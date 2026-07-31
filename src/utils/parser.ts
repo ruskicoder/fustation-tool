@@ -1,5 +1,34 @@
 import { ExamDataset, Question, Option } from '../types';
 
+export function sanitizeOptionText(text: string, optId: string): string {
+  if (!text) return '';
+  let cleaned = text.trim();
+
+  // If text starts with "A. " or "A: " or "A ", strip it
+  const prefixRegex = new RegExp(`^${optId}[.:\\s-]+`, 'i');
+  cleaned = cleaned.replace(prefixRegex, '');
+
+  // If text starts with just "A" followed directly by text without space (e.g. "AMâu thuẫn..."), strip leading optId
+  if (cleaned.length > 1 && cleaned.toUpperCase().startsWith(optId.toUpperCase())) {
+    const nextChar = cleaned[optId.length];
+    if (nextChar && nextChar === nextChar.toUpperCase() && nextChar !== nextChar.toLowerCase()) {
+      cleaned = cleaned.substring(optId.length).trim();
+    }
+  }
+
+  // Deduplicate repeated string halves if present (e.g. "Sentence. Sentence")
+  const halfLen = Math.floor(cleaned.length / 2);
+  if (halfLen > 5) {
+    const firstHalf = cleaned.substring(0, halfLen).trim();
+    const secondHalf = cleaned.substring(halfLen).trim();
+    if (firstHalf === secondHalf) {
+      cleaned = firstHalf;
+    }
+  }
+
+  return cleaned;
+}
+
 export function tryParsePartialJson(str: string): any {
   let count = 0;
   let inString = false;
@@ -72,24 +101,37 @@ export function formatExamDataset(initialData: any): ExamDataset {
     subjectName: subj.name || 'Subject',
     author: prod.description || (prod.seller && prod.seller.name) || 'XAVALO',
     totalQuestions: (initialData.questions || []).length,
-    questions: (initialData.questions || []).map((q: any, idx: number): Question => ({
-      index: idx + 1,
-      id: q.id || `q_${idx}`,
-      text: (q.text || '').trim(),
-      imageUrl: q.imageUrl || null,
-      correctAnswers: q.correctAnswers || [],
-      options: (q.options || []).map((opt: any): Option => ({
-        id: opt.id,
-        text: (opt.text || '').trim()
-      }))
-    }))
+    questions: (initialData.questions || []).map((q: any, idx: number): Question => {
+      const validOptions = (q.options || []).map((opt: any): Option => {
+        const optId = (opt.id || '').trim().toUpperCase();
+        const rawText = (opt.text || '').trim();
+        return {
+          id: optId,
+          text: sanitizeOptionText(rawText, optId)
+        };
+      });
+
+      const validAnswers = (q.correctAnswers || []).map((ans: string) => {
+        const str = (ans || '').trim().toUpperCase();
+        return str.length === 1 ? str : str.charAt(0);
+      });
+
+      return {
+        index: idx + 1,
+        id: q.id || `q_${idx}`,
+        text: (q.text || '').trim(),
+        imageUrl: q.imageUrl || null,
+        correctAnswers: validAnswers,
+        options: validOptions
+      };
+    })
   };
 }
 
 export function extractExamFromScripts(): ExamDataset | null {
   if (typeof document === 'undefined') return null;
 
-  // 1. Check raw HTML first (most reliable on live DOM)
+  // 1. Check raw HTML first
   const fullHtml = document.documentElement.innerHTML;
   if (fullHtml.includes('initialData') && fullHtml.includes('"questions":[')) {
     const parsed = unescapeNextFChunk(fullHtml);
@@ -178,27 +220,33 @@ export async function crawlExamFromDOM(
     const options: Option[] = [];
     const correctAnswers: string[] = [];
 
-    optBtns.forEach((btn) => {
+    optBtns.forEach((btn, btnIdx) => {
       const badgeEl = btn.querySelector('div');
-      const optId = badgeEl ? badgeEl.textContent?.trim() || '' : '';
-      const textEl = btn.querySelector('span.leading-snug');
-      const optText = textEl ? textEl.textContent?.trim() || '' : '';
+      let optId = badgeEl ? badgeEl.textContent?.trim() || '' : '';
+      if (!optId) {
+        optId = String.fromCharCode(65 + btnIdx); // 'A', 'B', 'C', 'D'
+      }
+      optId = optId.charAt(0).toUpperCase();
 
-      if (optId && optText) {
-        options.push({ id: optId, text: optText });
+      const textEl = btn.querySelector('span.leading-snug') || btn.querySelector('span');
+      let rawText = textEl ? textEl.textContent?.trim() || '' : btn.textContent?.trim() || '';
 
-        // Detect if this option is correct
-        const btnHtml = btn.outerHTML || '';
-        const btnClass = btn.className || '';
-        if (
-          btnClass.includes('emerald') ||
-          btnClass.includes('green') ||
-          btnClass.includes('bg-primary') ||
-          btnHtml.includes('lucide-check') ||
-          btn.getAttribute('data-correct') === 'true'
-        ) {
-          correctAnswers.push(optId);
-        }
+      const cleanText = sanitizeOptionText(rawText, optId);
+      if (cleanText) {
+        options.push({ id: optId, text: cleanText });
+      }
+
+      // Detect if this option is correct
+      const btnHtml = btn.outerHTML || '';
+      const btnClass = btn.className || '';
+      if (
+        btnClass.includes('emerald') ||
+        btnClass.includes('green') ||
+        btnClass.includes('bg-primary') ||
+        btnHtml.includes('lucide-check') ||
+        btn.getAttribute('data-correct') === 'true'
+      ) {
+        correctAnswers.push(optId);
       }
     });
 
@@ -207,7 +255,7 @@ export async function crawlExamFromDOM(
       id: `q_dom_${qIdx}`,
       text: qText,
       imageUrl,
-      correctAnswers: correctAnswers.length > 0 ? correctAnswers : ['A'], // Fallback if selected
+      correctAnswers: correctAnswers.length > 0 ? correctAnswers : ['A'],
       options
     });
 
