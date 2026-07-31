@@ -1,0 +1,216 @@
+Request URL
+https://www.fustation.net/home?_rsc=ln6dv
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+104.21.77.129:443
+Referrer Policy
+strict-origin-when-cross-origin
+age
+0
+alt-svc
+h3=":443"; ma=86400
+cache-control
+private, no-cache, no-store, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a23b15e099a2e2df-HKG
+content-encoding
+br
+content-type
+text/x-component
+date
+Fri, 31 Jul 2026 08:03:14 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=IT7%2Bm1RfTewdAlUHAeTOEYUWZrbfttLwC1oO36m8%2BuVqt5tLYARe12B3zHrWA61aVHOYCXbbxP%2BkVCHc5Mnazmvcq7w5bis3yjnNnmaxWiQ1s3x175vax1Zt%2BD%2B7wy7tb7TcvQ%3D%3D"}]}
+server
+cloudflare
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/home.rsc
+x-vercel-cache
+MISS
+x-vercel-id
+hkg1::iad1::h5bdf-1785484994656-9a9953232373
+:authority
+www.fustation.net
+:method
+GET
+:path
+/home?_rsc=ln6dv
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+cookie
+__Secure-better-auth.session_token=NTTprkLMdan8RzbcBIv1HDS1SYmApE5M.9m0R8ioQtlAvUkQZqGGyIZ%2Fb0TGVPvsSnnY7Kp3KCFg%3D; cf_clearance=_SGwZ4ZrK7lRLo2QoRf3PL8FENKFhPdQFhOgmBgkm4E-1785484989-1.2.1.1-qjSnhZyUyV2PLVHBJk8mLOrB.IE3UAKppEfNQ0ANnf.54va9dBJrdpfkVlwjDD8Vz7NJZGuGWpeZ4fYNazq0TsHM1TNQriC18NsxoNkSuoyl3QBP8DZD1rR4Cmn7MJboTtkyeig6kMIpx20gXkKwZeNmsp4TRJlSRCcOfUxufb6PGo8Rc.9G6rGMNT4MrrVvK.7BElSRLYvsXVNy40ZGPa11ljizEJj65cSF9.0ZHOnKO2WKihTQYE6OJqMkJTVAM0henNJ79kU.T9XfkQbtXhmYRqKNTZvUeBqWt8iYALfDr42Drwzx2x7PHie7GJoPYsMTAi60a2c.hTIXNvvhz29BnuSSIXloFBZ99hdeZMg; __Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wNFQxOToyNjowNy45MDhaIiwidG9rZW4iOiJOVFRwcmtMTWRhbjhSemJjQkl2MUhEUzFTWW1BcEU1TSIsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4yMTEuODgiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6ImlSSkVVVGgySW1wVU1WeDdsYVd1WHd1TkRCeDNWMFloIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTQ4NTg4OTcxNSwic2lnbmF0dXJlIjoiazhvMzJGVTBtZjNqYnJRSGRhbld2WWhUV1NoQTdXb0JicnhBalNMVVprdyJ9
+dnt
+1
+next-router-prefetch
+1
+next-router-segment-prefetch
+/_tree
+next-url
+/marketplace/exam/cmol4jwyh000004i3rxquc7sa
+priority
+i
+referer
+https://www.fustation.net/marketplace/exam/cmol4jwyh000004i3rxquc7sa
+rsc
+1
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+x-deployment-id
+dpl_BrzPodnErePx8z3sMEL2TarmSUDw
+
+Payload:
+
+_rsc=ln6dv
+
+Response:
+
+0:{"b":"xPvKReUNCPRkKT2yO8KNs","f":[[["",{"children":["home",{"children":["__PAGE__",{},"$undefined","$undefined","$undefined",3]},"$undefined","$undefined","$undefined",1]},"$undefined","$undefined",true,2],null,[null,null],true]],"q":"","i":false,"S":false}
+
+
+Request URL
+https://www.fustation.net/home?_rsc=wf3w2
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+104.21.77.129:443
+Referrer Policy
+strict-origin-when-cross-origin
+age
+0
+alt-svc
+h3=":443"; ma=86400
+cache-control
+private, no-cache, no-store, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a23b15e29f7fe2df-HKG
+content-encoding
+br
+content-type
+text/x-component
+date
+Fri, 31 Jul 2026 08:03:15 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=LxMgNsbmVTGHUKje7j6bnJjLsQt6y%2FCN9r8G8lG0rB1ePfkJFl3QU0d%2FS9GcYTLTBSZh8ZrJojmfERtl3ZF2USlnSw0ZC7VGiOsKAa3Myp03zFGPqPl2HyFC%2BM7sEMrJV8%2BrbA%3D%3D"}]}
+server
+cloudflare
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/home.rsc
+x-vercel-cache
+MISS
+x-vercel-id
+hkg1::iad1::sh9bh-1785484994974-913104bc2667
+:authority
+www.fustation.net
+:method
+GET
+:path
+/home?_rsc=wf3w2
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+cookie
+__Secure-better-auth.session_token=NTTprkLMdan8RzbcBIv1HDS1SYmApE5M.9m0R8ioQtlAvUkQZqGGyIZ%2Fb0TGVPvsSnnY7Kp3KCFg%3D; cf_clearance=_SGwZ4ZrK7lRLo2QoRf3PL8FENKFhPdQFhOgmBgkm4E-1785484989-1.2.1.1-qjSnhZyUyV2PLVHBJk8mLOrB.IE3UAKppEfNQ0ANnf.54va9dBJrdpfkVlwjDD8Vz7NJZGuGWpeZ4fYNazq0TsHM1TNQriC18NsxoNkSuoyl3QBP8DZD1rR4Cmn7MJboTtkyeig6kMIpx20gXkKwZeNmsp4TRJlSRCcOfUxufb6PGo8Rc.9G6rGMNT4MrrVvK.7BElSRLYvsXVNy40ZGPa11ljizEJj65cSF9.0ZHOnKO2WKihTQYE6OJqMkJTVAM0henNJ79kU.T9XfkQbtXhmYRqKNTZvUeBqWt8iYALfDr42Drwzx2x7PHie7GJoPYsMTAi60a2c.hTIXNvvhz29BnuSSIXloFBZ99hdeZMg; __Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wNFQxOToyNjowNy45MDhaIiwidG9rZW4iOiJOVFRwcmtMTWRhbjhSemJjQkl2MUhEUzFTWW1BcEU1TSIsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4yMTEuODgiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6ImlSSkVVVGgySW1wVU1WeDdsYVd1WHd1TkRCeDNWMFloIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTQ4NTg4OTcxNSwic2lnbmF0dXJlIjoiazhvMzJGVTBtZjNqYnJRSGRhbld2WWhUV1NoQTdXb0JicnhBalNMVVprdyJ9
+dnt
+1
+next-router-prefetch
+1
+next-router-state-tree
+%5B%22%22%2C%7B%22children%22%3A%5B%22home%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2Cfalse%5D%7D%2Cnull%2C%22refetch%22%2Cfalse%5D%7D%2Cnull%2Cnull%2Ctrue%5D
+next-url
+/marketplace/exam/cmol4jwyh000004i3rxquc7sa
+priority
+i
+referer
+https://www.fustation.net/marketplace/exam/cmol4jwyh000004i3rxquc7sa
+rsc
+1
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+x-deployment-id
+dpl_BrzPodnErePx8z3sMEL2TarmSUDw
+
+Payload:
+
+_rsc=wf3w2
+
+REsponse:
+1:"$Sreact.fragment"
+2:I[41300,["7923","static/chunks/7923-75ec2f6aee9ededc.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","9978","static/chunks/9978-c0f6dfc968ebc6b4.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","6827","static/chunks/6827-c4996b3fa14f2c0a.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","487","static/chunks/487-693d63cab3611b92.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","4061","static/chunks/4061-9edd67dd0039fd1e.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","1755","static/chunks/1755-06f47093577b9877.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","7924","static/chunks/7924-3c0900269ccb5057.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","9711","static/chunks/app/home/layout-a2edeea814dab9b1.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw"],"ProtectedRoute"]
+3:I[77924,["7923","static/chunks/7923-75ec2f6aee9ededc.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","9978","static/chunks/9978-c0f6dfc968ebc6b4.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","6827","static/chunks/6827-c4996b3fa14f2c0a.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","487","static/chunks/487-693d63cab3611b92.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","4061","static/chunks/4061-9edd67dd0039fd1e.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","1755","static/chunks/1755-06f47093577b9877.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","7924","static/chunks/7924-3c0900269ccb5057.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw","9711","static/chunks/app/home/layout-a2edeea814dab9b1.js?dpl=dpl_BrzPodnErePx8z3sMEL2TarmSUDw"],"MainLayout"]
+4:I[48323,[],""]
+5:I[42303,[],""]
+e:I[56234,[],"ViewportBoundary"]
+10:I[56234,[],"MetadataBoundary"]
+11:"$Sreact.suspense"
+0:{"b":"xPvKReUNCPRkKT2yO8KNs","f":[["children","home",["home",{"children":["__PAGE__",{}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[null,["$","$L2",null,{"children":["$","$L3",null,{"children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]}]}]]}],{"children":null},[["$","div","l",{"className":"min-h-screen bg-background","children":["$","div",null,{"className":"container mx-auto space-y-8 px-4 py-8 sm:px-6 lg:px-8","children":[["$","div",null,{"className":"flex flex-col items-start justify-between gap-4 md:flex-row md:items-center","children":[["$","div",null,{"className":"space-y-2","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-9 w-48"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-64"}]]}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-12 w-44 rounded-2xl"}]]}],["$","div",null,{"className":"grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4","children":[["$","div","0",{"data-slot":"skeleton","className":"animate-pulse bg-muted h-[148px] rounded-xl"}],["$","div","1",{"data-slot":"skeleton","className":"animate-pulse bg-muted h-[148px] rounded-xl"}],["$","div","2",{"data-slot":"skeleton","className":"animate-pulse bg-muted h-[148px] rounded-xl"}]]}],["$","div",null,{"className":"space-y-4","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-6 w-56"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-[280px] w-full rounded-2xl"}]]}],["$","div",null,{"className":"flex flex-wrap items-center gap-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-10 w-full rounded-xl sm:w-[360px]"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-9 w-24 rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-9 w-24 rounded-lg"}]]}],["$","div",null,{"className":"grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5","children":[["$","div","0",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}],["$","div","1",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}],["$","div","2",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}],"$L6","$L7","$L8","$L9","$La","$Lb","$Lc"]}]]}]}],[],[]],false,false],"$Ld",false]],"q":"","i":false,"S":false}
+6:["$","div","3",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+7:["$","div","4",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+8:["$","div","5",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+9:["$","div","6",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+a:["$","div","7",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+b:["$","div","8",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+c:["$","div","9",{"className":"space-y-3 rounded-xl border border-border bg-card p-3","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted aspect-[4/3] w-full rounded-lg"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-4 w-3/4"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-3 w-1/2"}],["$","div",null,{"className":"flex items-center justify-between pt-1","children":[["$","div",null,{"data-slot":"skeleton","className":"animate-pulse rounded-md bg-muted h-5 w-20"}],["$","div",null,{"data-slot":"skeleton","className":"animate-pulse bg-muted h-8 w-16 rounded-md"}]]}]]}]
+d:["$","$1","h",{"children":[null,["$","$Le","Pz4UWr5QA3hG92VRZXrVDv",{"children":"$Lf"}],["$","div","Pz4UWr5QA3hG92VRZXrVDm",{"hidden":true,"children":["$","$L10",null,{"children":["$","$11",null,{"name":"Next.Metadata","children":"$L12"}]}]}]]}]
+f:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+13:I[98303,[],"IconMark"]
+12:[["$","title","0",{"children":"FUSTATION - Ná»n táº£ng Há»— trá»£ Há»c táº­p & Chia sáº» TÃ i nguyÃªn"}],["$","meta","1",{"name":"description","content":"Ná»n táº£ng Marketplace & Service chuyÃªn biá»‡t cho sinh viÃªn FPT"}],["$","meta","2",{"property":"og:title","content":"FUSTATION - Ná»n táº£ng Há»— trá»£ Há»c táº­p & Chia sáº» TÃ i nguyÃªn"}],["$","meta","3",{"property":"og:description","content":"Ná»n táº£ng Marketplace & Service chuyÃªn biá»‡t cho sinh viÃªn FPT"}],["$","meta","4",{"property":"og:url","content":"https://www.fustation.net"}],["$","meta","5",{"property":"og:site_name","content":"FUSTATION"}],["$","meta","6",{"property":"og:locale","content":"vi_VN"}],["$","meta","7",{"property":"og:image","content":"https://www.fustation.net/images/logos/FUSTATIONremoved.png"}],["$","meta","8",{"property":"og:image:width","content":"1200"}],["$","meta","9",{"property":"og:image:height","content":"630"}],["$","meta","10",{"property":"og:image:alt","content":"FUSTATION"}],["$","meta","11",{"property":"og:type","content":"website"}],["$","meta","12",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","13",{"name":"twitter:title","content":"FUSTATION - Ná»n táº£ng Há»— trá»£ Há»c táº­p & Chia sáº» TÃ i nguyÃªn"}],["$","meta","14",{"name":"twitter:description","content":"Ná»n táº£ng Marketplace & Service chuyÃªn biá»‡t cho sinh viÃªn FPT"}],["$","meta","15",{"name":"twitter:image","content":"https://www.fustation.net/images/logos/FUSTATIONremoved.png"}],["$","link","16",{"rel":"icon","href":"/favicon.ico?25daaf3e02c8ede7","type":"image/x-icon","sizes":"32x19"}],["$","$L13","17",{}]]

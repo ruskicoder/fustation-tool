@@ -1,0 +1,26 @@
+{
+  "name": "fustation-tool",
+  "version": "1.0.0",
+  "description": "Chromium Extension to fetch and extract exam bank questions into MD, PDF, and JSON",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && node scripts/build.js",
+    "test": "npx tsx scratch/test-flow.ts"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "tsx": "^4.19.1",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.10",
+    "vite-plugin-static-copy": "^1.0.4"
+  }
+}

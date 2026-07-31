@@ -1,0 +1,91 @@
+Request URL
+https://www.fustation.net/api/auth/guard-context
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+104.21.77.129:443
+Referrer Policy
+strict-origin-when-cross-origin
+age
+0
+alt-svc
+h3=":443"; ma=86400
+cache-control
+public, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a23b15c3b8dce2df-HKG
+content-encoding
+br
+content-type
+application/json
+date
+Fri, 31 Jul 2026 08:03:10 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=v2w6RuUkdWfI4%2F75iIy7hv5WxxMDv%2FIw3LS3mrt679%2FiNezbhLjqlgfwoGhRVP47j0gc45sRoa5McgU3R2IC8vB9elPGN5uq7yw5K18UKf17aLc7GiUY%2BZPZm9Ida6e5mY5DKw%3D%3D"}]}
+server
+cloudflare
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/api/auth/guard-context
+x-vercel-cache
+MISS
+x-vercel-id
+hkg1::iad1::rh9gw-1785484990040-8ab81e9cd42f
+:authority
+www.fustation.net
+:method
+GET
+:path
+/api/auth/guard-context
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+cookie
+__Secure-better-auth.session_token=NTTprkLMdan8RzbcBIv1HDS1SYmApE5M.9m0R8ioQtlAvUkQZqGGyIZ%2Fb0TGVPvsSnnY7Kp3KCFg%3D; cf_clearance=_SGwZ4ZrK7lRLo2QoRf3PL8FENKFhPdQFhOgmBgkm4E-1785484989-1.2.1.1-qjSnhZyUyV2PLVHBJk8mLOrB.IE3UAKppEfNQ0ANnf.54va9dBJrdpfkVlwjDD8Vz7NJZGuGWpeZ4fYNazq0TsHM1TNQriC18NsxoNkSuoyl3QBP8DZD1rR4Cmn7MJboTtkyeig6kMIpx20gXkKwZeNmsp4TRJlSRCcOfUxufb6PGo8Rc.9G6rGMNT4MrrVvK.7BElSRLYvsXVNy40ZGPa11ljizEJj65cSF9.0ZHOnKO2WKihTQYE6OJqMkJTVAM0henNJ79kU.T9XfkQbtXhmYRqKNTZvUeBqWt8iYALfDr42Drwzx2x7PHie7GJoPYsMTAi60a2c.hTIXNvvhz29BnuSSIXloFBZ99hdeZMg; __Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wNFQxOToyNjowNy45MDhaIiwidG9rZW4iOiJOVFRwcmtMTWRhbjhSemJjQkl2MUhEUzFTWW1BcEU1TSIsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4yMTEuODgiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6ImlSSkVVVGgySW1wVU1WeDdsYVd1WHd1TkRCeDNWMFloIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTQ4NTg4OTcxNSwic2lnbmF0dXJlIjoiazhvMzJGVTBtZjNqYnJRSGRhbld2WWhUV1NoQTdXb0JicnhBalNMVVprdyJ9
+dnt
+1
+priority
+u=1, i
+referer
+https://www.fustation.net/marketplace/exam/cmol4jwyh000004i3rxquc7sa
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+
+Response:
+
+{
+    "locked": false,
+    "lockedUntil": null,
+    "loginAttempts": 0,
+    "needsSetup": false,
+    "hasGoogleAccount": true,
+    "missing": []
+}

@@ -1,0 +1,10 @@
+{
+  "description": "Effortlessly extract online exam question banks from fustation.net into offline Markdown files and PDFs, enhancing study efficiency for university students.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

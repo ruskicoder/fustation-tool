@@ -1,0 +1,455 @@
+/* fustation-tool Glassmorphism Overlay & Accessibility Styling */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+#fustation-tool-root {
+  --fus-emerald: #34d399;
+  --fus-sky: #38bdf8;
+  --fus-violet: #a78bfa;
+  --fus-amber: #fbbf24;
+  --fus-rose: #f43f5e;
+  --fus-border: rgba(255, 255, 255, 0.10);
+  --fus-border-dim: rgba(255, 255, 255, 0.07);
+  --fus-text: #f1f5f9;
+  --fus-text-mid: rgba(255, 255, 255, 0.65);
+  --fus-text-dim: rgba(255, 255, 255, 0.35);
+  
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--fus-text);
+  box-sizing: border-box;
+}
+
+#fustation-tool-root *, #fustation-tool-root *::before, #fustation-tool-root *::after {
+  box-sizing: border-box;
+}
+
+/* FAB Styling */
+.fus-fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+}
+
+.fus-fab {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #047857, #075985);
+  border: 1.5px solid rgba(52, 211, 153, 0.4);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fus-fab:hover {
+  transform: scale(1.08);
+  background: linear-gradient(135deg, #059669, #0284c7);
+  box-shadow: 0 8px 28px rgba(16, 185, 129, 0.45);
+}
+
+.fus-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #34d399, #38bdf8);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #000;
+}
+
+/* Panel Glassmorphism Overlay */
+.fus-panel {
+  position: fixed;
+  bottom: 84px;
+  right: 24px;
+  z-index: 99999;
+  width: 580px;
+  background: rgba(6, 8, 18, 0.88);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--fus-border);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(52, 211, 153, 0.08) inset;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: fus-fade-in 0.25s ease-out;
+}
+
+@keyframes fus-fade-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.fus-accent-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.6), rgba(56, 189, 248, 0.5), transparent);
+}
+
+/* Header */
+.fus-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--fus-border-dim);
+}
+
+.fus-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fus-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #059669, #0284c7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.fus-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.fus-title {
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #34d399, #38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fus-subtitle {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text-dim);
+}
+
+.fus-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.fus-tab-btn {
+  padding: 4px 12px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--fus-text-dim);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fus-tab-btn.active {
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--fus-emerald);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* Status Pill */
+.fus-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fus-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.fus-status-ready { background: rgba(56, 189, 248, 0.12); color: var(--fus-sky); border-color: rgba(56, 189, 248, 0.3); }
+.fus-status-ready .fus-status-dot { background: var(--fus-sky); box-shadow: 0 0 6px var(--fus-sky); }
+
+.fus-status-fetching { background: rgba(167, 139, 250, 0.12); color: var(--fus-violet); border-color: rgba(167, 139, 250, 0.3); }
+.fus-status-fetching .fus-status-dot { background: var(--fus-violet); box-shadow: 0 0 6px var(--fus-violet); }
+
+.fus-status-processing { background: rgba(251, 191, 36, 0.12); color: var(--fus-amber); border-color: rgba(251, 191, 36, 0.3); }
+.fus-status-processing .fus-status-dot { background: var(--fus-amber); box-shadow: 0 0 6px var(--fus-amber); }
+
+.fus-status-extracted { background: rgba(52, 211, 153, 0.12); color: var(--fus-emerald); border-color: rgba(52, 211, 153, 0.3); }
+.fus-status-extracted .fus-status-dot { background: var(--fus-emerald); box-shadow: 0 0 6px var(--fus-emerald); }
+
+.fus-status-error { background: rgba(244, 63, 94, 0.12); color: var(--fus-rose); border-color: rgba(244, 63, 94, 0.3); }
+.fus-status-error .fus-status-dot { background: var(--fus-rose); box-shadow: 0 0 6px var(--fus-rose); }
+
+/* Control Buttons */
+.fus-ctrl-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--fus-border-dim);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fus-text-dim);
+  font-family: monospace;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.fus-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+.fus-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+}
+
+/* Body Split Grid */
+.fus-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  min-height: 160px;
+}
+
+.fus-left-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fus-divider {
+  background: var(--fus-border-dim);
+  align-self: stretch;
+}
+
+.fus-right-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Metadata Badges */
+.fus-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fus-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fus-badge-subject { background: rgba(52, 211, 153, 0.12); color: var(--fus-emerald); border: 1px solid rgba(52, 211, 153, 0.25); }
+.fus-badge-campus { background: rgba(167, 139, 250, 0.12); color: var(--fus-violet); border: 1px solid rgba(167, 139, 250, 0.25); }
+
+.fus-subject-title {
+  font-size: 12px;
+  color: var(--fus-text-mid);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.fus-exam-code {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text);
+  margin: 0;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fus-q-count {
+  font-size: 11px;
+  color: var(--fus-sky);
+  font-weight: 600;
+}
+
+/* Format Switcher (Segmented Control) */
+.fus-switcher-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.fus-switcher-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.fus-segmented-control {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--fus-border);
+  gap: 2px;
+  width: 100%;
+}
+
+.fus-radio-item {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--fus-text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+
+.fus-radio-item:hover {
+  color: var(--fus-text-mid);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fus-radio-item.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(52, 211, 153, 0.25));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.4);
+}
+
+/* Action Buttons */
+.fus-action-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.fus-btn-primary {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  transition: all 0.18s ease;
+}
+
+.fus-btn-sec {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--fus-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fus-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.fus-btn-sec:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Focus Ring Accessibility */
+.fus-btn-primary:focus-visible,
+.fus-btn-sec:focus-visible,
+.fus-radio-item:focus-visible,
+.fus-ctrl-btn:focus-visible,
+.fus-tab-btn:focus-visible {
+  outline: 2px solid var(--fus-sky) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* Saved Tab List */
+.fus-saved-container {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.fus-saved-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fus-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--fus-border-dim);
+  transition: background 0.15s ease;
+}
+
+.fus-saved-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fus-saved-code {
+  flex: 1;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,118 @@
+Request URL
+https://www.fustation.net/api/auth/get-session
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+104.21.77.129:443
+Referrer Policy
+strict-origin-when-cross-origin
+age
+0
+alt-svc
+h3=":443"; ma=86400
+cache-control
+public, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a23b15b78de7e2df-HKG
+content-encoding
+br
+content-type
+application/json
+date
+Fri, 31 Jul 2026 08:03:09 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=RVsHlyE7cirJW0ygOWwBhUhjwqVJFB2eqqlbvj2IbRpBCigM8gedHYH77Y6oNdRsVqFu%2B3%2B5o7iuAEbQ8rMdqlryOeOZ3SbUB8zOKvPpZYK%2FNVbym%2FbSnopgnWcLurh6HHfhqA%3D%3D"}]}
+server
+cloudflare
+set-cookie
+__Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wNFQxOToyNjowNy45MDhaIiwidG9rZW4iOiJOVFRwcmtMTWRhbjhSemJjQkl2MUhEUzFTWW1BcEU1TSIsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjhUMTk6MjY6MDcuOTA5WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4yMTEuODgiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6ImlSSkVVVGgySW1wVU1WeDdsYVd1WHd1TkRCeDNWMFloIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTQ4NTg4OTcxNSwic2lnbmF0dXJlIjoiazhvMzJGVTBtZjNqYnJRSGRhbld2WWhUV1NoQTdXb0JicnhBalNMVVprdyJ9; Max-Age=900; Domain=fustation.net; Path=/; HttpOnly; Secure; SameSite=Lax
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/api/auth/[...all]
+x-vercel-cache
+MISS
+x-vercel-id
+hkg1::iad1::v6zcr-1785484988087-9f54a0139dec
+:authority
+www.fustation.net
+:method
+GET
+:path
+/api/auth/get-session
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+cookie
+__Secure-better-auth.session_token=NTTprkLMdan8RzbcBIv1HDS1SYmApE5M.9m0R8ioQtlAvUkQZqGGyIZ%2Fb0TGVPvsSnnY7Kp3KCFg%3D; cf_clearance=DEFU3teiWnasEjNNuSaq6le7DTcyYJYntppj8zTzGhk-1785459910-1.2.1.1-SeLlSfYV4IedbdDhnq54uZc33g0tpEnos.6e0qp8LfEETWk1_KWVDIKQWsjZ7HGAHdS8CgoTlNCC4zsLeXY0wClCZhuFXlVj06wCGX7CLqIq3_ll0l16zAtTW.cOkFmu6Si9viGjYxjlDTcvuAaK8NTjDsOiFzJ0qoGDZ6SWkxy2fTKuHAa5R3Kvn540NKnH5GEXgq4ddGPXQqEW_lvuOnwM23l.O1H6jvjl9XmboFIq07GQPJyvn9iM0xZSMv5.23spktdRxlLqioAVeiVHQ_el79CMbzhlSI2huk7F.Ww1W05irFvVIfi3M.CLE2WSTs_fUhJvFrFvwCughXTR62.CgvtDSkQRct9Wrn9uphQ
+dnt
+1
+priority
+u=1, i
+referer
+https://www.fustation.net/marketplace/exam/cmol4jwyh000004i3rxquc7sa
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+
+Response:
+
+{
+    "session": {
+        "expiresAt": "2026-08-04T19:26:07.908Z",
+        "token": "NTTprkLMdan8RzbcBIv1HDS1SYmApE5M",
+        "createdAt": "2026-07-28T19:26:07.909Z",
+        "updatedAt": "2026-07-28T19:26:07.909Z",
+        "ipAddress": "172.68.211.88",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+        "userId": "cms51qjn6000904ibjd3nj1q4",
+        "id": "iRJEUTh2ImpUMVx7laWuXwuNDBx3V0Yh"
+    },
+    "user": {
+        "name": "Do Dang Khoa",
+        "email": "khoado7577@gmail.com",
+        "emailVerified": true,
+        "image": "https://lh3.googleusercontent.com/a/ACg8ocIfP41ANUgmyX7ScxoECva8XmSsY8ubqzBjOHnyEYjVh0E2-mDm=s96-c",
+        "createdAt": "2026-07-28T19:26:04.530Z",
+        "updatedAt": "2026-07-28T19:27:33.247Z",
+        "mssv": "SE192357",
+        "username": "khoado7577",
+        "role": "STUDENT",
+        "trustScore": 0,
+        "successfulTransactions": 0,
+        "fiveStarRatings": 0,
+        "bio": null,
+        "phone": null,
+        "fusVerified": false,
+        "foundingMember": false,
+        "waitlistPosition": null,
+        "id": "cms51qjn6000904ibjd3nj1q4"
+    }
+}
+
