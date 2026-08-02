@@ -117,3 +117,24 @@ p-1.5 hover:bg-slate-100 text-slate-500 rounded cursor-pointer transition-colors
 w-[90px] text-[10px] font-extrabold uppercase h-[25px] px-1.5 py-0 rounded-md border
 
 * State Machine Governance: Selection options must enforce valid transition flows defined by business logic rules. Back-transitions to initialization states are blocked (e.g., DRAFT $\rightarrow$ ACTIVE $\rightarrow$ INACTIVE is valid; returning an ACTIVE or INACTIVE record back to DRAFT is prohibited).
+
+------------------------------
+## 9. fustation-tool Extension Overlay UI Specifications
+
+### 9.1 ExtractTab Left Panel 5-Row Layout Grid
+The `ExtractTab` left metadata panel enforces an exact 5-row structured grid layout:
+- **Row 1 (30% / 40% / 30% grid)**: `[SubjectCode]` | `[Term][ExamType]` | `[Campus]`
+- **Row 2 (70% / 30% grid)**: `[SessionDate]` | `[Question Counter] Questions`
+- **Row 3 (Full Width)**: `[SubjectName]`
+- **Row 4 (Full Width)**: `[ExamCode]`
+- **Divider**: Horizontal hairline separator.
+- **Row 5 (Full Width)**: `[ View Questions ]` (Placeholder Action Button).
+
+### 9.2 SavedTab Row Action Button Order
+Each saved record row in `SavedTab` renders action buttons in strict left-to-right order:
+- **Action 1**: `[ Delete ]` (Red danger button `.fus-btn-danger-icon`).
+- **Action 2**: `[ Download ]` (Control button for active format export).
+
+### 9.3 Header Control Minimal Pattern
+The top-right header container of the extension overlay renders a single `–` (Minimize) control button. Redundant `×` (Close) buttons are prohibited.
+
