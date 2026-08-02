@@ -75,33 +75,51 @@ export const Overlay: React.FC = () => {
     }
   };
 
-  const handleDownload = async () => {
-    let dataToExport = currentDataset;
-
-    // If dataset missing or incomplete, auto trigger fetch/crawl first
-    if (!dataToExport || !dataToExport.questions || dataToExport.questions.length <= 1) {
-      setStatus('fetching');
-      const fastData = extractExamFromScripts();
-      if (fastData && fastData.questions && fastData.questions.length > 1) {
-        dataToExport = fastData;
-        setCurrentDataset(fastData);
-      } else {
-        try {
-          const crawled = await crawlExamFromDOM((curr, total) => {
-            setProgressLabel(`(${curr}/${total})`);
-          });
-          if (crawled && crawled.questions && crawled.questions.length > 0) {
-            dataToExport = crawled;
-            setCurrentDataset(crawled);
-          }
-        } catch (e) {
-          console.error('[fustation-tool] Crawl failed during download:', e);
-        } finally {
-          setProgressLabel('');
-        }
-      }
+  const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {
+    if (currentDataset && currentDataset.questions && currentDataset.questions.length > 1) {
+      return currentDataset;
     }
 
+    setStatus('fetching');
+    const fastData = extractExamFromScripts();
+    if (fastData && fastData.questions && fastData.questions.length > 1) {
+      setCurrentDataset(fastData);
+      return fastData;
+    }
+
+    try {
+      const crawled = await crawlExamFromDOM((curr, total) => {
+        setProgressLabel(`(${curr}/${total})`);
+      });
+      if (crawled && crawled.questions && crawled.questions.length > 0) {
+        setCurrentDataset(crawled);
+        return crawled;
+      }
+    } catch (e) {
+      console.error('[fustation-tool] Crawl failed:', e);
+    } finally {
+      setProgressLabel('');
+    }
+
+    return null;
+  };
+
+  const handleSave = async () => {
+    const dataToSave = await ensureDatasetLoaded();
+    if (!dataToSave || !dataToSave.questions || dataToSave.questions.length === 0) {
+      setStatus('error');
+      return;
+    }
+
+    setStatus('processing');
+    saveExamToStorage(dataToSave, (updatedList) => {
+      setSavedExams(updatedList || savedExams);
+      setStatus('extracted'); // Display Saved state
+    });
+  };
+
+  const handleDownload = async () => {
+    const dataToExport = await ensureDatasetLoaded();
     if (!dataToExport || !dataToExport.questions || dataToExport.questions.length === 0) {
       setStatus('error');
       return;
@@ -109,12 +127,12 @@ export const Overlay: React.FC = () => {
 
     setStatus('processing');
     setTimeout(() => {
-      saveExamToStorage(dataToExport!, (updatedList) => {
+      saveExamToStorage(dataToExport, (updatedList) => {
         setSavedExams(updatedList || savedExams);
       });
 
       setStatus('downloading');
-      exportExam(dataToExport!, activeFormat);
+      exportExam(dataToExport, activeFormat);
 
       setTimeout(() => {
         setStatus('extracted');
@@ -143,7 +161,7 @@ export const Overlay: React.FC = () => {
       fetching: { label: `Fetching${progressLabel}...`, className: 'fus-status-fetching' },
       processing: { label: 'Processing...', className: 'fus-status-processing' },
       downloading: { label: 'Downloading...', className: 'fus-status-downloading' },
-      extracted: { label: 'Extracted', className: 'fus-status-extracted' },
+      extracted: { label: 'Saved / Ready', className: 'fus-status-extracted' },
       error: { label: 'Error', className: 'fus-status-error' }
     };
 
@@ -174,7 +192,7 @@ export const Overlay: React.FC = () => {
         </button>
       </div>
 
-      {/* Expanded Panel */}
+      {/* Expanded Panel (LOCKED 2:1 ASPECT RATIO) */}
       {isExpanded && (
         <div className="fus-panel">
           <div className="fus-accent-hairline" />
@@ -239,6 +257,7 @@ export const Overlay: React.FC = () => {
                 activeFormat={activeFormat}
                 onFormatChange={handleFormatChange}
                 onFetch={handleFetch}
+                onSave={handleSave}
                 onDownload={handleDownload}
               />
             ) : (
