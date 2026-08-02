@@ -1,0 +1,97 @@
+Request URL
+https://www.fustation.net/home/subject/PRM393?_rsc=1bcw7
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+104.21.77.129:443
+Referrer Policy
+strict-origin-when-cross-origin
+age
+0
+alt-svc
+h3=":443"; ma=86400
+cache-control
+private, no-cache, no-store, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a24af1b0fb5585b8-HKG
+content-encoding
+br
+content-type
+text/x-component
+date
+Sun, 02 Aug 2026 06:14:44 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+priority
+u=1,i
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=I%2FM1XTCf%2BHg9rktPdaaIF53MZyMX0%2B91uqC%2Fr2gAmhBkq%2FNGY1XSmiK9oLRzodDTngRmPV7M9NGSGd%2BFBtAd8vGfXFgkYKxXIQZwf4blP7HCUzvQ4bnrYsNPpcKtfe4sdg4LcQ%3D%3D"}]}
+server
+cloudflare
+server-timing
+cfExtPri
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/home/subject/[code].rsc
+x-vercel-cache
+MISS
+x-vercel-id
+hkg1::sin1::52xlv-1785651284637-5f1969c261f9
+:authority
+www.fustation.net
+:method
+GET
+:path
+/home/subject/PRM393?_rsc=1bcw7
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+cookie
+cf_clearance=v550TGifq77pxxqfIaCEx9klPA.ilkXk3PIDx3BUcH4-1785650871-1.2.1.1-MuDTFjAY4103Nu_u3Jsi350jg6Jqhfvd4P2LKo2AWHrW6MSyCQ6.zaczLRrZrVNylDWDuz.1Zirr8GyP3IA4Xs7JmLKuGUktjfj6gPVyCVVcxFvJhtbJ_jH5ogTahMHD8G62HnoFFLFUpBTWiC8T9Rp4UuUjAEyzH0rJVmLoPmZh32RP2nXHYuc31StJ75scQqgCXifGxiypi5Bx9wJfcaEevAh6kK4ZKYcLUWB7mBMqYmrjgu9V8TSI0NY58tupgn9kVoJ8dgQB4AOGGAE2aWbDkhb6AgyI80JP.CXrqI.pti9eMff4KeVaXrhPZ5psXN0C8wF_XbkEfBfcQGwonS0wVbhjFQxLaO3YAWCZMbQ; fus_oauth_state=5181d68c047e65bc080e4ca46ce7418e; __Secure-better-auth.session_token=fNmwxqVOlJTdpbtLoPcignwWeDfhNd7s.0NPFkDtmcpWGhgVSkQ6ckerODbyzIHDueSjdhSsd7nE%3D; __Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wOVQwNjoxMjoyMC4wMzRaIiwidG9rZW4iOiJmTm13eHFWT2xKVGRwYnRMb1BjaWdud1dlRGZoTmQ3cyIsImNyZWF0ZWRBdCI6IjIwMjYtMDgtMDJUMDY6MTI6MjAuMDM0WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDgtMDJUMDY6MTI6MjAuMDM0WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4yMTEuODkiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6Iks0NnlMSG84NnFuY1FTNGUySm9jaXA2SkE4aWhxb3RNIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTY1MjA0MDExNywic2lnbmF0dXJlIjoiY1FRQk9Zb0hKTTc1Uk91cHRXZnhQZXV6QmpEZU9hSlAtaVhOOHVTYzFXUSJ9
+dnt
+1
+next-router-state-tree
+%5B%22%22%2C%7B%22children%22%3A%5B%22home%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D
+next-url
+/home
+priority
+u=1, i
+referer
+https://www.fustation.net/home
+rsc
+1
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+x-deployment-id
+dpl_BRTSPWXz9fyG6DVtvCKu4eRcet89
+
+Payload:
+
+_rsc=1bcw7
+

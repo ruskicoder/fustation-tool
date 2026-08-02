@@ -9,48 +9,181 @@
 
 ---
 
-## 2. Server Component Streaming & Data Hydration
+## 2. Platform Domain Entities & Schema Specifications
 
-### A. Next.js RSC Data Payload (`self.__next_f`)
-- `fustation.net` streams initial page state inside inline `<script>` tags executing `self.__next_f.push([1, "..."])`.
-- On exam pages (`/marketplace/exam/[id]`), chunk entry `d:` contains the complete `initialData` object:
+Based on comprehensive analysis of server payloads across `/home`, `/subjects/[subjectCode]`, and `/marketplace/exam/[id]`, the following entities form the core platform data model:
 
-```json
-{
-  "product": {
-    "id": "cmol4jwyh000004i3rxquc7sa",
-    "title": "MLN122_SP26_B5FE_915637",
-    "description": "XAVALO",
-    "price": 0,
-    "category": "SOURCE_EXAM",
-    "examType": "FE",
-    "subjectCode": "MLN122",
-    "subject": {
-      "code": "MLN122",
-      "name": "Kinh tế chính trị Mác - Lênin"
-    }
-  },
-  "hasAccess": true,
-  "accessReason": "subscription",
-  "questions": [
-    {
-      "id": "q_1777531136180_0_sk03ztva8",
-      "text": "Mâu thuẫn cơ bản của sản xuất hàng hóa là gì?",
-      "options": [
-        { "id": "A", "text": "Mâu thuẫn giữa lao động tư nhân và lao động xã hội" },
-        { "id": "B", "text": "Mâu thuẫn giữa lao động cụ thể và lao động trừu tượng" },
-        { "id": "C", "text": "Mâu thuẫn giữa giá trị sử dụng và giá trị" },
-        { "id": "D", "text": "Mâu thuẫn giữa giá trị và giá cả hàng hóa" }
-      ],
-      "imageUrl": null,
-      "correctAnswers": ["A"],
-      "correctAnswersCount": 1
-    }
-  ]
+### A. Major Program (`MajorProgram`)
+Academic major program (e.g. Software Engineering).
+```typescript
+interface MajorProgram {
+  id: string;        // CUID (e.g. "cmot19i120000dktomy9njp54")
+  slug: string;      // URL slug (e.g. "ky-thuat-phan-mem")
+  name: string;      // Major title (e.g. "Kỹ thuật phần mềm")
+  terms?: Term[];    // Curriculum terms
 }
 ```
 
-### B. React TS Extension Content Script Flow
-- Content Script (`src/content.tsx`) mounts a React root inside a Shadow DOM / isolated container (`#fustation-tool-root`).
-- Parses `document.scripts` for `self.__next_f` payloads containing `initialData.questions`.
-- Provides instant `<50ms` extraction without DOM manipulation.
+### B. Major Term / Semester (`Term`)
+Curriculum term index within a major.
+```typescript
+interface Term {
+  term: number;         // Term number (1..9)
+  subjects: Subject[];  // List of courses taught in term
+}
+```
+
+### C. Subject / Course (`Subject`)
+Academic course subject.
+```typescript
+interface Subject {
+  code: string;  // Subject code: 3 Alphas + 3 Numericals + 0-2 Alphas (e.g. "PRM393", "DBM302m", "WED201C")
+  name: string;  // Course title (e.g. "Phát triển ứng dụng di động")
+}
+```
+
+### D. Platform Statistics (`PlatformStats`)
+Global platform metrics returned on catalog routes.
+```typescript
+interface PlatformStats {
+  examCount: number;     // Total exam sets (e.g. 330)
+  subjectCount: number;  // Total subjects (e.g. 153)
+}
+```
+
+### E. Product Summary (`ExamSetSummary`)
+Catalog product card metadata (Homepage & Subject listings).
+```typescript
+interface ProductSummary {
+  id: string;                     // CUID (e.g. "cms5ks213000304i7gbldi37p")
+  title: string;                  // Exam title string (e.g. "PRM393_SU26_FE_887674")
+  price: number;                  // Price in VND (e.g. 0)
+  imageUrl: string | null;        // Thumbnail cover image
+  category: string;               // Category enum ("SOURCE_EXAM")
+  examType: 'FE' | 'PE' | 'RE';   // Exam type enum (FE=Final, PE=Practical, RE=Retake)
+  examSessionTime: string | null; // Session time (e.g. "10:50")
+  examSessionDate: string | null; // Session date (ISO string stripped of $D prefix)
+  campus: string;                 // Campus code (e.g. "XAVALO", "HOLA")
+}
+```
+
+### F. Product Detail (`ExamSetDetail`)
+Full product entity returned on exam view (`/marketplace/exam/[id]`).
+```typescript
+interface ProductDetail {
+  id: string;                // CUID (e.g. "cmol4jwyh000004i3rxquc7sa")
+  title: string;             // Full exam title (e.g. "MLN122_SP26_B5FE_915637")
+  description: string;       // Campus / Uploader code (e.g. "XAVALO")
+  price: number;             // Price (e.g. 0)
+  category: string;          // Category enum ("SOURCE_EXAM")
+  examType: 'FE'|'PE'|'RE';  // Exam type
+  subjectCode: string;       // Subject code (e.g. "MLN122")
+  subject: Subject;          // Nested subject object
+  seller: Seller;            // Uploader user profile
+  createdAt: string;         // ISO Creation date
+  isActive: boolean;         // Product status flag
+  questions: Question[];     // Question cards
+}
+```
+
+### G. Seller / User Profile (`Seller`)
+User entity representing uploaders or student accounts.
+```typescript
+interface Seller {
+  id: string;                    // CUID (e.g. "cmjac22no00023wto3ke4z7js")
+  name: string;                  // Full name (e.g. "Nguyễn Trọng Nguyên")
+  username: string;              // Username (e.g. "admin1")
+  email?: string;                // Email address
+  image?: string | null;         // Avatar URL
+  role?: 'STUDENT' | 'ADMIN';    // System role
+  trustScore: number;            // Reputation score
+  successfulTransactions?: number;
+  fiveStarRatings?: number;
+  mssv?: string | null;          // Student ID (e.g. "SE192357")
+  fusVerified?: boolean;         // Verification status
+  foundingMember?: boolean;
+}
+```
+
+### H. Access Control & Campaign (`AccessControl`)
+Permission state for unlocking exam questions.
+```typescript
+interface AccessControl {
+  hasAccess: boolean;     // Whether current user has access to full questions
+  accessReason: string;   // Access grant reason ("subscription", "free")
+  campaign: {
+    active: boolean;      // Active promotional campaign status
+  };
+}
+```
+
+### I. Question Item (`Question`) & Option (`Option`)
+Individual question card and choice option structures.
+```typescript
+interface Question {
+  id: string;                  // Unique question ID (e.g. "q_1777531136180_0_sk03ztva8")
+  text: string;                // Question text prompt
+  imageUrl: string | null;     // Attachment diagram/formula image URL
+  options: Option[];           // Array of choice options (A, B, C, D)
+  correctAnswers: string[];    // Array of correct choice keys (e.g. ["A"])
+  correctAnswersCount: number; // Correct choice count (e.g. 1)
+}
+
+interface Option {
+  id: string;    // Choice key ("A", "B", "C", "D")
+  text: string;  // Choice text content
+}
+```
+
+### J. Parsed Title Metadata (`TitleMetadata`)
+Derived metadata extracted from standard exam title string (`[SubjectCode]_[Term]_[Type]_[ExamCode]`):
+```typescript
+interface TitleMetadata {
+  subjectCode: string;  // 3 Alphas + 3 Numericals + 0-2 Alphas (START)
+  termCode: string;     // 2 Alphas + 2 Numericals
+  typeCode: string;     // 1-5 Alphanumericals
+  examCode: string;     // 6 Numericals (END)
+}
+```
+
+---
+
+## 3. Exam Code Structure & Token Parsing Rules
+
+The exam set title code follows a tokenized structure separated by underscores (`_`):
+
+```
+[SubjectCode]_[Term]_[Type]_[ExamCode]
+```
+
+### Structural Rules & Token Specifications
+1. **`SubjectCode`** (Token 1 - START):
+   - Formatted strictly as **3 Uppercase Alphas + 3 Numericals + 0 to 2 Optional Alphas**.
+   - Pattern: `^[A-Z]{3}\d{3}[A-Za-z]{0,2}` (e.g. `MLN122`, `PRM393`, `DBM302m`, `WED201C`, `SWE202C`).
+   - **Guaranteed Location**: Always positioned at the very **START** of the code string.
+
+2. **`Term`** (Middle Token):
+   - Formatted as **2 Uppercase Alphas + 2 Numericals**.
+   - Pattern: `[A-Z]{2}\d{2}` (e.g. `SP26` = Spring 2026, `SU26` = Summer 2026, `FA25` = Fall 2025).
+
+3. **`Type`** (Middle Token):
+   - Formatted as **1 to 5 Alphanumericals** (ALL CAPS).
+   - Pattern: `[A-Z0-9]{1,5}` (e.g. `FE` = Final Exam, `PE1` = Practical Exam 1, `RE` = Retake Exam, `B5FE` = Block 5 FE).
+
+4. **`ExamCode`** (Token N - END):
+   - Formatted strictly as **6 Numericals**.
+   - Pattern: `\d{6}$` (e.g. `915637`, `887674`, `312264`, `224890`, `859065`).
+   - **Guaranteed Location**: Always positioned at the very **END** of the code string.
+
+---
+
+## 4. Bulk Extraction Architecture (`/home` & `/subjects/[subjectCode]`)
+
+1. **RSC Streaming Endpoints**:
+   - `GET /home?_rsc=...`: Next.js Server Component payload returning `initialProducts` (20 items), `initialMajorData`, and `initialStats`.
+   - `POST /home` (Server Action): Triggers Next.js Server Action returning paginated catalog product chunks.
+   - `GET /home/subject/[code]?_rsc=...`: Returns catalog items filtered by course `code`.
+
+2. **Bulk Extraction Flow**:
+   - Content script parses catalog route for `initialProducts`.
+   - Iterates product IDs to fetch question payloads or queue background extraction.

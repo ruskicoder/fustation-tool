@@ -1,0 +1,8 @@
+The web calls fustation.net/home GET.
+
+it returns the homepage
+
+to view more or all remaining courses, user click "Xem them" button to call /home GET again with pagination
+
+a subject endpoint is roughly  /subjects/[subjectCode]
+
