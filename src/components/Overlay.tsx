@@ -28,17 +28,19 @@ export const Overlay: React.FC = () => {
   const [status, setStatus] = useState<StatusState>('ready');
   const [progressLabel, setProgressLabel] = useState<string>('');
 
-  const runFetch = async () => {
+  const runFetch = async (forceDOM = false) => {
     setStatus('fetching');
     setProgressLabel('');
     await new Promise((r) => setTimeout(r, 100)); // 100ms visual render buffer
 
-    const targetId = getExamIdFromUrl();
-    const fastData = extractExamFromScripts(targetId ?? undefined);
-    if (fastData && fastData.questions && fastData.questions.length > 1) {
-      setCurrentDataset(fastData);
-      setStatus('ready');
-      return;
+    if (!forceDOM) {
+      const targetId = getExamIdFromUrl();
+      const fastData = extractExamFromScripts(targetId ?? undefined);
+      if (fastData && fastData.questions && fastData.questions.length > 1) {
+        setCurrentDataset(fastData);
+        setStatus('ready');
+        return;
+      }
     }
 
     try {
@@ -123,7 +125,7 @@ export const Overlay: React.FC = () => {
 
   const handleFetch = async () => {
     setCurrentDataset(null); // Clear active dataset in place
-    await runFetch();
+    await runFetch(true); // Force DOM crawl on manual fetch
   };
 
   const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {

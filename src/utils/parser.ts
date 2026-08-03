@@ -201,7 +201,7 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
       }
     }
 
-    if (fallbackParsed) {
+    if (fallbackParsed && !targetId) {
       return fallbackParsed;
     }
 
@@ -212,6 +212,9 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
       if (objStart !== -1) {
         const parsed = tryParsePartialJson(text.substring(objStart));
         if (parsed && parsed.initialData) {
+          if (targetId && parsed.initialData.product && parsed.initialData.product.id !== targetId) {
+            return null; // Stale data, ID mismatch
+          }
           return parsed;
         }
       }
