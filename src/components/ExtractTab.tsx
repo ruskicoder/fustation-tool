@@ -28,7 +28,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
     term: 'SP26',
     termCode: 'SP26',
     examType: 'FE',
-    examSessionTime: '09:10',
+    examSessionTime: 'N/A',
     examSessionDate: '29/04/2026',
     title: 'Open an exam page on fustation.net',
     totalQuestions: 0,
@@ -41,7 +41,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
   const termStr = data.term || data.termCode || 'SP26';
   const typeStr = data.examType || 'FE';
   const termExamType = `${termStr} - ${typeStr}`;
-  const sessionStr = `${data.examSessionTime || '09:10'} | ${data.examSessionDate || '29/04/2026'}`;
+  const sessionStr = `${data.examSessionTime || 'N/A'} | ${data.examSessionDate || '29/04/2026'}`;
 
   return (
     <div className="fus-body-grid">

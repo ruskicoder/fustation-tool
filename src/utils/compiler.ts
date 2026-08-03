@@ -7,7 +7,7 @@ export function compileMarkdown(dataset: ExamDataset): string {
   const campus = dataset.campus || dataset.author || 'XAVALO';
   const termStr = dataset.term || dataset.termCode || 'SP26';
   const examType = dataset.examType || 'FE';
-  const session = `${dataset.examSessionTime || '09:10'} | ${dataset.examSessionDate || '29/04/2026'}`;
+  const session = `${dataset.examSessionTime || 'N/A'} | ${dataset.examSessionDate || '29/04/2026'}`;
 
   const lines: string[] = [
     `# [info]`,

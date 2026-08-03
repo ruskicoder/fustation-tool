@@ -8,7 +8,11 @@ import {
   deleteExamFromStorage,
   clearAllExamsFromStorage,
   getActiveFormatFromStorage,
-  setActiveFormatInStorage
+  setActiveFormatInStorage,
+  getPanelStateFromStorage,
+  setPanelStateInStorage,
+  getPendingFetchFromStorage,
+  setPendingFetchInStorage
 } from '../utils/storage';
 import { ExtractTab } from './ExtractTab';
 import { SavedTab } from './SavedTab';
@@ -44,10 +48,12 @@ export const Overlay: React.FC = () => {
 
     // If manual fetch triggered and fastData is missing/empty, reload page to re-hydrate RSC script tags
     if (isManual) {
-      console.warn('[fustation-tool] Script payload missing on manual fetch. Triggering page reload...');
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
+      console.warn('[fustation-tool] Script payload missing on manual fetch. Setting pending fetch & reloading page...');
+      setPendingFetchInStorage(true, () => {
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      });
       return;
     }
 
@@ -72,6 +78,12 @@ export const Overlay: React.FC = () => {
   };
 
   useEffect(() => {
+    // Restore persistent panel state & active tab
+    getPanelStateFromStorage(({ isExpanded: savedExpanded, activeTab: savedTab }) => {
+      if (typeof savedExpanded === 'boolean') setIsExpanded(savedExpanded);
+      if (savedTab) setActiveTab(savedTab);
+    });
+
     // Load initial storage settings & auto extract on initial mount
     getActiveFormatFromStorage((fmt) => {
       setActiveFormat(fmt || 'MD');
@@ -81,9 +93,18 @@ export const Overlay: React.FC = () => {
       setSavedExams(exams || {});
     });
 
-    if (typeof window !== 'undefined' && classifyRoute(window.location.pathname) === 'exam') {
-      runFetch();
-    }
+    // Check for pending fetch intention post-reload
+    getPendingFetchFromStorage((pending) => {
+      if (pending) {
+        setPendingFetchInStorage(false, () => {
+          if (typeof window !== 'undefined' && classifyRoute(window.location.pathname) === 'exam') {
+            runFetch();
+          }
+        });
+      } else if (typeof window !== 'undefined' && classifyRoute(window.location.pathname) === 'exam') {
+        runFetch();
+      }
+    });
   }, []);
 
   // Background SPA Route Observer
@@ -213,6 +234,22 @@ export const Overlay: React.FC = () => {
 
   const savedCount = Object.keys(savedExams).length;
 
+  const handleToggleExpand = () => {
+    const nextState = !isExpanded;
+    setIsExpanded(nextState);
+    setPanelStateInStorage({ isExpanded: nextState });
+  };
+
+  const handleMinimize = () => {
+    setIsExpanded(false);
+    setPanelStateInStorage({ isExpanded: false });
+  };
+
+  const handleTabSelect = (tab: 'extract' | 'saved') => {
+    setActiveTab(tab);
+    setPanelStateInStorage({ activeTab: tab });
+  };
+
   const renderStatusPill = () => {
     const statusMap: Record<StatusState, { label: string; className: string }> = {
       ready: { label: 'Ready', className: 'fus-status-ready' },
@@ -242,7 +279,7 @@ export const Overlay: React.FC = () => {
           type="button"
           className="fus-fab"
           aria-label="Toggle fustation-tool overlay"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={handleToggleExpand}
         >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -274,14 +311,14 @@ export const Overlay: React.FC = () => {
               <button
                 type="button"
                 className={`fus-tab-btn ${activeTab === 'extract' ? 'active' : ''}`}
-                onClick={() => setActiveTab('extract')}
+                onClick={() => handleTabSelect('extract')}
               >
                 Extract
               </button>
               <button
                 type="button"
                 className={`fus-tab-btn ${activeTab === 'saved' ? 'active' : ''}`}
-                onClick={() => setActiveTab('saved')}
+                onClick={() => handleTabSelect('saved')}
               >
                 Saved ({savedCount})
               </button>
@@ -293,7 +330,7 @@ export const Overlay: React.FC = () => {
                 type="button"
                 className="fus-ctrl-btn"
                 aria-label="Minimize"
-                onClick={() => setIsExpanded(false)}
+                onClick={handleMinimize}
               >
                 –
               </button>

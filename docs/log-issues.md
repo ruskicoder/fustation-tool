@@ -37,6 +37,8 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-28**: DOM Crawler Navigation & State Synchronization Failure -> Fixed in `src/utils/parser.ts`.
 - [x] **ISSUE-29**: Manual Fetch Failure & Answer N/A (Switch to Instant RSC Script Parser) -> Fixed in `src/components/Overlay.tsx`.
 - [x] **ISSUE-30**: Session Time Metadata Extraction & Dynamic Fallback to N/A -> Fixed in `src/utils/parser.ts`, `src/utils/compiler.ts`, `src/utils/storage.ts`, and `src/components/ExtractTab.tsx`.
+- [x] **ISSUE-31**: Extension Reload Proofing & State Resilience on Cold/Fetch Reloads -> Fixed in `src/utils/storage.ts` and `src/components/Overlay.tsx`.
+- [x] **ISSUE-32**: Persistent Panel State & Auto-Open Persistence (`isExpanded`, `activeTab`) -> Fixed in `src/utils/storage.ts` and `src/components/Overlay.tsx`.
 
 ---
 
@@ -72,21 +74,6 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - **Symptom**: Saved items in `SavedTab.tsx` display question count (e.g. `45Q`), but do not indicate whether the dataset was saved as a partial fetch (`isPartial`), obscuring fetch quality.
 - **Remediation**: Render a small warning indicator badge `[Partial]` in `SavedTab.tsx` rows when `item.isPartial` is true.
 
-### [ISSUE-31] Extension Reload Proofing & State Resilience on Cold/Fetch Reloads
-- **Status**: 🟠 **HIGH PRIORITY / STATE RESILIENCE**
-- **Symptom**: Triggering `window.location.reload()` during manual fetch (or manual browser cold reloads) causes the extension UI context to reset completely, losing in-flight state or intention.
-- **Remediation**:
-  - Implement reload-proof persistence mechanisms using `chrome.storage.local` to store overlay state and active operations across page reloads.
-  - Restore overlay UI state automatically after page re-hydration.
-
-### [ISSUE-32] Persistent Panel State & Auto-Open Persistence (`isExpanded`, `activeTab`)
-- **Status**: 🟠 **HIGH PRIORITY / UX ENHANCEMENT**
-- **Symptom**: When `window.location.reload()` occurs or when navigating between pages, the extension overlay panel closes automatically because React state (`isExpanded`) defaults to `false`.
-- **Remediation**:
-  - Add `STORAGE_KEYS.PANEL_EXPANDED` and `STORAGE_KEYS.ACTIVE_TAB` helpers in `src/utils/storage.ts`.
-  - Save `isExpanded` and `activeTab` to `chrome.storage.local` upon user interaction in `src/components/Overlay.tsx`.
-  - Retrieve and restore `isExpanded` and `activeTab` from storage during `useEffect` initialization on mount.
-
 ---
 
 ## Summary Matrix of Remaining Issues
@@ -98,8 +85,6 @@ This document maintains open, deferred, and roadmap issues identified during tes
 | **ISSUE-12** | Catalog | Catalog route `initialProducts` batch extraction | 🔵 Roadmap | [src/utils/parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts) |
 | **ISSUE-16** | Feature | In-Extension Saved ExamSet Viewing / Preview Mode | 🔴 Deferred | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
 | **ISSUE-24** | Saved UI | Missing partial fetch badge indicator in SavedTab rows | 🟡 UI Enhancement | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
-| **ISSUE-31** | Extension | Extension reload proofing & state resilience on fetch reloads | 🟠 High Priority | [src/components/Overlay.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/Overlay.tsx) |
-| **ISSUE-32** | Extension | Persistent panel state & auto-open persistence (`isExpanded`, `activeTab`) | 🟠 High Priority | [src/utils/storage.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/storage.ts) |
 
 ---
 

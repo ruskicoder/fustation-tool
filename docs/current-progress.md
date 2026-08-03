@@ -29,6 +29,11 @@
 - [x] **Manual Save Resilience, Deterministic Storage Identifier & React Immutability (ISSUE-22)**: Fixed `saveExamToStorage()` to produce shallow object map copies (`{ ...list }`) for React state identity triggers in `Overlay.tsx`, generated deterministic primary keys (`[subjectCode]_[examCode]`), and added `"unlimitedStorage"` permission to `manifest.json`.
 - [x] **Exported Filename Deduplication (ISSUE-23)**: Deduplicated `subjectCode` prefix prepending in `exportExam()` when `sanitizedTitle` already starts with `subjectCode`.
 - [x] **Metadata Title Token Precedence & Dynamic Header Formatting (ISSUE-25)**: Enforced `parsedCode.term` (`SU26`) and `parsedCode.examType` (`RE`) precedence over server DB enum defaults (`prod.examType = "FE"`), added `term` to `ExamDataset` & `SavedExamItem`, eliminated hardcoded `"SP26"` literals, and updated `compileMarkdown()` and `generatePrintHtml()`.
+- [x] **DOM Crawler Navigation & State Synchronization (ISSUE-28)**: Fixed total question count detection to sidebar `h3` (`Câu hỏi X / Y`), introduced mandatory rewind phase (`Làm lại đề`), and replaced blind delays with polling state sync.
+- [x] **Instant RSC Script Manual Fetch & Reload Fallback (ISSUE-29)**: Updated `handleFetch` to extract Next.js RSC hydration script tags directly in <50ms with 100% correct answer keys, and added `window.location.reload()` fallback for missing script payloads.
+- [x] **Dynamic Session Time Extraction & N/A Fallback (ISSUE-30)**: Replaced hardcoded default session time `'09:10'` with `extractSessionTimeFromText()` 3-pass extraction, outputting explicit `'N/A'` when session time is missing.
+- [x] **Extension Reload Proofing & Fetch State Resilience (ISSUE-31)**: Added `fustation_pending_fetch` storage flag to `chrome.storage.local`. Automatically resumes manual fetch extraction post-reload without user re-intervention.
+- [x] **Persistent Panel State & Auto-Open Persistence (ISSUE-32)**: Added `fustation_panel_expanded` and `fustation_active_tab` to `chrome.storage.local`. Automatically restores panel open/closed state (`isExpanded`) and active tab (`activeTab`) across page reloads and SPA navigation.
 
 ---
 

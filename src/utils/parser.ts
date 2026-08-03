@@ -225,6 +225,33 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
   return null;
 }
 
+export function extractSessionTimeFromText(text?: string, prod?: any): string {
+  // Pass 1: RSC product object properties
+  if (prod) {
+    if (prod.examSessionTime && /^\d{1,2}:\d{2}$/.test(prod.examSessionTime)) return prod.examSessionTime;
+    if (prod.sessionTime && /^\d{1,2}:\d{2}$/.test(prod.sessionTime)) return prod.sessionTime;
+    if (prod.startTime && /^\d{1,2}:\d{2}$/.test(prod.startTime)) return prod.startTime;
+  }
+
+  // Pass 2: Regex extraction from DOM text / HTML
+  const sourceText = text || (typeof document !== 'undefined' ? document.body?.textContent || '' : '');
+  if (sourceText) {
+    // Match "Ca thi: 14:40" or "Ca thi 14:40"
+    const caThiMatch = sourceText.match(/Ca\s*thi\s*[:\s]*(\d{1,2}:\d{2})/i);
+    if (caThiMatch && caThiMatch[1]) {
+      return caThiMatch[1];
+    }
+
+    // Match "14:40 | 25/4/2026" or "14:40 - 25/04/2026"
+    const sessionMatch = sourceText.match(/\b(\d{1,2}:\d{2})\s*[\/\u2044|:\-]\s*\d{1,2}[\/\u2044\-]\d{1,2}[\/\u2044\-]\d{4}\b/);
+    if (sessionMatch && sessionMatch[1]) {
+      return sessionMatch[1];
+    }
+  }
+
+  return 'N/A'; // Clear, explicit fallback indicating missing session time
+}
+
 export function formatExamDataset(initialData: any): ExamDataset {
   const prod = initialData.product || {};
   const subj = prod.subject || {};
@@ -235,7 +262,8 @@ export function formatExamDataset(initialData: any): ExamDataset {
   // Title token precedence: parsedCode.term / parsedCode.examType override default DB enums
   const term = parsedCode.term || prod.term || 'SP26';
   const examType = parsedCode.examType || prod.examType || 'FE';
-  const examSessionTime = prod.examSessionTime || '09:10';
+  const fullHtml = typeof document !== 'undefined' ? document.documentElement.innerHTML : '';
+  const examSessionTime = extractSessionTimeFromText(fullHtml, prod);
   const examSessionDate = sanitizeRscDate(prod.createdAt || prod.examSessionDate || '$D2026-04-29T00:00:00.000Z');
 
   const questionsList = initialData.questions || [];
@@ -539,6 +567,9 @@ export async function crawlExamFromDOM(
   const term = parsedCode.term || 'SP26';
   const examType = parsedCode.examType || 'FE';
 
+  const bodyText = typeof document !== 'undefined' ? document.body?.textContent || '' : '';
+  const examSessionTime = extractSessionTimeFromText(bodyText);
+
   return {
     id: deterministicId,
     title,
@@ -549,7 +580,7 @@ export async function crawlExamFromDOM(
     term,
     termCode: term,
     examType,
-    examSessionTime: '09:10',
+    examSessionTime,
     examSessionDate: '29/04/2026',
     parsedTitle: title,
     totalQuestions: isPartial ? totalQuestions : questions.length,

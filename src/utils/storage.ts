@@ -2,7 +2,10 @@ import { ExamDataset, ExportFormat, SavedExamsMap } from '../types';
 
 const STORAGE_KEYS = {
   SAVED_EXAMS: 'fustation_saved_exams',
-  ACTIVE_FORMAT: 'fustation_active_format'
+  ACTIVE_FORMAT: 'fustation_active_format',
+  PANEL_EXPANDED: 'fustation_panel_expanded',
+  ACTIVE_TAB: 'fustation_active_tab',
+  PENDING_FETCH: 'fustation_pending_fetch'
 };
 
 export function normalizeSavedDataset(dataset: any): ExamDataset {
@@ -40,7 +43,7 @@ export function normalizeSavedDataset(dataset: any): ExamDataset {
     term: dataset.term || dataset.termCode || 'SP26',
     termCode: dataset.termCode || dataset.term || 'SP26',
     examType: dataset.examType || 'FE',
-    examSessionTime: dataset.examSessionTime || '09:10',
+    examSessionTime: dataset.examSessionTime || 'N/A',
     examSessionDate: dataset.examSessionDate || '29/04/2026',
     parsedTitle: dataset.parsedTitle || dataset.title || 'Exam Set',
     totalQuestions: dataset.totalQuestions || (dataset.questions ? dataset.questions.length : 0),
@@ -150,3 +153,67 @@ export function setActiveFormatInStorage(format: ExportFormat, callback?: () => 
     if (callback) callback();
   });
 }
+
+export function getPanelStateFromStorage(
+  callback: (state: { isExpanded: boolean; activeTab: 'extract' | 'saved' }) => void
+): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback({ isExpanded: false, activeTab: 'extract' });
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.PANEL_EXPANDED, STORAGE_KEYS.ACTIVE_TAB], (res) => {
+    const isExpanded = typeof res[STORAGE_KEYS.PANEL_EXPANDED] === 'boolean' ? res[STORAGE_KEYS.PANEL_EXPANDED] : false;
+    const activeTab = res[STORAGE_KEYS.ACTIVE_TAB] === 'saved' ? 'saved' : 'extract';
+    callback({ isExpanded, activeTab });
+  });
+}
+
+export function setPanelStateInStorage(
+  state: { isExpanded?: boolean; activeTab?: 'extract' | 'saved' },
+  callback?: () => void
+): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  const payload: Record<string, any> = {};
+  if (typeof state.isExpanded === 'boolean') {
+    payload[STORAGE_KEYS.PANEL_EXPANDED] = state.isExpanded;
+  }
+  if (state.activeTab) {
+    payload[STORAGE_KEYS.ACTIVE_TAB] = state.activeTab;
+  }
+
+  if (Object.keys(payload).length > 0) {
+    chrome.storage.local.set(payload, () => {
+      if (callback) callback();
+    });
+  } else if (callback) {
+    callback();
+  }
+}
+
+export function getPendingFetchFromStorage(callback: (pending: boolean) => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback(false);
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.PENDING_FETCH], (res) => {
+    callback(!!res[STORAGE_KEYS.PENDING_FETCH]);
+  });
+}
+
+export function setPendingFetchInStorage(pending: boolean, callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.set({ [STORAGE_KEYS.PENDING_FETCH]: pending }, () => {
+    if (callback) callback();
+  });
+}
+
