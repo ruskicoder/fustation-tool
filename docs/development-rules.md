@@ -53,9 +53,11 @@ The AI assistant MUST follow this exact multi-stage workflow for all issue detec
 
 ### Stage 1: Issue Detection & Logging Phase
 - When requested to scan/detect issues, the AI SHALL perform codebase/fetch scans, detect ALL issues, and record them exhaustively in `docs/log-issues.md`.
+- **Mandatory Web Search**: For Stage 1 & Stage 2, each AI response MUST execute `search_web` every time before any response, to ensure complete context and alignment with the latest web standards.
 - **Separation of Concerns**: Adding issues to `docs/log-issues.md` DOES NOT automatically trigger an implementation plan draft until the user explicitly requests it.
 
 ### Stage 2: Implementation Plan Drafting Phase
+- **Mandatory Web Search**: For Stage 1 & Stage 2, each AI response MUST execute `search_web` every time before any response, to ensure complete context and alignment with the latest web standards.
 - When the user specifies which issues to resolve, the AI SHALL draft an `implementation_plan.md` artifact targeting **ONLY those specified issues**.
 - The plan MUST explicitly restate:
   1. Exactly which issues are being resolved.

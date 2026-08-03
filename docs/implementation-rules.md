@@ -5,7 +5,8 @@ This document specifies the strict execution rules and workflow for `fustation-t
 
 ---
 
-## 2. Pre-Implementation Verification
+## 2. Pre-Implementation Verification & Planning (Stage 1 & 2)
+- **Mandatory Web Search**: During Stage 1 (Issue Detection) and Stage 2 (Implementation Plan Drafting), each AI response MUST execute a web search (`search_web`) every time before any response to ensure full technical context and align with current web standards.
 - Tasks are divided into large implementation phases.
 - The AI is **mandatory** to double check all specification documents (`requirements.md`, `design.md`, `tasks.md`) and confirm alignment with the user before proceeding with execution.
 
