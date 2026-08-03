@@ -317,6 +317,40 @@ export function extractExamFromScripts(targetProductId?: string): ExamDataset | 
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
+function readSidebarCounter(): { cur: number; total: number } | null {
+  const h3 = Array.from(document.querySelectorAll('h3')).find((el) =>
+    /Câu\s*h[oỏ]i\s+\d+\s*[\/\u2044]\s*\d+/i.test((el.textContent || '').trim())
+  );
+  if (!h3) return null;
+  const m = (h3.textContent || '').match(/(\d+)\s*[\/\u2044]\s*(\d+)/);
+  return m ? { cur: parseInt(m[1], 10), total: parseInt(m[2], 10) } : null;
+}
+
+async function pollSidebarCounter(
+  expectedQ: number,
+  maxWaitMs = 1500
+): Promise<{ cur: number; total: number } | null> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    const counter = readSidebarCounter();
+    if (counter && counter.cur === expectedQ) return counter;
+    await delay(100);
+  }
+  return null;
+}
+
+function findResetButton(): HTMLButtonElement | null {
+  return (
+    Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find((btn) => {
+      const txt = (btn.textContent || '').trim();
+      return (
+        txt === 'Làm lại đề' ||
+        (txt.includes('Làm lại') && !txt.includes('từ đầu') && !!btn.querySelector('svg.lucide-rotate-ccw'))
+      );
+    }) || null
+  );
+}
+
 export async function crawlExamFromDOM(
   onProgress?: (current: number, total: number) => void
 ): Promise<ExamDataset | null> {
@@ -332,20 +366,52 @@ export async function crawlExamFromDOM(
   const authorEl = document.querySelector('p.text-muted-foreground');
   const author = authorEl ? authorEl.textContent?.trim() || 'XAVALO' : 'XAVALO';
 
-  // Find total questions count from sidebar / header (e.g. "Câu hỏi 1 / 60", "1 / 60")
-  let totalQuestions = 60;
-  const counterEls = Array.from(document.querySelectorAll('p, div, span, h2, h3'));
-  for (const p of counterEls) {
-    const txt = (p.textContent || '').trim();
-    const match = txt.match(/(?:Câu\s*hỏi|Câu|Question|\b)\s*\d+\s*[\/\u2044]\s*(\d+)/i) || txt.match(/\b\d+\s*[\/\u2044]\s*(\d+)\b/);
-    if (match && match[1]) {
-      const val = parseInt(match[1], 10);
-      if (val > 0 && val <= 300) {
-        totalQuestions = val;
+  // 1. Strict Total Question Detection
+  let totalQuestions = 0;
+
+  // Pass 1: Authoritative sidebar h3 ("Câu hỏi X / Y")
+  const initialCounter = readSidebarCounter();
+  if (initialCounter) {
+    totalQuestions = initialCounter.total;
+  }
+
+  // Pass 2: Fallback inline per-question span counter ("Câu X / Y")
+  if (totalQuestions === 0) {
+    const spanEls = Array.from(document.querySelectorAll('span.font-mono'));
+    for (const el of spanEls) {
+      const txt = (el.textContent || '').trim();
+      const m = txt.match(/Câu\s+\d+\s*[\/\u2044]\s*(\d+)/i);
+      if (m) {
+        totalQuestions = parseInt(m[1], 10);
         break;
       }
     }
   }
+
+  // 2. Rewind Phase (Reset to Question 1 before crawling)
+  const resetBtn = findResetButton();
+  if (resetBtn) {
+    resetBtn.click();
+    const afterReset = await pollSidebarCounter(1, 1500);
+    if (afterReset) totalQuestions = afterReset.total;
+  } else {
+    // Fallback: Loop 'Trước' until Q1 reached
+    let safetyLimit = (totalQuestions || 60) + 5;
+    while (safetyLimit-- > 0) {
+      const counter = readSidebarCounter();
+      if (!counter || counter.cur <= 1) break;
+      const prevBtn = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (b) => (b.textContent || '').trim().includes('Trước')
+      );
+      if (!prevBtn || prevBtn.disabled) break;
+      prevBtn.click();
+      await delay(100);
+    }
+    const finalCounter = readSidebarCounter();
+    if (finalCounter) totalQuestions = finalCounter.total;
+  }
+
+  if (totalQuestions === 0) totalQuestions = 60; // Final fallback safety net
 
   const questions: Question[] = [];
 
@@ -457,7 +523,8 @@ export async function crawlExamFromDOM(
 
       if (nextBtn && !nextBtn.disabled) {
         nextBtn.click();
-        await delay(100);
+        const advanced = await pollSidebarCounter(qIdx + 1, 1500);
+        if (!advanced) break;
       } else {
         break;
       }

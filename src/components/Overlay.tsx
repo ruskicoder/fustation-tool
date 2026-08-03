@@ -28,21 +28,30 @@ export const Overlay: React.FC = () => {
   const [status, setStatus] = useState<StatusState>('ready');
   const [progressLabel, setProgressLabel] = useState<string>('');
 
-  const runFetch = async (forceDOM = false) => {
+  const runFetch = async (isManual = false) => {
     setStatus('fetching');
     setProgressLabel('');
     await new Promise((r) => setTimeout(r, 100)); // 100ms visual render buffer
 
-    if (!forceDOM) {
-      const targetId = getExamIdFromUrl();
-      const fastData = extractExamFromScripts(targetId ?? undefined);
-      if (fastData && fastData.questions && fastData.questions.length > 1) {
-        setCurrentDataset(fastData);
-        setStatus('ready');
-        return;
-      }
+    const targetId = getExamIdFromUrl();
+    const fastData = extractExamFromScripts(targetId ?? undefined);
+
+    if (fastData && fastData.questions && fastData.questions.length > 0) {
+      setCurrentDataset(fastData);
+      setStatus('ready');
+      return;
     }
 
+    // If manual fetch triggered and fastData is missing/empty, reload page to re-hydrate RSC script tags
+    if (isManual) {
+      console.warn('[fustation-tool] Script payload missing on manual fetch. Triggering page reload...');
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+      return;
+    }
+
+    // Fallback for auto-fetch: try DOM crawl
     try {
       const crawled = await crawlExamFromDOM((curr, total) => {
         setProgressLabel(`(${curr}/${total})`);
@@ -125,7 +134,7 @@ export const Overlay: React.FC = () => {
 
   const handleFetch = async () => {
     setCurrentDataset(null); // Clear active dataset in place
-    await runFetch(true); // Force DOM crawl on manual fetch
+    await runFetch(true);    // Execute manual fetch flow (script parse -> reload fallback)
   };
 
   const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {
@@ -140,21 +149,8 @@ export const Overlay: React.FC = () => {
     const fastData = extractExamFromScripts(targetId ?? undefined);
     if (fastData && fastData.questions && fastData.questions.length > 0) {
       setCurrentDataset(fastData);
+      setStatus('ready');
       return fastData;
-    }
-
-    try {
-      const crawled = await crawlExamFromDOM((curr, total) => {
-        setProgressLabel(`(${curr}/${total})`);
-      });
-      if (crawled && crawled.questions && crawled.questions.length > 0) {
-        setCurrentDataset(crawled);
-        return crawled;
-      }
-    } catch (e) {
-      console.error('[fustation-tool] Crawl failed:', e);
-    } finally {
-      setProgressLabel('');
     }
 
     return null;
