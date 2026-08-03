@@ -88,4 +88,21 @@ Upon successful implementation and verification:
    - Confirmation of implementation completion.
 5. **Standby** for further user directives.
 
+---
+
+## 5. Temporary Commit Squashing & Precedence Protocol
+
+When temporary or broken intermediate commits exist in local history (e.g., `(temp-notworking)`, `(temp-working-somewhat)`):
+
+1. **Local Log Inspection**: Check `git log -n <N>` before committing to identify temporary or incomplete commits.
+2. **Precedence Guarantee**: The latest working code in the current turn MUST ALWAYS override and supersede any temporary or broken implementations in earlier commits.
+3. **Soft Reset & Squash Sequence**:
+   - Stage and commit working changes on top of the working tree:
+     `git add . && git commit -m "type: description"`
+   - Reset soft to the last stable/permanent commit preceding the temporary commits:
+     `git reset --soft <stable-commit-hash>`
+   - Re-commit the combined index into a single clean commit:
+     `git commit -m "type: description (resolving ISSUE-X, ISSUE-Y)"`
+4. **Clean Tree Verification**: Confirm `git status` is clean and `git log` reflects a single squashed commit containing the latest working state.
+
 
