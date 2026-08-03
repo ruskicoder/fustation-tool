@@ -34,6 +34,7 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-22**: Manual Save Resilience, React State Map Copies & Unlimited Storage -> Fixed in `src/utils/storage.ts`, `src/components/Overlay.tsx`, and `manifest.json`.
 - [x] **ISSUE-23**: Exported Filename Deduplication -> Fixed in `src/utils/exporter.ts`.
 - [x] **ISSUE-25**: Metadata Header Term & ExamType Title Precedence -> Fixed in `src/types/index.ts`, `src/utils/parser.ts`, `src/utils/compiler.ts`, `src/utils/exporter.ts`, and `src/components/ExtractTab.tsx`.
+- [x] **ISSUE-28**: DOM Crawler Navigation & State Synchronization Failure -> Fixed in `src/utils/parser.ts`.
 
 ---
 
