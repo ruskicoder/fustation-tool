@@ -177,13 +177,65 @@ The exam set title code follows a tokenized structure separated by underscores (
 
 ---
 
-## 4. Bulk Extraction Architecture (`/home` & `/subjects/[subjectCode]`)
+## 5. Exam View RSC Payload Structure & Control Character Unescaping Rules
 
-1. **RSC Streaming Endpoints**:
-   - `GET /home?_rsc=...`: Next.js Server Component payload returning `initialProducts` (20 items), `initialMajorData`, and `initialStats`.
-   - `POST /home` (Server Action): Triggers Next.js Server Action returning paginated catalog product chunks.
-   - `GET /home/subject/[code]?_rsc=...`: Returns catalog items filtered by course `code`.
+### A. RSC Push Chunk Payload Structure (`self.__next_f.push`)
+On `/marketplace/exam/[id]`, the server injects exam data via Next.js RSC stream chunks (`self.__next_f.push`). The raw payload structure contains:
+```json
+{
+  "productId": "cmokyg7rh000004jrq3xyf15i",
+  "initialData": {
+    "product": {
+      "id": "cmokyg7rh000004jrq3xyf15i",
+      "title": "HCM202_SP26_B5FE_915637",
+      "description": "HOLA",
+      "price": 0,
+      "category": "SOURCE_EXAM",
+      "examType": "FE",
+      "subjectCode": "HCM202",
+      "subject": { "code": "HCM202", "name": "Tư tưởng Hồ Chí Minh" },
+      "seller": { "id": "...", "name": "...", "username": "...", "trustScore": 0 },
+      "createdAt": "$D2026-04-30T03:59:33.197Z",
+      "isActive": true
+    },
+    "hasAccess": true,
+    "accessReason": "subscription",
+    "campaign": { "active": false },
+    "questions": [
+      {
+        "id": "q_1777521494390_0_szpb41bqq",
+        "text": "Theo Hồ Chí Minh...",
+        "options": [
+          { "id": "A", "text": "Cách mạng Trung Quốc" },
+          { "id": "B", "text": "Cách mạng Ấn Độ" },
+          { "id": "C", "text": "Cách mạng tháng Mười Nga" },
+          { "id": "D", "text": "Cách mạng Pháp" }
+        ],
+        "imageUrl": null,
+        "correctAnswers": ["C"],
+        "correctAnswersCount": 1
+      }
+    ]
+  }
+}
+```
 
-2. **Bulk Extraction Flow**:
-   - Content script parses catalog route for `initialProducts`.
-   - Iterates product IDs to fetch question payloads or queue background extraction.
+### B. Critical Control Character Unescaping Rule
+- **Vulnerability**: `self.__next_f.push` JS string wrappers encode quotes as `\"` and backslashes as `\\`. Question and option text strings contain escaped newline characters formatted as `\n` inside the JSON string literal.
+- **Rule**: When unescaping the outer JS string before passing candidate strings to `JSON.parse()`, **DO NOT replace `\\n` with a raw ASCII 10 (`0x0A`) newline character**.
+- **Reason**: RFC 8259 forbids raw unescaped control characters (`0x00`-`0x1F`) inside JSON string literals. Converting `\n` to raw `0x0A` causes `JSON.parse()` to throw `SyntaxError: Bad control character in string literal in JSON`.
+- **Correct Unescaping Code**:
+  ```typescript
+  const unescaped = escaped
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\');
+  // DO NOT run .replace(/\\n/g, '\n') before JSON.parse()
+  ```
+
+### C. Attribute & Field Resolution
+- **Campus**: Extracted from `product.description` (e.g. `"HOLA"`, `"XAVALO"`, `"FPTU Hà Nội"`). Fallback: `'XAVALO'`.
+- **Exam Type**: Extracted from `product.examType` (e.g. `"FE"`, `"PE"`, `"RE"`). Fallback: `parseExamCode(title).examType`.
+- **Exam Session Date**: Extracted from `product.createdAt` or `product.examSessionDate` after stripping Next.js `$D` ISO prefix (`sanitizeRscDate()`).
+- **Options**: Array of choice objects `[{ id: "A", text: "..." }, ...]`. Supports 3, 4, or 5 options per question.
+- **Correct Answers**: String array `correctAnswers: ["C"]` (single choice) or `["A", "B", "C"]` (multiple choice).
+

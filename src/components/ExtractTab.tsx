@@ -19,25 +19,72 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
   onSave,
   onDownload
 }) => {
-  const data = dataset || {
+  const data: ExamDataset = dataset || {
+    id: 'unknown',
     subjectCode: 'EXAM',
     subjectName: 'No active exam page detected',
     author: 'XAVALO',
+    campus: 'XAVALO',
+    examType: 'FE',
+    examSessionTime: '09:10',
+    examSessionDate: '29/04/2026',
     title: 'Open an exam page on fustation.net',
-    totalQuestions: 0
+    totalQuestions: 0,
+    isPartial: false,
+    successFetchCount: 0,
+    failedFetchCount: 0,
+    questions: []
   };
+
+  const termExamType = `SP26 - ${data.examType || 'FE'}`;
+  const sessionStr = `${data.examSessionTime || '09:10'} | ${data.examSessionDate || '29/04/2026'}`;
 
   return (
     <div className="fus-body-grid">
-      {/* Left Panel Metadata (No metric boxes) */}
+      {/* Left Panel Metadata (5-Row Structured Layout) */}
       <div className="fus-left-panel">
-        <div className="fus-badge-row">
-          <span className="fus-badge fus-badge-subject">{data.subjectCode}</span>
-          <span className="fus-badge fus-badge-campus">{data.author || 'XAVALO'}</span>
+        {/* Row 1: 30% / 40% / 30% grid */}
+        <div className="fus-meta-row-1">
+          <span className="fus-badge fus-badge-subject" title="Subject Code">{data.subjectCode}</span>
+          <span className="fus-badge fus-badge-type" title="Term & Exam Type">{termExamType}</span>
+          <span className="fus-badge fus-badge-campus" title="Campus">{data.campus || data.author || 'XAVALO'}</span>
         </div>
-        <p className="fus-subject-title">{data.subjectName}</p>
+
+        {/* Row 2: 70% / 30% grid */}
+        <div className="fus-meta-row-2">
+          <span className="fus-meta-date" title="Exam Session Date">{sessionStr}</span>
+          <span className="fus-q-count" title="Question Count">{data.totalQuestions} Questions</span>
+        </div>
+
+        {/* Row 3: Full Width Subject Name */}
+        <p className="fus-subject-title" title={data.subjectName}>{data.subjectName}</p>
+
+        {/* Row 4: Full Width Exam Code */}
         <p className="fus-exam-code" title={data.title}>{data.title}</p>
-        <span className="fus-q-count">{data.totalQuestions} Questions</span>
+
+        {/* Temporary Metadata if Partial Fetch */}
+        {data.isPartial && (
+          <p className="fus-meta-partial" title="Partial fetch warning">
+            Fetched with fails: {data.successFetchCount || (data.questions ? data.questions.length : 0)} ✓ | {data.failedFetchCount || 0} ✗
+          </p>
+        )}
+
+        {/* Hairline Divider */}
+        <div className="fus-left-divider" />
+
+        {/* Row 5: View Questions Placeholder Button */}
+        <button
+          type="button"
+          className="fus-btn-placeholder-view"
+          disabled
+          title="ExamSet Viewing feature coming soon"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          View Questions
+        </button>
       </div>
 
       {/* Divider */}

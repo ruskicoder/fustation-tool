@@ -5,23 +5,69 @@ const STORAGE_KEYS = {
   ACTIVE_FORMAT: 'fustation_active_format'
 };
 
+export function normalizeSavedDataset(dataset: any): ExamDataset {
+  if (!dataset) {
+    return {
+      id: 'unknown',
+      title: 'Exam Set',
+      subjectCode: 'EXAM',
+      subjectName: 'Subject',
+      author: 'XAVALO',
+      campus: 'XAVALO',
+      examType: 'FE',
+      examSessionTime: '09:10',
+      examSessionDate: '29/04/2026',
+      parsedTitle: 'Exam Set',
+      totalQuestions: 0,
+      questions: []
+    };
+  }
+
+  return {
+    id: dataset.id || 'unknown',
+    title: dataset.title || 'Exam Set',
+    subjectCode: dataset.subjectCode || 'EXAM',
+    subjectName: dataset.subjectName || 'Subject',
+    author: dataset.author || 'XAVALO',
+    campus: dataset.campus || dataset.author || 'XAVALO',
+    examType: dataset.examType || 'FE',
+    examSessionTime: dataset.examSessionTime || '09:10',
+    examSessionDate: dataset.examSessionDate || '29/04/2026',
+    parsedTitle: dataset.parsedTitle || dataset.title || 'Exam Set',
+    totalQuestions: dataset.totalQuestions || (dataset.questions ? dataset.questions.length : 0),
+    isPartial: dataset.isPartial || false,
+    successFetchCount: dataset.successFetchCount,
+    failedFetchCount: dataset.failedFetchCount,
+    questions: dataset.questions || []
+  };
+}
+
 export function saveExamToStorage(dataset: ExamDataset, callback?: (exams: SavedExamsMap) => void): void {
   if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
     if (callback) callback({});
     return;
   }
 
+  const normalized = normalizeSavedDataset(dataset);
+
   getSavedExamsFromStorage((exams) => {
     const list = exams || {};
-    list[dataset.id] = {
-      id: dataset.id,
-      title: dataset.title,
-      subjectCode: dataset.subjectCode,
-      subjectName: dataset.subjectName,
-      author: dataset.author,
-      totalQuestions: dataset.totalQuestions,
+    list[normalized.id] = {
+      id: normalized.id,
+      title: normalized.title,
+      subjectCode: normalized.subjectCode,
+      subjectName: normalized.subjectName,
+      author: normalized.author,
+      campus: normalized.campus,
+      examType: normalized.examType,
+      examSessionTime: normalized.examSessionTime,
+      examSessionDate: normalized.examSessionDate,
+      totalQuestions: normalized.totalQuestions,
+      isPartial: normalized.isPartial,
+      successFetchCount: normalized.successFetchCount,
+      failedFetchCount: normalized.failedFetchCount,
       extractedAt: new Date().toLocaleString(),
-      dataset: dataset
+      dataset: normalized
     };
 
     chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: list }, () => {

@@ -4,11 +4,17 @@ export function compileMarkdown(dataset: ExamDataset): string {
   if (!dataset) return '';
 
   const subject = `${dataset.subjectCode} - ${dataset.subjectName}`;
+  const campus = dataset.campus || dataset.author || 'XAVALO';
+  const examType = dataset.examType || 'FE';
+  const session = `${dataset.examSessionTime || '09:10'} | ${dataset.examSessionDate || '29/04/2026'}`;
+
   const lines: string[] = [
     `# [info]`,
     `- Subject: ${subject}`,
     `- Title: ${dataset.title}`,
-    `- Author: ${dataset.author || 'XAVALO'}`,
+    `- Campus: ${campus}`,
+    `- Term & Type: SP26 - ${examType}`,
+    `- Session: ${session}`,
     `- Total Questions: ${dataset.totalQuestions}`,
     ``,
     `---`,

@@ -219,6 +219,9 @@
 .fus-status-extracted { background: rgba(52, 211, 153, 0.12); color: var(--fus-emerald); border-color: rgba(52, 211, 153, 0.3); }
 .fus-status-extracted .fus-status-dot { background: var(--fus-emerald); box-shadow: 0 0 6px var(--fus-emerald); }
 
+.fus-status-autosaving { background: rgba(251, 146, 60, 0.12); color: #fb923c; border-color: rgba(251, 146, 60, 0.3); }
+.fus-status-autosaving .fus-status-dot { background: #fb923c; box-shadow: 0 0 6px #fb923c; animation: fus-pulse 1.2s infinite; }
+
 .fus-status-error { background: rgba(244, 63, 94, 0.12); color: var(--fus-rose); border-color: rgba(244, 63, 94, 0.3); }
 .fus-status-error .fus-status-dot { background: var(--fus-rose); box-shadow: 0 0 6px var(--fus-rose); }
 
@@ -316,37 +319,62 @@
   overflow-y: auto;
 }
 
-/* Metadata Badges */
-.fus-badge-row {
-  display: flex;
+/* Metadata Badges & 5-Row Structured Layout Grid */
+.fus-meta-row-1 {
+  display: grid;
+  grid-template-columns: 30% 40% 30%;
+  gap: 4px;
   align-items: center;
-  gap: 8px;
+  width: 100%;
+}
+
+.fus-meta-row-2 {
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
 }
 
 .fus-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
+  justify-content: center;
+  padding: 2px 5px;
   border-radius: 4px;
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fus-badge-subject { background: rgba(52, 211, 153, 0.12); color: var(--fus-emerald); border: 1px solid rgba(52, 211, 153, 0.25); }
+.fus-badge-type { background: rgba(56, 189, 248, 0.12); color: var(--fus-sky); border: 1px solid rgba(56, 189, 248, 0.25); }
 .fus-badge-campus { background: rgba(167, 139, 250, 0.12); color: var(--fus-violet); border: 1px solid rgba(167, 139, 250, 0.25); }
+
+.fus-meta-date {
+  font-size: 11px;
+  color: var(--fus-text-mid);
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .fus-subject-title {
   font-size: 12px;
   color: var(--fus-text-mid);
   margin: 0;
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .fus-exam-code {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   color: var(--fus-text);
@@ -357,10 +385,58 @@
   white-space: nowrap;
 }
 
+.fus-meta-partial {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: #f87171;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 2px 0 0 0;
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .fus-q-count {
   font-size: 11px;
   color: var(--fus-sky);
   font-weight: 600;
+  text-align: right;
+}
+
+.fus-left-divider {
+  height: 1px;
+  background: var(--fus-border-dim);
+  margin: 4px 0;
+}
+
+.fus-btn-placeholder-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fus-text-dim);
+  border: 1px dashed var(--fus-border-dim);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.fus-btn-danger-icon {
+  color: #f43f5e !important;
+}
+
+.fus-btn-danger-icon:hover {
+  background: rgba(244, 63, 94, 0.2) !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+  color: #ff6b81 !important;
 }
 
 /* Format Switcher (Segmented Control) */

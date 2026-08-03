@@ -1,8 +1,110 @@
 import { ExamDataset, Question, Option } from '../types';
 
+export function decodeHtmlEntities(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\\\\"/g, '"')
+    .replace(/\\"/g, '"');
+}
+
+export function sanitizeRscDate(dateStr: string): string {
+  if (!dateStr) return '';
+  let cleaned = dateStr.trim();
+
+  // Strip Next.js RSC date prefix "$D"
+  if (cleaned.startsWith('$D')) {
+    cleaned = cleaned.substring(2);
+  }
+
+  try {
+    const d = new Date(cleaned);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  } catch (e) {}
+
+  return cleaned;
+}
+
+export const formatDateString = sanitizeRscDate;
+
+export interface ParsedExamCode {
+  subjectCode: string;
+  term: string;
+  examType: string;
+  examCode: string;
+  termCode: string;
+  typeCode: string;
+}
+
+export function parseExamCode(title: string): ParsedExamCode {
+  const cleanTitle = (title || '').trim();
+  
+  // Default values
+  let subjectCode = 'EXAM';
+  let term = 'SP26';
+  let examType = 'FE';
+  let examCode = '';
+
+  const parts = cleanTitle.split('_');
+
+  // 1. Extract Subject Code at START (3 Alphas + 3 Numericals + 0-2 Optional Alphas)
+  const subjMatch = cleanTitle.match(/^[A-Z]{3}\d{3}[A-Za-z]{0,2}/i);
+  if (subjMatch) {
+    subjectCode = subjMatch[0].toUpperCase();
+  } else if (parts[0]) {
+    subjectCode = parts[0].toUpperCase();
+  }
+
+  // 2. Extract Term from delimited tokens (e.g. SP26, SU26, FA25)
+  for (const part of parts) {
+    const upper = part.toUpperCase();
+    if (upper === subjectCode) continue;
+    const termMatch = upper.match(/^[A-Z]{2}\d{2}$/);
+    if (termMatch) {
+      term = termMatch[0];
+      break;
+    }
+  }
+
+  // 3. Extract Exam Code at END (6 Numericals)
+  const codeMatch = cleanTitle.match(/\d{6}$/);
+  if (codeMatch) {
+    examCode = codeMatch[0];
+  } else if (parts.length > 1) {
+    examCode = parts[parts.length - 1];
+  }
+
+  // 4. Extract Exam Type (FE, PE, RE, etc.)
+  for (const part of parts) {
+    const upper = part.toUpperCase();
+    if (['FE', 'PE', 'RE', 'PE1', 'B5FE'].includes(upper)) {
+      examType = upper;
+      break;
+    }
+  }
+
+  return {
+    subjectCode,
+    term,
+    examType,
+    examCode,
+    termCode: term,
+    typeCode: examType
+  };
+}
+
 export function sanitizeOptionText(text: string, optId: string): string {
   if (!text) return '';
-  let cleaned = text.trim();
+  let cleaned = decodeHtmlEntities(text.trim());
 
   // If text starts with "A. " or "A: " or "A ", strip it
   const prefixRegex = new RegExp(`^${optId}[.:\\s-]+`, 'i');
@@ -53,35 +155,67 @@ export function tryParsePartialJson(str: string): any {
   return null;
 }
 
-export function unescapeNextFChunk(text: string): any {
+export function getExamIdFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  const m = window.location.pathname.match(/\/marketplace\/exam\/([^/?#]+)/);
+  return m ? m[1] : null;
+}
+
+export function unescapeNextFChunk(text: string, targetId?: string): any {
   try {
-    const matches = text.matchAll(/self\.__next_f\.push\(\[\d+,\s*"([\s\S]*?)"\]\)/g);
+    // Search for initialData string directly
+    const matches = Array.from(text.matchAll(/self\.__next_f\.push\(\[\d+,\s*"([\s\S]*?)"\]\)/g));
     for (const match of matches) {
       const escaped = match[1];
-      if (escaped.includes('initialData')) {
+      if (escaped.includes('initialData') || escaped.includes('questions')) {
+        if (targetId && !escaped.includes(targetId)) {
+          continue;
+        }
+        // DO NOT replace \\n with raw \n character because raw \n breaks JSON.parse string literals!
+        // Only unescape escaped quotes \" -> " and escaped backslashes \\ -> \
         const unescaped = escaped
           .replace(/\\"/g, '"')
-          .replace(/\\\\/g, '\\')
-          .replace(/\\n/g, '\n');
+          .replace(/\\\\/g, '\\');
         
-        const dataIdx = unescaped.indexOf('{"productId":');
-        if (dataIdx !== -1) {
-          const jsonCandidate = unescaped.substring(dataIdx);
-          const parsed = tryParsePartialJson(jsonCandidate);
+        // Find initialData anchor
+        const initDataIdx = unescaped.indexOf('"initialData":');
+        if (initDataIdx !== -1) {
+          // Backward search for object start brace
+          const objStart = unescaped.lastIndexOf('{', initDataIdx);
+          if (objStart !== -1) {
+            const parsed = tryParsePartialJson(unescaped.substring(objStart));
+            if (parsed && parsed.initialData) {
+              if (!targetId || (parsed.initialData.product && parsed.initialData.product.id === targetId) || unescaped.includes(targetId)) {
+                return parsed;
+              }
+            }
+          }
+        }
+
+        // Direct search for productId anchor
+        const prodIdx = unescaped.indexOf('{"productId":');
+        if (prodIdx !== -1) {
+          const parsed = tryParsePartialJson(unescaped.substring(prodIdx));
           if (parsed && parsed.initialData) {
-            return parsed;
+            if (!targetId || (parsed.initialData.product && parsed.initialData.product.id === targetId) || unescaped.includes(targetId)) {
+              return parsed;
+            }
           }
         }
       }
     }
 
-    // Direct search for initialData string in raw HTML
-    const dataIdx = text.indexOf('{"productId":');
-    if (dataIdx !== -1) {
-      const jsonCandidate = text.substring(dataIdx);
-      const parsed = tryParsePartialJson(jsonCandidate);
-      if (parsed && parsed.initialData) {
-        return parsed;
+    // Direct search in raw HTML text
+    if (!targetId || text.includes(targetId)) {
+      const initDataIdx = text.indexOf('"initialData":');
+      if (initDataIdx !== -1) {
+        const objStart = text.lastIndexOf('{', initDataIdx);
+        if (objStart !== -1) {
+          const parsed = tryParsePartialJson(text.substring(objStart));
+          if (parsed && parsed.initialData) {
+            return parsed;
+          }
+        }
       }
     }
   } catch (e) {
@@ -93,15 +227,31 @@ export function unescapeNextFChunk(text: string): any {
 export function formatExamDataset(initialData: any): ExamDataset {
   const prod = initialData.product || {};
   const subj = prod.subject || {};
-  
+  const parsedCode = parseExamCode(prod.title || '');
+
+  const campus = prod.description || prod.campus || 'XAVALO';
+  const examType = prod.examType || parsedCode.examType || 'FE';
+  const examSessionTime = prod.examSessionTime || '09:10';
+  const examSessionDate = sanitizeRscDate(prod.createdAt || prod.examSessionDate || '$D2026-04-29T00:00:00.000Z');
+
+  const questionsList = initialData.questions || [];
+
   return {
     id: prod.id || 'unknown',
     title: prod.title || 'Exam Set',
-    subjectCode: prod.subjectCode || subj.code || 'EXAM',
-    subjectName: subj.name || 'Subject',
-    author: prod.description || (prod.seller && prod.seller.name) || 'XAVALO',
-    totalQuestions: (initialData.questions || []).length,
-    questions: (initialData.questions || []).map((q: any, idx: number): Question => {
+    subjectCode: prod.subjectCode || subj.code || parsedCode.subjectCode || 'EXAM',
+    subjectName: decodeHtmlEntities(subj.name || 'Subject'),
+    author: campus,
+    campus: campus,
+    examType: examType,
+    examSessionTime: examSessionTime,
+    examSessionDate: examSessionDate,
+    parsedTitle: prod.title || 'Exam Set',
+    totalQuestions: initialData.totalQuestions || questionsList.length,
+    isPartial: initialData.isPartial || false,
+    successFetchCount: initialData.successFetchCount,
+    failedFetchCount: initialData.failedFetchCount,
+    questions: questionsList.map((q: any, idx: number): Question => {
       const validOptions = (q.options || []).map((opt: any): Option => {
         const optId = (opt.id || '').trim().toUpperCase();
         const rawText = (opt.text || '').trim();
@@ -119,7 +269,7 @@ export function formatExamDataset(initialData: any): ExamDataset {
       return {
         index: idx + 1,
         id: q.id || `q_${idx}`,
-        text: (q.text || '').trim(),
+        text: decodeHtmlEntities((q.text || '').trim()),
         imageUrl: q.imageUrl || null,
         correctAnswers: validAnswers,
         options: validOptions
@@ -128,13 +278,15 @@ export function formatExamDataset(initialData: any): ExamDataset {
   };
 }
 
-export function extractExamFromScripts(): ExamDataset | null {
+export function extractExamFromScripts(targetProductId?: string): ExamDataset | null {
   if (typeof document === 'undefined') return null;
+
+  const activeTargetId = targetProductId || getExamIdFromUrl() || undefined;
 
   // 1. Check raw HTML first
   const fullHtml = document.documentElement.innerHTML;
-  if (fullHtml.includes('initialData') && fullHtml.includes('"questions":[')) {
-    const parsed = unescapeNextFChunk(fullHtml);
+  if (fullHtml.includes('initialData') || fullHtml.includes('questions')) {
+    const parsed = unescapeNextFChunk(fullHtml, activeTargetId);
     if (parsed && parsed.initialData) {
       return formatExamDataset(parsed.initialData);
     }
@@ -144,8 +296,8 @@ export function extractExamFromScripts(): ExamDataset | null {
   const scripts = Array.from(document.scripts);
   for (const script of scripts) {
     const content = script.textContent || script.innerText || '';
-    if (content.includes('initialData') && content.includes('"questions":[')) {
-      const parsed = unescapeNextFChunk(content);
+    if (content.includes('initialData') || content.includes('questions')) {
+      const parsed = unescapeNextFChunk(content, activeTargetId);
       if (parsed && parsed.initialData) {
         return formatExamDataset(parsed.initialData);
       }
@@ -164,29 +316,26 @@ export async function crawlExamFromDOM(
   // Find Exam Metadata
   const titleEl = document.querySelector('h1');
   const title = titleEl ? titleEl.textContent?.trim() || 'Exam' : 'Exam';
-  const subjectCode = title.split('_')[0] || 'EXAM';
+  const parsedCode = parseExamCode(title);
+  const subjectCode = parsedCode.subjectCode;
   const subjectBadge = document.querySelector('span[data-slot="badge"]:nth-child(2)');
   const subjectName = subjectBadge ? subjectBadge.textContent?.trim() || subjectCode : subjectCode;
   const authorEl = document.querySelector('p.text-muted-foreground');
   const author = authorEl ? authorEl.textContent?.trim() || 'XAVALO' : 'XAVALO';
 
-  // Find total questions count from sidebar (e.g. "Câu hỏi 1 / 60")
+  // Find total questions count from sidebar / header (e.g. "Câu hỏi 1 / 60", "1 / 60")
   let totalQuestions = 60;
-  const counterEls = Array.from(document.querySelectorAll('p'));
+  const counterEls = Array.from(document.querySelectorAll('p, div, span, h2, h3'));
   for (const p of counterEls) {
-    const txt = p.textContent || '';
-    const match = txt.match(/Câu hỏi\s+\d+\s*\/\s*(\d+)/i);
+    const txt = (p.textContent || '').trim();
+    const match = txt.match(/(?:Câu\s*hỏi|Câu|Question|\b)\s*\d+\s*[\/\u2044]\s*(\d+)/i) || txt.match(/\b\d+\s*[\/\u2044]\s*(\d+)\b/);
     if (match && match[1]) {
-      totalQuestions = parseInt(match[1], 10);
-      break;
+      const val = parseInt(match[1], 10);
+      if (val > 0 && val <= 300) {
+        totalQuestions = val;
+        break;
+      }
     }
-  }
-
-  // Ensure Study Mode toggle is enabled
-  const studyToggle = document.querySelector<HTMLButtonElement>('#study-mode-toggle');
-  if (studyToggle && studyToggle.getAttribute('data-state') === 'unchecked') {
-    studyToggle.click();
-    await delay(100);
   }
 
   const questions: Question[] = [];
@@ -194,18 +343,19 @@ export async function crawlExamFromDOM(
   for (let qIdx = 1; qIdx <= totalQuestions; qIdx++) {
     if (onProgress) onProgress(qIdx, totalQuestions);
 
-    const qContainer = document.querySelector('div.w-3\\/4');
+    const qContainer = document.querySelector('div.w-3\\/4') || document.querySelector('main') || document.querySelector('[data-slot="card"]') || document;
     if (!qContainer) break;
 
     const qTitleEl = qContainer.querySelector('h2');
-    const qText = qTitleEl ? qTitleEl.textContent?.trim() || '' : '';
+    const qText = qTitleEl ? decodeHtmlEntities(qTitleEl.textContent?.trim() || '') : '';
     const imgEl = qContainer.querySelector<HTMLImageElement>('img');
     const imageUrl = imgEl ? imgEl.src : null;
 
-    const optBtns = Array.from(qContainer.querySelectorAll<HTMLButtonElement>('div.space-y-2\\.5 button'));
+    const optBtns = Array.from(qContainer.querySelectorAll<HTMLButtonElement>('div.space-y-2\\.5 button, button[role="radio"], button[data-slot="button"]'));
     
-    // If correct answer styling is not revealed, click option A
-    let hasAnswerRevealed = optBtns.some(btn => 
+    // Check if answer text "Đáp án đúng: \nC" or "Đáp án đúng: \nA,B,C" is already present
+    let containerText = qContainer.textContent || '';
+    let hasAnswerRevealed = /Đáp án\s*đúng\s*:\s*[A-E]/i.test(containerText) || optBtns.some(btn => 
       btn.className.includes('emerald') || 
       btn.className.includes('green') || 
       btn.className.includes('bg-primary') ||
@@ -214,12 +364,14 @@ export async function crawlExamFromDOM(
 
     if (!hasAnswerRevealed && optBtns.length > 0) {
       optBtns[0].click();
-      await delay(80);
+      await delay(100);
+      containerText = qContainer.textContent || '';
     }
 
     const options: Option[] = [];
     const correctAnswers: string[] = [];
 
+    // Parse options list
     optBtns.forEach((btn, btnIdx) => {
       const badgeEl = btn.querySelector('div');
       let optId = badgeEl ? badgeEl.textContent?.trim() || '' : '';
@@ -235,43 +387,77 @@ export async function crawlExamFromDOM(
       if (cleanText) {
         options.push({ id: optId, text: cleanText });
       }
-
-      // Detect if this option is correct
-      const btnHtml = btn.outerHTML || '';
-      const btnClass = btn.className || '';
-      if (
-        btnClass.includes('emerald') ||
-        btnClass.includes('green') ||
-        btnClass.includes('bg-primary') ||
-        btnHtml.includes('lucide-check') ||
-        btn.getAttribute('data-correct') === 'true'
-      ) {
-        correctAnswers.push(optId);
-      }
     });
+
+    // 1. Extract correct answers from text block "Đáp án đúng: \nC" or "Đáp án đúng: \nA,B,C"
+    const ansMatch = containerText.match(/Đáp án\s*đúng\s*:\s*([A-E,\s\n]+)/i);
+    if (ansMatch && ansMatch[1]) {
+      const rawAns = ansMatch[1];
+      const parsedKeys = rawAns.split(/[\s,\n]+/).map(s => s.trim().toUpperCase()).filter(s => /^[A-E]$/.test(s));
+      parsedKeys.forEach(k => {
+        if (!correctAnswers.includes(k)) correctAnswers.push(k);
+      });
+    }
+
+    // 2. Fallback to option button CSS class inspection
+    if (correctAnswers.length === 0) {
+      optBtns.forEach((btn, btnIdx) => {
+        const badgeEl = btn.querySelector('div');
+        let optId = badgeEl ? badgeEl.textContent?.trim() || '' : '';
+        if (!optId) optId = String.fromCharCode(65 + btnIdx);
+        optId = optId.charAt(0).toUpperCase();
+
+        const btnHtml = btn.outerHTML || '';
+        const btnClass = btn.className || '';
+        if (
+          btnClass.includes('emerald') ||
+          btnClass.includes('green') ||
+          btnClass.includes('bg-primary') ||
+          btnHtml.includes('lucide-check') ||
+          btn.getAttribute('data-correct') === 'true'
+        ) {
+          if (!correctAnswers.includes(optId)) correctAnswers.push(optId);
+        }
+      });
+    }
 
     questions.push({
       index: qIdx,
       id: `q_dom_${qIdx}`,
       text: qText,
       imageUrl,
-      correctAnswers: correctAnswers.length > 0 ? correctAnswers : ['A'],
+      correctAnswers: correctAnswers,
       options
     });
 
     // Click Next ("Sau") button to advance
     if (qIdx < totalQuestions) {
-      const nextBtn = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b => 
-        (b.textContent || '').includes('Sau') || b.querySelector('svg.lucide-chevron-right')
-      );
+      const nextBtn = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b => {
+        const txt = (b.textContent || '').trim();
+        const aria = (b.getAttribute('aria-label') || '').trim();
+        return (
+          txt.includes('Sau') ||
+          txt.includes('Tiếp') ||
+          txt.includes('Next') ||
+          aria.toLowerCase().includes('next') ||
+          aria.toLowerCase().includes('sau') ||
+          !!b.querySelector('svg.lucide-chevron-right') ||
+          !!b.querySelector('svg.lucide-arrow-right')
+        );
+      });
+
       if (nextBtn && !nextBtn.disabled) {
         nextBtn.click();
-        await delay(120);
+        await delay(100);
       } else {
         break;
       }
     }
   }
+
+  const isPartial = questions.length < totalQuestions;
+  const successFetchCount = questions.length;
+  const failedFetchCount = isPartial ? totalQuestions - questions.length : 0;
 
   return {
     id: 'exam_' + Date.now(),
@@ -279,7 +465,15 @@ export async function crawlExamFromDOM(
     subjectCode,
     subjectName,
     author,
-    totalQuestions: questions.length,
+    campus: author,
+    examType: parsedCode.examType,
+    examSessionTime: '09:10',
+    examSessionDate: '29/04/2026',
+    parsedTitle: title,
+    totalQuestions: isPartial ? totalQuestions : questions.length,
+    isPartial,
+    successFetchCount,
+    failedFetchCount,
     questions
   };
 }

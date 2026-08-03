@@ -14,6 +14,19 @@ if (typeof chrome !== 'undefined' && chrome.tabs) {
   });
 }
 
+if (typeof chrome !== 'undefined' && chrome.webNavigation) {
+  chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
+    if (details.frameId === 0 && details.url && details.url.includes('fustation.net')) {
+      chrome.tabs.sendMessage(details.tabId, {
+        type: 'FUSTATION_URL_CHANGED',
+        url: details.url
+      }).catch(() => {
+        // Tab listener not ready yet, safe to ignore
+      });
+    }
+  });
+}
+
 function addDiscoveredExamId(examId: string): void {
   if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
 

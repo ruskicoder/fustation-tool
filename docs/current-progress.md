@@ -12,6 +12,20 @@
 - [x] **Sticky Saved Tab Toolbar**: Top toolbar remains fixed at top of tab container when scrolling saved items.
 - [x] **Red Clear-All Danger Button**: Styled with `.fus-btn-danger`.
 - [x] **Option Text Sanitization**: Prefix removal (`A.`, `A:`, `A `) and text deduplication.
+- [x] **Robust RSC Stream Parser (ISSUE-01)**: Anchors directly to `"initialData":` across Next.js push chunks regardless of key order.
+- [x] **Semantic DOM Crawler Selectors (ISSUE-02)**: Robust fallbacks using `[data-slot="card"]`, `button[role="radio"]`, `h2`.
+- [x] **Next.js `$D` ISO Date Stripping (ISSUE-03)**: `sanitizeRscDate()` strips `$D` prefix and formats `DD/MM/YYYY`.
+- [x] **HTML Entity Decoding (ISSUE-04)**: `decodeHtmlEntities()` unescapes `&amp;`, `&quot;`, `&#x27;`, `&lt;`, `&gt;`.
+- [x] **Extended ExamDataset Schema (ISSUE-05)**: Added `campus`, `examType`, `examSessionTime`, `examSessionDate`, `parsedTitle`.
+- [x] **Tokenized Regex Exam Code Parser (ISSUE-06)**: `parseExamCode()` extracts `SubjectCode`, `Term`, `Type`, `ExamCode`.
+- [x] **ExtractTab 5-Row Metadata Layout (ISSUE-13)**: 30/40/30 & 70/30 grid splits + `[ View Questions ]` placeholder button.
+- [x] **SavedTab Per-Item Delete Button (ISSUE-14)**: Added `[ Delete ]` button before `[ Download ]` for single item cache removal.
+- [x] **Single Minimize Header Control (ISSUE-15)**: Removed redundant `×` Close button, retained `–` Minimize button.
+- [x] **Control Character JSON Crash Fix (ISSUE-17)**: Preserved embedded `\n` escapes in `unescapeNextFChunk()` prior to `JSON.parse()`.
+- [x] **Metadata & Answer Fallback Cleanup (ISSUE-18)**: Mapped `prod.description` $\rightarrow$ `campus`, preserved single/multi-choice `correctAnswers` without forcing dummy `['A']`.
+- [x] **Next.js Escaped Quote RSC Stream Parser (ISSUE-19)**: Broadened script detection guard and unescaped `\"` in `unescapeNextFChunk()`.
+- [x] **Text Answer Reveal DOM Crawler & Partial Fetch UI (ISSUE-20)**: Implemented 100ms hydration delay, text answer reveal regex `/Đáp án\s*đúng\s*:\s*([A-E,\s\n]+)/i` for single & multi-choice, and `Fetched with fails: [success] ✓ | [failed] ✗` ExtractTab indicator below Exam Code.
+- [x] **SPA Route Navigation, Targeted Product ID Filtering & Auto-Save (ISSUE-21)**: Added `chrome.webNavigation.onHistoryStateUpdated` listener, product ID filtering in `extractExamFromScripts()`, 100ms render buffer for `Fetching...` status pill, and automatic save (`Autosaving...`) when exiting exam pages to `/home/subject/[code]`.
 
 ---
 

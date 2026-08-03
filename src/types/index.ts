@@ -1,6 +1,6 @@
 export type ExportFormat = 'MD' | 'PDF' | 'JSON';
 
-export type StatusState = 'ready' | 'fetching' | 'processing' | 'downloading' | 'extracted' | 'error';
+export type StatusState = 'ready' | 'fetching' | 'autosaving' | 'processing' | 'downloading' | 'extracted' | 'error';
 
 export interface Option {
   id: string; // "A", "B", "C", "D"
@@ -22,7 +22,15 @@ export interface ExamDataset {
   subjectCode: string;
   subjectName: string;
   author: string; // Campus / Uploader (e.g. "XAVALO")
+  campus?: string;
+  examType?: string;
+  examSessionTime?: string;
+  examSessionDate?: string;
+  parsedTitle?: string;
   totalQuestions: number;
+  isPartial?: boolean;
+  successFetchCount?: number;
+  failedFetchCount?: number;
   questions: Question[];
 }
 
@@ -32,7 +40,14 @@ export interface SavedExamItem {
   subjectCode: string;
   subjectName: string;
   author: string;
+  campus?: string;
+  examType?: string;
+  examSessionTime?: string;
+  examSessionDate?: string;
   totalQuestions: number;
+  isPartial?: boolean;
+  successFetchCount?: number;
+  failedFetchCount?: number;
   extractedAt: string;
   dataset: ExamDataset;
 }

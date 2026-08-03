@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { ExamDataset, ExportFormat, SavedExamsMap, StatusState } from '../types';
-import { extractExamFromScripts, crawlExamFromDOM } from '../utils/parser';
+import { extractExamFromScripts, crawlExamFromDOM, getExamIdFromUrl } from '../utils/parser';
 import { exportExam } from '../utils/exporter';
 import {
   saveExamToStorage,
   getSavedExamsFromStorage,
+  deleteExamFromStorage,
   clearAllExamsFromStorage,
   getActiveFormatFromStorage,
   setActiveFormatInStorage
 } from '../utils/storage';
 import { ExtractTab } from './ExtractTab';
 import { SavedTab } from './SavedTab';
+
+function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
+  if (/\/marketplace\/exam\//.test(pathname)) return 'exam';
+  if (/\/home(\/|$)/.test(pathname) || /\/subject\//.test(pathname)) return 'catalog';
+  return 'other';
+}
 
 export const Overlay: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -21,41 +28,19 @@ export const Overlay: React.FC = () => {
   const [status, setStatus] = useState<StatusState>('ready');
   const [progressLabel, setProgressLabel] = useState<string>('');
 
-  useEffect(() => {
-    // Load initial storage settings & auto extract
-    getActiveFormatFromStorage((fmt) => {
-      setActiveFormat(fmt || 'MD');
-    });
-
-    getSavedExamsFromStorage((exams) => {
-      setSavedExams(exams || {});
-    });
-
-    const data = extractExamFromScripts();
-    if (data && data.questions && data.questions.length > 1) {
-      setCurrentDataset(data);
-      setStatus('ready');
-    }
-  }, []);
-
-  const handleFormatChange = (fmt: ExportFormat) => {
-    setActiveFormat(fmt);
-    setActiveFormatInStorage(fmt);
-  };
-
-  const handleFetch = async () => {
+  const runFetch = async () => {
     setStatus('fetching');
     setProgressLabel('');
+    await new Promise((r) => setTimeout(r, 100)); // 100ms visual render buffer
 
-    // 1. Try raw script / HTML extraction
-    const fastData = extractExamFromScripts();
+    const targetId = getExamIdFromUrl();
+    const fastData = extractExamFromScripts(targetId ?? undefined);
     if (fastData && fastData.questions && fastData.questions.length > 1) {
       setCurrentDataset(fastData);
       setStatus('ready');
       return;
     }
 
-    // 2. Automated DOM Crawler
     try {
       const crawled = await crawlExamFromDOM((curr, total) => {
         setProgressLabel(`(${curr}/${total})`);
@@ -75,13 +60,82 @@ export const Overlay: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    // Load initial storage settings & auto extract on initial mount
+    getActiveFormatFromStorage((fmt) => {
+      setActiveFormat(fmt || 'MD');
+    });
+
+    getSavedExamsFromStorage((exams) => {
+      setSavedExams(exams || {});
+    });
+
+    if (typeof window !== 'undefined' && classifyRoute(window.location.pathname) === 'exam') {
+      runFetch();
+    }
+  }, []);
+
+  // Background SPA Route Observer
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.onMessage) return;
+
+    const handleMessage = (msg: any) => {
+      if (msg && msg.type === 'FUSTATION_URL_CHANGED' && msg.url) {
+        try {
+          const newPath = new URL(msg.url).pathname;
+          const targetRoute = classifyRoute(newPath);
+
+          if (targetRoute === 'catalog') {
+            // Exiting exam page to catalog/subject route: Autosave & clear current dataset
+            setCurrentDataset((prevDataset) => {
+              if (prevDataset && prevDataset.questions && prevDataset.questions.length > 0) {
+                setStatus('autosaving');
+                saveExamToStorage(prevDataset, (updatedList) => {
+                  setSavedExams(updatedList || savedExams);
+                  setStatus('ready');
+                });
+              } else {
+                setStatus('ready');
+              }
+              return null; // Clear dataset to default placeholder
+            });
+          } else if (targetRoute === 'exam') {
+            // Entering new exam page: Clear active dataset and auto-fetch for new URL
+            setCurrentDataset(null);
+            runFetch();
+          }
+        } catch (e) {
+          console.error('[fustation-tool] Route listener error:', e);
+        }
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    };
+  }, [savedExams]);
+
+  const handleFormatChange = (fmt: ExportFormat) => {
+    setActiveFormat(fmt);
+    setActiveFormatInStorage(fmt);
+  };
+
+  const handleFetch = async () => {
+    setCurrentDataset(null); // Clear active dataset in place
+    await runFetch();
+  };
+
   const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {
     if (currentDataset && currentDataset.questions && currentDataset.questions.length > 1) {
       return currentDataset;
     }
 
     setStatus('fetching');
-    const fastData = extractExamFromScripts();
+    await new Promise((r) => setTimeout(r, 100));
+
+    const targetId = getExamIdFromUrl();
+    const fastData = extractExamFromScripts(targetId ?? undefined);
     if (fastData && fastData.questions && fastData.questions.length > 1) {
       setCurrentDataset(fastData);
       return fastData;
@@ -147,6 +201,12 @@ export const Overlay: React.FC = () => {
     }
   };
 
+  const handleDeleteItem = (examId: string) => {
+    deleteExamFromStorage(examId, (updatedList: SavedExamsMap) => {
+      setSavedExams(updatedList || {});
+    });
+  };
+
   const handleClearAll = () => {
     clearAllExamsFromStorage(() => {
       setSavedExams({});
@@ -159,6 +219,7 @@ export const Overlay: React.FC = () => {
     const statusMap: Record<StatusState, { label: string; className: string }> = {
       ready: { label: 'Ready', className: 'fus-status-ready' },
       fetching: { label: `Fetching${progressLabel}...`, className: 'fus-status-fetching' },
+      autosaving: { label: 'Autosaving...', className: 'fus-status-autosaving' },
       processing: { label: 'Processing...', className: 'fus-status-processing' },
       downloading: { label: 'Downloading...', className: 'fus-status-downloading' },
       extracted: { label: 'Saved / Ready', className: 'fus-status-extracted' },
@@ -238,14 +299,6 @@ export const Overlay: React.FC = () => {
               >
                 –
               </button>
-              <button
-                type="button"
-                className="fus-ctrl-btn fus-close-btn"
-                aria-label="Close"
-                onClick={() => setIsExpanded(false)}
-              >
-                ×
-              </button>
             </div>
           </div>
 
@@ -266,6 +319,7 @@ export const Overlay: React.FC = () => {
                 activeFormat={activeFormat}
                 onFormatChange={handleFormatChange}
                 onClearAll={handleClearAll}
+                onDeleteItem={handleDeleteItem}
                 onExportItem={handleExportSavedItem}
               />
             )}
