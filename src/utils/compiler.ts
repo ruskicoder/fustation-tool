@@ -5,6 +5,7 @@ export function compileMarkdown(dataset: ExamDataset): string {
 
   const subject = `${dataset.subjectCode} - ${dataset.subjectName}`;
   const campus = dataset.campus || dataset.author || 'XAVALO';
+  const termStr = dataset.term || dataset.termCode || 'SP26';
   const examType = dataset.examType || 'FE';
   const session = `${dataset.examSessionTime || '09:10'} | ${dataset.examSessionDate || '29/04/2026'}`;
 
@@ -13,7 +14,7 @@ export function compileMarkdown(dataset: ExamDataset): string {
     `- Subject: ${subject}`,
     `- Title: ${dataset.title}`,
     `- Campus: ${campus}`,
-    `- Term & Type: SP26 - ${examType}`,
+    `- Term & Type: ${termStr} - ${examType}`,
     `- Session: ${session}`,
     `- Total Questions: ${dataset.totalQuestions}`,
     ``,

@@ -25,6 +25,8 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
     subjectName: 'No active exam page detected',
     author: 'XAVALO',
     campus: 'XAVALO',
+    term: 'SP26',
+    termCode: 'SP26',
     examType: 'FE',
     examSessionTime: '09:10',
     examSessionDate: '29/04/2026',
@@ -36,7 +38,9 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
     questions: []
   };
 
-  const termExamType = `SP26 - ${data.examType || 'FE'}`;
+  const termStr = data.term || data.termCode || 'SP26';
+  const typeStr = data.examType || 'FE';
+  const termExamType = `${termStr} - ${typeStr}`;
   const sessionStr = `${data.examSessionTime || '09:10'} | ${data.examSessionDate || '29/04/2026'}`;
 
   return (

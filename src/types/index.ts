@@ -23,6 +23,8 @@ export interface ExamDataset {
   subjectName: string;
   author: string; // Campus / Uploader (e.g. "XAVALO")
   campus?: string;
+  term?: string;
+  termCode?: string;
   examType?: string;
   examSessionTime?: string;
   examSessionDate?: string;
@@ -41,6 +43,8 @@ export interface SavedExamItem {
   subjectName: string;
   author: string;
   campus?: string;
+  term?: string;
+  termCode?: string;
   examType?: string;
   examSessionTime?: string;
   examSessionDate?: string;

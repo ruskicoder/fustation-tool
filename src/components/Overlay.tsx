@@ -91,7 +91,7 @@ export const Overlay: React.FC = () => {
               if (prevDataset && prevDataset.questions && prevDataset.questions.length > 0) {
                 setStatus('autosaving');
                 saveExamToStorage(prevDataset, (updatedList) => {
-                  setSavedExams(updatedList || savedExams);
+                  setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
                   setStatus('ready');
                 });
               } else {
@@ -127,7 +127,7 @@ export const Overlay: React.FC = () => {
   };
 
   const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {
-    if (currentDataset && currentDataset.questions && currentDataset.questions.length > 1) {
+    if (currentDataset && currentDataset.questions && currentDataset.questions.length > 0) {
       return currentDataset;
     }
 
@@ -136,7 +136,7 @@ export const Overlay: React.FC = () => {
 
     const targetId = getExamIdFromUrl();
     const fastData = extractExamFromScripts(targetId ?? undefined);
-    if (fastData && fastData.questions && fastData.questions.length > 1) {
+    if (fastData && fastData.questions && fastData.questions.length > 0) {
       setCurrentDataset(fastData);
       return fastData;
     }
@@ -167,7 +167,7 @@ export const Overlay: React.FC = () => {
 
     setStatus('processing');
     saveExamToStorage(dataToSave, (updatedList) => {
-      setSavedExams(updatedList || savedExams);
+      setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
       setStatus('extracted'); // Display Saved state
     });
   };
@@ -182,7 +182,7 @@ export const Overlay: React.FC = () => {
     setStatus('processing');
     setTimeout(() => {
       saveExamToStorage(dataToExport, (updatedList) => {
-        setSavedExams(updatedList || savedExams);
+        setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
       });
 
       setStatus('downloading');
@@ -203,7 +203,7 @@ export const Overlay: React.FC = () => {
 
   const handleDeleteItem = (examId: string) => {
     deleteExamFromStorage(examId, (updatedList: SavedExamsMap) => {
-      setSavedExams(updatedList || {});
+      setSavedExams({ ...(updatedList || {}) });
     });
   };
 

@@ -31,6 +31,9 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-19**: Live Script Extraction String Match Failure (Escaped Quotes in RSC Chunks) -> Fixed in `src/utils/parser.ts`.
 - [x] **ISSUE-20**: DOM Crawler Text Answer Reveal, Single/Multi-Choice Support & Partial Fetch UI -> Fixed in `src/utils/parser.ts`, `src/components/ExtractTab.tsx`, and `src/styles/overlay.css`.
 - [x] **ISSUE-21**: SPA Route Navigation, Targeted Product ID Filtering & Auto-Save -> Fixed in `manifest.json`, `src/background.ts`, `src/utils/parser.ts`, `src/components/Overlay.tsx`, and `src/styles/overlay.css`.
+- [x] **ISSUE-22**: Manual Save Resilience, React State Map Copies & Unlimited Storage -> Fixed in `src/utils/storage.ts`, `src/components/Overlay.tsx`, and `manifest.json`.
+- [x] **ISSUE-23**: Exported Filename Deduplication -> Fixed in `src/utils/exporter.ts`.
+- [x] **ISSUE-25**: Metadata Header Term & ExamType Title Precedence -> Fixed in `src/types/index.ts`, `src/utils/parser.ts`, `src/utils/compiler.ts`, `src/utils/exporter.ts`, and `src/components/ExtractTab.tsx`.
 
 ---
 
@@ -61,6 +64,11 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - **Current State**: Added `[ View Questions ]` placeholder button on `ExtractTab.tsx`.
 - **Planned Remediation**: Full preview sub-view or expandable accordion viewer inside `SavedTab`.
 
+### [ISSUE-24] SavedTab Missing Partial Fetch Badge Indicator
+- **Status**: 🟡 **UI ENHANCEMENT**
+- **Symptom**: Saved items in `SavedTab.tsx` display question count (e.g. `45Q`), but do not indicate whether the dataset was saved as a partial fetch (`isPartial`), obscuring fetch quality.
+- **Remediation**: Render a small warning indicator badge `[Partial]` in `SavedTab.tsx` rows when `item.isPartial` is true.
+
 ---
 
 ## Summary Matrix of Remaining Issues
@@ -71,6 +79,7 @@ This document maintains open, deferred, and roadmap issues identified during tes
 | **ISSUE-11** | Storage | Storage cache normalization for legacy cached datasets | 🟢 Resolved | [src/utils/storage.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/storage.ts) |
 | **ISSUE-12** | Catalog | Catalog route `initialProducts` batch extraction | 🔵 Roadmap | [src/utils/parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts) |
 | **ISSUE-16** | Feature | In-Extension Saved ExamSet Viewing / Preview Mode | 🔴 Deferred | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
+| **ISSUE-24** | Saved UI | Missing partial fetch badge indicator in SavedTab rows | 🟡 UI Enhancement | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
 
 ---
 

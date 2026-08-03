@@ -163,58 +163,56 @@ export function getExamIdFromUrl(): string | null {
 
 export function unescapeNextFChunk(text: string, targetId?: string): any {
   try {
-    // Search for initialData string directly
     const matches = Array.from(text.matchAll(/self\.__next_f\.push\(\[\d+,\s*"([\s\S]*?)"\]\)/g));
+    let fallbackParsed: any = null;
+
+    // Pass 1: Try matching targetId specifically if provided
     for (const match of matches) {
       const escaped = match[1];
       if (escaped.includes('initialData') || escaped.includes('questions')) {
-        if (targetId && !escaped.includes(targetId)) {
-          continue;
-        }
-        // DO NOT replace \\n with raw \n character because raw \n breaks JSON.parse string literals!
-        // Only unescape escaped quotes \" -> " and escaped backslashes \\ -> \
         const unescaped = escaped
           .replace(/\\"/g, '"')
           .replace(/\\\\/g, '\\');
-        
-        // Find initialData anchor
+
         const initDataIdx = unescaped.indexOf('"initialData":');
         if (initDataIdx !== -1) {
-          // Backward search for object start brace
           const objStart = unescaped.lastIndexOf('{', initDataIdx);
           if (objStart !== -1) {
             const parsed = tryParsePartialJson(unescaped.substring(objStart));
             if (parsed && parsed.initialData) {
-              if (!targetId || (parsed.initialData.product && parsed.initialData.product.id === targetId) || unescaped.includes(targetId)) {
+              if (targetId && (escaped.includes(targetId) || (parsed.initialData.product && parsed.initialData.product.id === targetId))) {
                 return parsed;
               }
+              if (!fallbackParsed) fallbackParsed = parsed;
             }
           }
         }
 
-        // Direct search for productId anchor
         const prodIdx = unescaped.indexOf('{"productId":');
         if (prodIdx !== -1) {
           const parsed = tryParsePartialJson(unescaped.substring(prodIdx));
           if (parsed && parsed.initialData) {
-            if (!targetId || (parsed.initialData.product && parsed.initialData.product.id === targetId) || unescaped.includes(targetId)) {
+            if (targetId && (escaped.includes(targetId) || (parsed.initialData.product && parsed.initialData.product.id === targetId))) {
               return parsed;
             }
+            if (!fallbackParsed) fallbackParsed = parsed;
           }
         }
       }
     }
 
+    if (fallbackParsed) {
+      return fallbackParsed;
+    }
+
     // Direct search in raw HTML text
-    if (!targetId || text.includes(targetId)) {
-      const initDataIdx = text.indexOf('"initialData":');
-      if (initDataIdx !== -1) {
-        const objStart = text.lastIndexOf('{', initDataIdx);
-        if (objStart !== -1) {
-          const parsed = tryParsePartialJson(text.substring(objStart));
-          if (parsed && parsed.initialData) {
-            return parsed;
-          }
+    const initDataIdx = text.indexOf('"initialData":');
+    if (initDataIdx !== -1) {
+      const objStart = text.lastIndexOf('{', initDataIdx);
+      if (objStart !== -1) {
+        const parsed = tryParsePartialJson(text.substring(objStart));
+        if (parsed && parsed.initialData) {
+          return parsed;
         }
       }
     }
@@ -227,26 +225,34 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
 export function formatExamDataset(initialData: any): ExamDataset {
   const prod = initialData.product || {};
   const subj = prod.subject || {};
-  const parsedCode = parseExamCode(prod.title || '');
+  const title = prod.title || 'Exam Set';
+  const parsedCode = parseExamCode(title);
 
   const campus = prod.description || prod.campus || 'XAVALO';
-  const examType = prod.examType || parsedCode.examType || 'FE';
+  // Title token precedence: parsedCode.term / parsedCode.examType override default DB enums
+  const term = parsedCode.term || prod.term || 'SP26';
+  const examType = parsedCode.examType || prod.examType || 'FE';
   const examSessionTime = prod.examSessionTime || '09:10';
   const examSessionDate = sanitizeRscDate(prod.createdAt || prod.examSessionDate || '$D2026-04-29T00:00:00.000Z');
 
   const questionsList = initialData.questions || [];
 
+  // Deterministic ID resolution
+  const deterministicId = prod.id || initialData.productId || (parsedCode.subjectCode && parsedCode.examCode ? `${parsedCode.subjectCode}_${parsedCode.examCode}` : getExamIdFromUrl()) || `exam_${parsedCode.subjectCode}_${Date.now()}`;
+
   return {
-    id: prod.id || 'unknown',
-    title: prod.title || 'Exam Set',
+    id: deterministicId,
+    title: title,
     subjectCode: prod.subjectCode || subj.code || parsedCode.subjectCode || 'EXAM',
     subjectName: decodeHtmlEntities(subj.name || 'Subject'),
     author: campus,
     campus: campus,
+    term: term,
+    termCode: term,
     examType: examType,
     examSessionTime: examSessionTime,
     examSessionDate: examSessionDate,
-    parsedTitle: prod.title || 'Exam Set',
+    parsedTitle: title,
     totalQuestions: initialData.totalQuestions || questionsList.length,
     isPartial: initialData.isPartial || false,
     successFetchCount: initialData.successFetchCount,
@@ -459,14 +465,20 @@ export async function crawlExamFromDOM(
   const successFetchCount = questions.length;
   const failedFetchCount = isPartial ? totalQuestions - questions.length : 0;
 
+  const deterministicId = (parsedCode.subjectCode && parsedCode.examCode ? `${parsedCode.subjectCode}_${parsedCode.examCode}` : getExamIdFromUrl()) || `exam_${parsedCode.subjectCode}_${Date.now()}`;
+  const term = parsedCode.term || 'SP26';
+  const examType = parsedCode.examType || 'FE';
+
   return {
-    id: 'exam_' + Date.now(),
+    id: deterministicId,
     title,
     subjectCode,
     subjectName,
     author,
     campus: author,
-    examType: parsedCode.examType,
+    term,
+    termCode: term,
+    examType,
     examSessionTime: '09:10',
     examSessionDate: '29/04/2026',
     parsedTitle: title,

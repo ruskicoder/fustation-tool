@@ -26,6 +26,9 @@
 - [x] **Next.js Escaped Quote RSC Stream Parser (ISSUE-19)**: Broadened script detection guard and unescaped `\"` in `unescapeNextFChunk()`.
 - [x] **Text Answer Reveal DOM Crawler & Partial Fetch UI (ISSUE-20)**: Implemented 100ms hydration delay, text answer reveal regex `/Đáp án\s*đúng\s*:\s*([A-E,\s\n]+)/i` for single & multi-choice, and `Fetched with fails: [success] ✓ | [failed] ✗` ExtractTab indicator below Exam Code.
 - [x] **SPA Route Navigation, Targeted Product ID Filtering & Auto-Save (ISSUE-21)**: Added `chrome.webNavigation.onHistoryStateUpdated` listener, product ID filtering in `extractExamFromScripts()`, 100ms render buffer for `Fetching...` status pill, and automatic save (`Autosaving...`) when exiting exam pages to `/home/subject/[code]`.
+- [x] **Manual Save Resilience, Deterministic Storage Identifier & React Immutability (ISSUE-22)**: Fixed `saveExamToStorage()` to produce shallow object map copies (`{ ...list }`) for React state identity triggers in `Overlay.tsx`, generated deterministic primary keys (`[subjectCode]_[examCode]`), and added `"unlimitedStorage"` permission to `manifest.json`.
+- [x] **Exported Filename Deduplication (ISSUE-23)**: Deduplicated `subjectCode` prefix prepending in `exportExam()` when `sanitizedTitle` already starts with `subjectCode`.
+- [x] **Metadata Title Token Precedence & Dynamic Header Formatting (ISSUE-25)**: Enforced `parsedCode.term` (`SU26`) and `parsedCode.examType` (`RE`) precedence over server DB enum defaults (`prod.examType = "FE"`), added `term` to `ExamDataset` & `SavedExamItem`, eliminated hardcoded `"SP26"` literals, and updated `compileMarkdown()` and `generatePrintHtml()`.
 
 ---
 

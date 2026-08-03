@@ -5,6 +5,7 @@
   "description": "Extract exam question banks from fustation.net into clean Markdown, PDF, and JSON files",
   "permissions": [
     "storage",
+    "unlimitedStorage",
     "activeTab",
     "scripting",
     "webRequest"

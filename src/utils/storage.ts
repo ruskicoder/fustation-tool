@@ -14,6 +14,8 @@ export function normalizeSavedDataset(dataset: any): ExamDataset {
       subjectName: 'Subject',
       author: 'XAVALO',
       campus: 'XAVALO',
+      term: 'SP26',
+      termCode: 'SP26',
       examType: 'FE',
       examSessionTime: '09:10',
       examSessionDate: '29/04/2026',
@@ -23,13 +25,20 @@ export function normalizeSavedDataset(dataset: any): ExamDataset {
     };
   }
 
+  const rawId = dataset.id;
+  const safeId = (rawId && rawId !== 'unknown')
+    ? rawId
+    : `exam_${(dataset.subjectCode || 'EXAM').toUpperCase()}_${Date.now()}`;
+
   return {
-    id: dataset.id || 'unknown',
+    id: safeId,
     title: dataset.title || 'Exam Set',
     subjectCode: dataset.subjectCode || 'EXAM',
     subjectName: dataset.subjectName || 'Subject',
     author: dataset.author || 'XAVALO',
     campus: dataset.campus || dataset.author || 'XAVALO',
+    term: dataset.term || dataset.termCode || 'SP26',
+    termCode: dataset.termCode || dataset.term || 'SP26',
     examType: dataset.examType || 'FE',
     examSessionTime: dataset.examSessionTime || '09:10',
     examSessionDate: dataset.examSessionDate || '29/04/2026',
@@ -49,9 +58,11 @@ export function saveExamToStorage(dataset: ExamDataset, callback?: (exams: Saved
   }
 
   const normalized = normalizeSavedDataset(dataset);
+  dataset.id = normalized.id;
 
   getSavedExamsFromStorage((exams) => {
-    const list = exams || {};
+    // Produce a new shallow map copy to ensure React state identity changes
+    const list: SavedExamsMap = { ...(exams || {}) };
     list[normalized.id] = {
       id: normalized.id,
       title: normalized.title,
@@ -59,6 +70,8 @@ export function saveExamToStorage(dataset: ExamDataset, callback?: (exams: Saved
       subjectName: normalized.subjectName,
       author: normalized.author,
       campus: normalized.campus,
+      term: normalized.term,
+      termCode: normalized.termCode,
       examType: normalized.examType,
       examSessionTime: normalized.examSessionTime,
       examSessionDate: normalized.examSessionDate,
@@ -71,6 +84,9 @@ export function saveExamToStorage(dataset: ExamDataset, callback?: (exams: Saved
     };
 
     chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: list }, () => {
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
+        console.error('[fustation-tool] Storage write error:', chrome.runtime.lastError);
+      }
       if (callback) callback(list);
     });
   });

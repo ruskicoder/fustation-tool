@@ -16,6 +16,9 @@ export function downloadBlob(content: string, filename: string, mimeType: string
 
 export function generatePrintHtml(dataset: ExamDataset): string {
   const subjectStr = `${dataset.subjectCode} - ${dataset.subjectName}`;
+  const termStr = dataset.term || dataset.termCode || 'SP26';
+  const typeStr = dataset.examType || 'FE';
+  const termTypeStr = `${termStr} - ${typeStr}`;
   let questionsHtml = '';
 
   (dataset.questions || []).forEach((q, idx) => {
@@ -73,8 +76,8 @@ export function generatePrintHtml(dataset: ExamDataset): string {
 <body>
   <div class="header">
     <h1>${dataset.title}</h1>
-    <div class="meta"><strong>Môn học:</strong> ${subjectStr}</div>
-    <div class="meta"><strong>Tác giả / Nguồn:</strong> ${dataset.author || 'XAVALO'} | <strong>Số câu hỏi:</strong> ${dataset.totalQuestions}</div>
+    <div class="meta"><strong>Môn học:</strong> ${subjectStr} | <strong>Học kỳ & Loại thi:</strong> ${termTypeStr}</div>
+    <div class="meta"><strong>Cơ sở / Nguồn:</strong> ${dataset.campus || dataset.author || 'XAVALO'} | <strong>Số câu hỏi:</strong> ${dataset.totalQuestions}</div>
   </div>
   ${questionsHtml}
 </body>
@@ -83,8 +86,13 @@ export function generatePrintHtml(dataset: ExamDataset): string {
 
 export function exportExam(dataset: ExamDataset, format: ExportFormat = 'MD'): void {
   if (!dataset) return;
-  const sanitizedTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const filename = `${dataset.subjectCode}_${sanitizedTitle}`;
+  const subjCode = (dataset.subjectCode || 'EXAM').toUpperCase();
+  const cleanTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+  let filename = cleanTitle;
+  if (!cleanTitle.toUpperCase().startsWith(subjCode)) {
+    filename = `${subjCode}_${cleanTitle}`;
+  }
 
   if (format === 'JSON') {
     const jsonStr = JSON.stringify(dataset, null, 2);
