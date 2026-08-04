@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ExamDataset, ExportFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS } from '../types';
-import { extractExamFromScripts, crawlExamFromDOM, getExamIdFromUrl } from '../utils/parser';
+import { extractExamFromScripts, getExamIdFromUrl } from '../utils/parser';
 import { exportExam } from '../utils/exporter';
 import {
   saveExamToStorage,
@@ -14,7 +14,12 @@ import {
   getPendingFetchFromStorage,
   setPendingFetchInStorage,
   getThemeFromStorage,
-  setThemeInStorage
+  setThemeInStorage,
+  getViewerOpenFromStorage,
+  setViewerOpenInStorage,
+  getReloadAttemptedFromStorage,
+  setReloadAttemptedInStorage,
+  clearReloadAttemptedFromStorage
 } from '../utils/storage';
 import { usePanelGeometry } from '../hooks/usePanelGeometry';
 import { useToasts } from '../hooks/useToasts';
@@ -23,6 +28,7 @@ import { SavedTab } from './SavedTab';
 import { FormatSwitcher } from './FormatSwitcher';
 import { ResizeHandles } from './ResizeHandles';
 import { ToastHost } from './ToastHost';
+import { ViewerPanel } from './ViewerPanel';
 import { BoltIcon, MinimizeIcon, PaletteIcon } from './Icons';
 
 function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
@@ -44,58 +50,100 @@ export const Overlay: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const { geometry, hydrated, isDragging, isResizing, startDrag, startResize } = usePanelGeometry(isExpanded);
+  // Viewer panel state
+  const [viewerOpen, setViewerOpen] = useState<boolean>(false);
+  const [viewerDataset, setViewerDataset] = useState<ExamDataset | null>(null);
+
+  const { geometry, hydrated, isDragging, isResizing, startDrag, startResize } = usePanelGeometry(isExpanded, 'main');
   const { toasts, push, dismiss } = useToasts();
 
-  const runFetch = async (isManual = false) => {
+  // Stable ref to always-current runFetch — prevents stale closure in useEffect (ISSUE-45)
+  const runFetchRef = useRef<(() => Promise<void>) | null>(null);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Unified 4-phase RSC fetch pipeline (ISSUE-42, 43, 44)
+  //
+  // Phase 1 — Instant parse (0ms):   reads innerHTML immediately
+  // Phase 2 — Polling retry (×10):   retries every 300ms up to 3s to catch
+  //                                   streamed __next_f.push() chunks
+  // Phase 3 — Single guarded reload: fires once per exam URL, then sets
+  //                                   pendingFetch flag for post-reload run
+  // Phase 4 — Surface error:         shown only if all three phases fail
+  //
+  // DOM crawl (crawlExamFromDOM) is NEVER called. It is deprecated.
+  // ─────────────────────────────────────────────────────────────────────────
+  const runFetch = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+
     setStatus('fetching');
     setProgressLabel('');
-    await new Promise((r) => setTimeout(r, 100)); // 100ms visual render buffer
 
     const targetId = getExamIdFromUrl();
-    const fastData = extractExamFromScripts(targetId ?? undefined);
+    const currentUrl = window.location.pathname;
 
-    if (fastData && fastData.questions && fastData.questions.length > 0) {
-      setCurrentDataset(fastData);
+    // ── Phase 1: INSTANT PARSE (0ms delay) ──────────────────────────────
+    // Highest priority. Reads document.documentElement.innerHTML right now.
+    // Works even before React hydration, on cached pages, or fast CDN hits.
+    const instantData = extractExamFromScripts(targetId ?? undefined);
+    if (instantData && instantData.questions && instantData.questions.length > 0) {
+      setCurrentDataset(instantData);
       setStatus('ready');
-      push(`Extracted ${fastData.questions.length} questions`, 'success');
+      push(`Extracted ${instantData.questions.length} questions`, 'success');
+      clearReloadAttemptedFromStorage();
       return;
     }
 
-    // If manual fetch triggered and fastData is missing/empty, reload page to re-hydrate RSC script tags
-    if (isManual) {
-      console.warn('[fustation-tool] Script payload missing on manual fetch. Setting pending fetch & reloading page...');
-      push('Re-hydrating scripts...', 'info');
-      setPendingFetchInStorage(true, () => {
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
-      });
-      return;
-    }
+    // ── Phase 2: POLLING RETRY LOOP (300ms × 10 = up to 3s) ────────────
+    // Next.js RSC __next_f.push() chunks stream in progressively after
+    // document_idle. Re-reading innerHTML on each tick catches late chunks.
+    const POLL_INTERVAL_MS = 300;
+    const POLL_MAX_RETRIES = 10;
 
-    // Fallback for auto-fetch: try DOM crawl
-    try {
-      const crawled = await crawlExamFromDOM((curr, total) => {
-        setProgressLabel(`(${curr}/${total})`);
-      });
+    for (let attempt = 1; attempt <= POLL_MAX_RETRIES; attempt++) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      setProgressLabel(`(${attempt}/${POLL_MAX_RETRIES})`);
 
-      if (crawled && crawled.questions && crawled.questions.length > 0) {
-        setCurrentDataset(crawled);
+      const polledData = extractExamFromScripts(targetId ?? undefined);
+      if (polledData && polledData.questions && polledData.questions.length > 0) {
+        setCurrentDataset(polledData);
         setStatus('ready');
-        push(`Crawled ${crawled.questions.length} questions`, 'success');
-      } else {
-        setStatus('error');
-        push('Failed to parse exam page', 'error');
+        setProgressLabel('');
+        push(`Extracted ${polledData.questions.length} questions`, 'success');
+        clearReloadAttemptedFromStorage();
+        return;
       }
-    } catch (e) {
-      console.error('[fustation-tool] DOM Crawler error:', e);
-      setStatus('error');
-      push('DOM crawler error', 'error');
-    } finally {
-      setProgressLabel('');
     }
-  };
+
+    setProgressLabel('');
+
+    // ── Phase 3: SINGLE GUARDED RELOAD ──────────────────────────────────
+    // URL-keyed flag prevents reload loops. SPA navigation to a new exam
+    // URL auto-invalidates the guard (different pathname = false).
+    getReloadAttemptedFromStorage(currentUrl, (alreadyAttempted) => {
+      if (!alreadyAttempted) {
+        console.warn('[fustation-tool] RSC payload not found after polling. Reloading once for:', currentUrl);
+        push('Re-hydrating page...', 'info');
+        setReloadAttemptedInStorage(currentUrl, () => {
+          setPendingFetchInStorage(true, () => {
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
+          });
+        });
+      } else {
+        // ── Phase 4: SURFACE ERROR ─────────────────────────────────────
+        // Instant parse + polling + reload all failed. Never fall into DOM crawl.
+        console.error('[fustation-tool] All fetch phases failed for:', currentUrl);
+        setStatus('error');
+        push('Could not extract exam data. Try refreshing manually.', 'error');
+      }
+    });
+  }, [push]);
+
+  // Keep runFetchRef always pointing to the current runFetch closure (ISSUE-45)
+  useEffect(() => {
+    runFetchRef.current = runFetch;
+  });
 
   useEffect(() => {
     // Restore persistent panel state & active tab
@@ -118,16 +166,26 @@ export const Overlay: React.FC = () => {
       setSavedExams(exams || {});
     });
 
-    // Check for pending fetch intention post-reload
+    // Restore viewer open state (but don't re-open without a dataset)
+    getViewerOpenFromStorage((wasOpen) => {
+      // Viewer open state is restored only if there's a dataset available;
+      // we silently discard it on cold boot — dataset isn't persisted.
+      if (!wasOpen) return;
+      // Clear stale viewer open flag since dataset is not yet loaded
+      setViewerOpenInStorage(false);
+    });
+
+    // Check for pending fetch intention post-reload.
+    // Use runFetchRef.current() to always call the latest closure (ISSUE-45).
     getPendingFetchFromStorage((pending) => {
       if (pending) {
         setPendingFetchInStorage(false, () => {
           if (typeof window !== 'undefined' && classifyRoute(window.location.pathname) === 'exam') {
-            runFetch();
+            runFetchRef.current?.();
           }
         });
       } else if (typeof window !== 'undefined' && classifyRoute(window.location.pathname) === 'exam') {
-        runFetch();
+        runFetchRef.current?.();
       }
     });
   }, []);
@@ -157,10 +215,17 @@ export const Overlay: React.FC = () => {
               }
               return null; // Clear dataset to default placeholder
             });
+            // Close viewer when navigating away
+            setViewerOpen(false);
+            setViewerDataset(null);
+            setViewerOpenInStorage(false);
           } else if (targetRoute === 'exam') {
             // Entering new exam page: Clear active dataset and auto-fetch for new URL
             setCurrentDataset(null);
-            runFetch();
+            setViewerOpen(false);
+            setViewerDataset(null);
+            // Use ref to ensure we always call the latest runFetch closure (ISSUE-45)
+            runFetchRef.current?.();
           }
         } catch (e) {
           console.error('[fustation-tool] Route listener error:', e);
@@ -189,18 +254,16 @@ export const Overlay: React.FC = () => {
   };
 
   const handleFetch = async () => {
-    setCurrentDataset(null); // Clear active dataset in place
-    await runFetch(true);    // Execute manual fetch flow (script parse -> reload fallback)
+    setCurrentDataset(null); // Clear active dataset
+    await runFetch();        // Unified pipeline handles all cases
   };
 
   const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {
     if (currentDataset && currentDataset.questions && currentDataset.questions.length > 0) {
       return currentDataset;
     }
-
-    setStatus('fetching');
-    await new Promise((r) => setTimeout(r, 100));
-
+    // Instant parse one more time — covers edge cases where runFetch
+    // hasn't fired yet but the RSC payload is already in the DOM.
     const targetId = getExamIdFromUrl();
     const fastData = extractExamFromScripts(targetId ?? undefined);
     if (fastData && fastData.questions && fastData.questions.length > 0) {
@@ -208,7 +271,6 @@ export const Overlay: React.FC = () => {
       setStatus('ready');
       return fastData;
     }
-
     return null;
   };
 
@@ -252,6 +314,40 @@ export const Overlay: React.FC = () => {
     }, 300);
   };
 
+  // ----------------------------------------------------------------
+  // Viewer Panel handlers
+  // ----------------------------------------------------------------
+  const handleViewExam = (dataset: ExamDataset) => {
+    setViewerDataset(dataset);
+    setViewerOpen(true);
+    setViewerOpenInStorage(true);
+    push(`Viewing ${dataset.subjectCode} · ${dataset.questions.length}Q`, 'info');
+  };
+
+  const handleViewerClose = () => {
+    setViewerOpen(false);
+    setViewerOpenInStorage(false);
+  };
+
+  const handleViewCurrentExam = async () => {
+    const data = await ensureDatasetLoaded();
+    if (!data || !data.questions || data.questions.length === 0) {
+      push('No questions to view. Fetch first.', 'warn');
+      return;
+    }
+    handleViewExam(data);
+  };
+
+  const handleViewSavedItem = (examId: string) => {
+    const item = savedExams[examId];
+    if (item && item.dataset) {
+      handleViewExam(item.dataset);
+    }
+  };
+
+  // ----------------------------------------------------------------
+  // Selection handlers
+  // ----------------------------------------------------------------
   const handleToggleSelect = (examId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -425,7 +521,7 @@ export const Overlay: React.FC = () => {
         </button>
       </div>
 
-      {/* Expanded Drag & Resizable Panel */}
+      {/* Main Panel — Expanded Drag & Resizable */}
       {isExpanded && (
         <div
           className="fus-panel"
@@ -486,7 +582,7 @@ export const Overlay: React.FC = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {renderStatusPill()}
-              
+
               {/* Theme Switcher Button */}
               <button
                 type="button"
@@ -518,6 +614,7 @@ export const Overlay: React.FC = () => {
                 onFetch={handleFetch}
                 onSave={handleSave}
                 onDownload={handleDownload}
+                onView={handleViewCurrentExam}
               />
             ) : (
               <SavedTab
@@ -535,10 +632,20 @@ export const Overlay: React.FC = () => {
                 onExportItem={handleExportSavedItem}
                 onExportFolder={handleExportFolder}
                 onDeleteFolder={handleDeleteFolder}
+                onViewItem={handleViewSavedItem}
               />
             )}
           </div>
         </div>
+      )}
+
+      {/* Viewer Panel — independent second floating panel */}
+      {viewerOpen && viewerDataset && (
+        <ViewerPanel
+          dataset={viewerDataset}
+          onClose={handleViewerClose}
+          mainGeo={geometry}
+        />
       )}
     </div>
   );

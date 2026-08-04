@@ -27,6 +27,12 @@ export const PANEL_MIN_H = 240;
 export const PANEL_DEFAULT_W = 600;
 export const PANEL_DEFAULT_H = 330;
 
+/** Exam View Panel (viewer) geometry defaults. */
+export const VIEWER_MIN_W = 420;
+export const VIEWER_MIN_H = 300;
+export const VIEWER_DEFAULT_W = 680;
+export const VIEWER_DEFAULT_H = 520;
+
 export type ToastKind = 'success' | 'error' | 'info' | 'warn';
 
 export interface ToastItem {

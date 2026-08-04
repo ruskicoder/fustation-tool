@@ -7,7 +7,10 @@ const STORAGE_KEYS = {
   ACTIVE_TAB: 'fustation_active_tab',
   PENDING_FETCH: 'fustation_pending_fetch',
   THEME: 'fustation_theme',
-  GEOMETRY: 'fustation_panel_geometry'
+  GEOMETRY: 'fustation_panel_geometry',
+  VIEWER_GEOMETRY: 'fustation_viewer_geometry',
+  VIEWER_OPEN: 'fustation_viewer_open',
+  RELOAD_ATTEMPTED: 'fustation_reload_attempted'
 };
 
 const VALID_THEMES: ThemeName[] = ['glass-dark', 'glass-light', 'neu-light', 'neu-dark'];
@@ -285,3 +288,112 @@ export function setGeometryInStorage(geo: PanelGeometry, callback?: () => void):
   });
 }
 
+/* ----------------------------------------------------------------
+ * Viewer panel geometry
+ * ---------------------------------------------------------------- */
+
+export function getViewerGeometryFromStorage(callback: (geo: PanelGeometry | null) => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback(null);
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.VIEWER_GEOMETRY], (res) => {
+    const raw = res[STORAGE_KEYS.VIEWER_GEOMETRY];
+    if (
+      raw &&
+      typeof raw.x === 'number' &&
+      typeof raw.y === 'number' &&
+      typeof raw.w === 'number' &&
+      typeof raw.h === 'number'
+    ) {
+      callback(raw as PanelGeometry);
+    } else {
+      callback(null);
+    }
+  });
+}
+
+export function setViewerGeometryInStorage(geo: PanelGeometry, callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.set({ [STORAGE_KEYS.VIEWER_GEOMETRY]: geo }, () => {
+    if (callback) callback();
+  });
+}
+
+/* ----------------------------------------------------------------
+ * Viewer open state
+ * ---------------------------------------------------------------- */
+
+export function getViewerOpenFromStorage(callback: (open: boolean) => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback(false);
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.VIEWER_OPEN], (res) => {
+    callback(!!res[STORAGE_KEYS.VIEWER_OPEN]);
+  });
+}
+
+export function setViewerOpenInStorage(open: boolean, callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.set({ [STORAGE_KEYS.VIEWER_OPEN]: open }, () => {
+    if (callback) callback();
+  });
+}
+
+/* ----------------------------------------------------------------
+ * Reload attempt guard — URL-keyed to auto-invalidate on SPA nav
+ * Stores the exam page pathname so navigating to a new exam URL
+ * returns false without any explicit cleanup.
+ * ---------------------------------------------------------------- */
+
+export function getReloadAttemptedFromStorage(
+  currentUrl: string,
+  callback: (attempted: boolean) => void
+): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback(false);
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.RELOAD_ATTEMPTED], (res) => {
+    const storedUrl = res[STORAGE_KEYS.RELOAD_ATTEMPTED];
+    // Only true when the stored URL matches the current exam URL exactly
+    callback(typeof storedUrl === 'string' && storedUrl === currentUrl);
+  });
+}
+
+export function setReloadAttemptedInStorage(
+  currentUrl: string,
+  callback?: () => void
+): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.set({ [STORAGE_KEYS.RELOAD_ATTEMPTED]: currentUrl }, () => {
+    if (callback) callback();
+  });
+}
+
+export function clearReloadAttemptedFromStorage(callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.remove(STORAGE_KEYS.RELOAD_ATTEMPTED, () => {
+    if (callback) callback();
+  });
+}

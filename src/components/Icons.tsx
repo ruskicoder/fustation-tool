@@ -137,3 +137,16 @@ export const PaletteIcon: React.FC<IconProps> = ({ size = 13, className }) => (
     <path d="M12 2a10 10 0 1 0 0 20c.6 0 1-.4 1-1v-1.5a2 2 0 0 1 2-2h1.5a4 4 0 0 0 4-4A9.5 9.5 0 0 0 12 2z" />
   </svg>
 );
+
+export const XIcon: React.FC<IconProps> = ({ size = 13, className }) => (
+  <svg {...base(size)} className={className}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+export const ChevronLeftIcon: React.FC<IconProps> = ({ size = 12, className }) => (
+  <svg {...base(size)} className={className}>
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);

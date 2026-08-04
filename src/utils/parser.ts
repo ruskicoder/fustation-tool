@@ -131,12 +131,18 @@ export function sanitizeOptionText(text: string, optId: string): string {
   return cleaned;
 }
 
+function isEscapedQuote(str: string, i: number): boolean {
+  let backslashes = 0;
+  for (let j = i - 1; j >= 0 && str[j] === '\\'; j--) backslashes++;
+  return backslashes % 2 === 1;
+}
+
 export function tryParsePartialJson(str: string): any {
   let count = 0;
   let inString = false;
   for (let i = 0; i < str.length; i++) {
     const char = str[i];
-    if (char === '"' && str[i - 1] !== '\\') {
+    if (char === '"' && !isEscapedQuote(str, i)) {
       inString = !inString;
     } else if (!inString) {
       if (char === '{') count++;
@@ -379,6 +385,14 @@ function findResetButton(): HTMLButtonElement | null {
   );
 }
 
+/**
+ * @deprecated Not called from the primary fetch pipeline (ISSUE-43 resolution).
+ * Kept for future use as an explicit "Deep Scan" fallback only.
+ * DOM selectors are known to be unreliable against fustation.net's RSC-hydrated UI:
+ * Radix UI renders `<div role="radio">` wrappers, not `<button>` elements, so all
+ * existing option/answer selectors return 0 matches.
+ * Do NOT call this from runFetch or any auto-fetch path.
+ */
 export async function crawlExamFromDOM(
   onProgress?: (current: number, total: number) => void
 ): Promise<ExamDataset | null> {

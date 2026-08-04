@@ -248,9 +248,12 @@
 #fustation-tool-root[data-theme^='neu'] .fus-fab,
 #fustation-tool-root[data-theme^='neu'] .fus-empty-icon,
 #fustation-tool-root[data-theme^='neu'] .fus-btn-placeholder-view,
+#fustation-tool-root[data-theme^='neu'] .fus-btn-view-active,
 #fustation-tool-root[data-theme^='neu'] .fus-btn-primary,
 #fustation-tool-root[data-theme^='neu'] .fus-badge-partial,
-#fustation-tool-root[data-theme^='neu'] .fus-meta-partial {
+#fustation-tool-root[data-theme^='neu'] .fus-meta-partial,
+#fustation-tool-root[data-theme^='neu'] .fus-q-card,
+#fustation-tool-root[data-theme^='neu'] .fus-q-option {
   border: none;
 }
 
@@ -1617,4 +1620,511 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ================================================================
+   19. View button active state
+   ================================================================ */
+
+.fus-btn-view-active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--fus-r-lg);
+  background: var(--fus-accent-soft);
+  color: var(--fus-accent);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  font-family: inherit;
+  font-size: var(--fus-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--fus-dur-fast) var(--fus-ease),
+              box-shadow var(--fus-dur-fast) var(--fus-ease),
+              transform var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-btn-view-active:hover:not(:disabled) {
+  background: rgba(52, 211, 153, 0.22);
+  box-shadow: var(--fus-raise-sm);
+}
+
+.fus-btn-view-active:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.fus-btn-view-active:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Active [View] eye icon button in SavedTab child rows */
+.fus-btn-view {
+  color: var(--fus-accent);
+}
+
+.fus-btn-view:hover:not(:disabled) {
+  background: var(--fus-accent-soft);
+  color: var(--fus-accent);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* ================================================================
+   20. Viewer Panel shell
+   ================================================================ */
+
+.fus-viewer-panel {
+  z-index: 2147483002;
+  container-type: inline-size;
+  container-name: fusviewer;
+}
+
+.fus-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px 8px 12px;
+  border-bottom: 1px solid var(--fus-border-dim);
+  flex-shrink: 0;
+  min-height: 48px;
+  touch-action: none;
+}
+
+.fus-viewer-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 0;
+  user-select: none;
+  color: var(--fus-text-dim);
+}
+
+.fus-viewer-examcode {
+  font-size: var(--fus-fs-xs);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fus-viewer-qcount {
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--fus-text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fus-viewer-search-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fus-viewer-search {
+  padding-left: 23px !important;
+}
+
+.fus-viewer-result-nav {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(4px);
+  transition: opacity var(--fus-dur) var(--fus-ease),
+              transform var(--fus-dur) var(--fus-ease);
+}
+
+.fus-viewer-result-nav.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.fus-viewer-result-count {
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--fus-sky);
+  white-space: nowrap;
+  padding: 0 4px;
+  letter-spacing: 0.02em;
+}
+
+.fus-viewer-body {
+  display: grid;
+  grid-template-columns: 20% 80%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ================================================================
+   21. Scrollspy Rail — "On this page" sticky nav
+   ================================================================ */
+
+.fus-scrollspy {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid var(--fus-border-dim);
+  padding: 8px 3px 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fus-scrollspy::-webkit-scrollbar { width: 3px; }
+.fus-scrollspy::-webkit-scrollbar-track { background: transparent; }
+.fus-scrollspy::-webkit-scrollbar-thumb {
+  background: var(--fus-text-dim);
+  border-radius: 99px;
+}
+
+.fus-spy-link {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 4px 4px 4px 10px;
+  border-radius: var(--fus-r-sm);
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: var(--fus-text-dim);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--fus-dur-fast) var(--fus-ease),
+              background var(--fus-dur-fast) var(--fus-ease);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Vertical accent bar — scales in from center when active */
+.fus-spy-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--fus-accent);
+  transform: scaleY(0);
+  transition: transform var(--fus-dur) var(--fus-ease-spring),
+              opacity var(--fus-dur) var(--fus-ease);
+  opacity: 0;
+}
+
+.fus-spy-link[aria-current='location'],
+.fus-spy-link.active {
+  color: var(--fus-accent);
+  font-weight: 700;
+  background: var(--fus-accent-soft);
+}
+
+.fus-spy-link[aria-current='location']::before,
+.fus-spy-link.active::before {
+  transform: scaleY(1);
+  opacity: 1;
+}
+
+/* Dot indicator for search-matched questions in the rail */
+.fus-spy-link.has-match::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--fus-sky);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   22. Question List & Cards
+   ================================================================ */
+
+.fus-question-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-padding-top: 52px;
+}
+
+.fus-question-list::-webkit-scrollbar { width: 5px; }
+.fus-question-list::-webkit-scrollbar-track { background: transparent; }
+.fus-question-list::-webkit-scrollbar-thumb {
+  background: var(--fus-text-dim);
+  border-radius: 99px;
+}
+
+.fus-question-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fus-q-card {
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border-dim);
+  border-radius: var(--fus-r-lg);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color var(--fus-dur-fast) var(--fus-ease),
+              box-shadow var(--fus-dur-fast) var(--fus-ease);
+  scroll-margin-top: 52px;
+}
+
+.fus-q-card.is-match {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15);
+}
+
+.fus-q-card-header {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.fus-q-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--fus-accent);
+  background: var(--fus-accent-soft);
+  border-radius: var(--fus-r-sm);
+  padding: 2px 6px;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.fus-q-text {
+  font-size: var(--fus-fs-md);
+  color: var(--fus-text);
+  margin: 0;
+  line-height: 1.6;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.fus-q-img-thumb {
+  position: relative;
+  align-self: flex-start;
+  border: 1px solid var(--fus-border);
+  border-radius: var(--fus-r-md);
+  overflow: hidden;
+  cursor: zoom-in;
+  background: var(--fus-layer);
+  padding: 0;
+  display: block;
+  transition: border-color var(--fus-dur-fast) var(--fus-ease),
+              box-shadow var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-q-img-thumb:hover {
+  border-color: var(--fus-accent);
+  box-shadow: var(--fus-raise-sm);
+}
+
+.fus-q-img-thumb img {
+  display: block;
+  max-height: 130px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.fus-q-img-zoom-hint {
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  font-size: 10px;
+  color: var(--fus-text-dim);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.fus-q-options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fus-q-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: var(--fus-r-md);
+  font-size: var(--fus-fs-sm);
+  color: var(--fus-text-mid);
+  border: 1px solid transparent;
+  line-height: 1.5;
+  transition: background var(--fus-dur-fast) var(--fus-ease),
+              border-color var(--fus-dur-fast) var(--fus-ease),
+              color var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-q-option.correct {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: var(--fus-emerald);
+  font-weight: 600;
+}
+
+.fus-q-opt-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: var(--fus-fs-xs);
+  flex-shrink: 0;
+  min-width: 14px;
+  padding-top: 1px;
+}
+
+.fus-q-opt-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.fus-q-check {
+  flex-shrink: 0;
+  color: var(--fus-emerald);
+  margin-left: auto;
+  padding-top: 2px;
+}
+
+mark.fus-highlight {
+  background: rgba(251, 191, 36, 0.28);
+  color: var(--fus-amber);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-style: normal;
+}
+
+/* Neumorphic overrides for question cards */
+#fustation-tool-root[data-theme^='neu'] .fus-q-card {
+  box-shadow: var(--fus-raise-sm);
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-q-card.is-match {
+  box-shadow: var(--fus-raise-sm), 0 0 0 2px var(--fus-accent);
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-q-option.correct {
+  box-shadow: inset var(--fus-press);
+}
+
+/* ================================================================
+   23. Image Lightbox (native <dialog>)
+   ================================================================ */
+
+.fus-lightbox {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-width: min(90vw, 1200px);
+  max-height: 90vh;
+  width: fit-content;
+  height: fit-content;
+  background: var(--fus-surface);
+  backdrop-filter: blur(var(--fus-surface-blur)) saturate(var(--fus-surface-sat));
+  -webkit-backdrop-filter: blur(var(--fus-surface-blur)) saturate(var(--fus-surface-sat));
+  border: var(--fus-edge);
+  border-radius: var(--fus-r-xl);
+  box-shadow: var(--fus-raise), var(--fus-inset);
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  animation: fus-panel-in var(--fus-dur-slow) var(--fus-ease) both;
+}
+
+.fus-lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.fus-lightbox-img {
+  display: block;
+  max-width: min(88vw, 1180px);
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: var(--fus-r-lg);
+}
+
+.fus-lightbox-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--fus-r-md);
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border);
+  color: var(--fus-text-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--fus-dur-fast) var(--fus-ease),
+              color var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-lightbox-close:hover {
+  background: var(--fus-layer-hover);
+  color: var(--fus-text);
+}
+
+/* ================================================================
+   24. Viewer responsive container queries
+   ================================================================ */
+
+/* Viewer narrower than 480px — hide scrollspy */
+@container fusviewer (max-width: 480px) {
+  .fus-viewer-body {
+    grid-template-columns: 0 100%;
+  }
+  .fus-scrollspy {
+    display: none;
+  }
+}
+
+/* Viewer narrower than 400px — hide brand metadata */
+@container fusviewer (max-width: 400px) {
+  .fus-viewer-examcode { display: none; }
+  .fus-viewer-qcount { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fus-lightbox {
+    animation: none;
+  }
 }

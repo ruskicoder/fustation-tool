@@ -18,6 +18,7 @@ interface SavedTabProps {
   onExportItem: (examId: string) => void;
   onExportFolder: (folderExamIds: string[]) => void;
   onDeleteFolder: (folderExamIds: string[]) => void;
+  onViewItem: (examId: string) => void;
 }
 
 const IndeterminateCheckbox: React.FC<{
@@ -61,7 +62,8 @@ export const SavedTab: React.FC<SavedTabProps> = ({
   onDeleteItem,
   onExportItem,
   onExportFolder,
-  onDeleteFolder
+  onDeleteFolder,
+  onViewItem
 }) => {
   // Folder expanded state: default is empty Set (all collapsed)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -264,12 +266,12 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                           </div>
 
                           <div className="fus-row-actions">
-                            {/* Placeholder View Button (Disabled) */}
+                            {/* View Item Button */}
                             <button
                               type="button"
-                              className="fus-ctrl-btn fus-btn-view-placeholder"
-                              disabled
-                              title="View questions (placeholder)"
+                              className="fus-ctrl-btn fus-btn-view"
+                              title="View exam questions"
+                              onClick={() => onViewItem(item.id)}
                             >
                               <EyeIcon size={12} />
                             </button>

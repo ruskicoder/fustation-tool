@@ -9,6 +9,7 @@ interface ExtractTabProps {
   onFetch: () => void;
   onSave: () => void;
   onDownload: () => void;
+  onView: () => void;
 }
 
 export const ExtractTab: React.FC<ExtractTabProps> = ({
@@ -16,7 +17,8 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
   status,
   onFetch,
   onSave,
-  onDownload
+  onDownload,
+  onView
 }) => {
   const data: ExamDataset = dataset || {
     id: 'unknown',
@@ -42,6 +44,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
   const termExamType = `${termStr} - ${typeStr}`;
   const sessionStr = `${data.examSessionTime || 'N/A'} | ${data.examSessionDate || '29/04/2026'}`;
   const isLoading = status === 'fetching' || status === 'processing';
+  const hasQuestions = !!(dataset && dataset.questions && dataset.questions.length > 0);
 
   return (
     <div className="fus-body-grid">
@@ -54,7 +57,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
             {/* Row 1: 30% / 40% / 30% grid */}
             <div className="fus-meta-row-1">
               <span className="fus-badge fus-badge-subject" title="Subject Code">{data.subjectCode}</span>
-              <span className="fus-badge fus-badge-type" title="Term & Exam Type">{termExamType}</span>
+              <span className="fus-badge fus-badge-type" title="Term &amp; Exam Type">{termExamType}</span>
               <span className="fus-badge fus-badge-campus" title="Campus">{data.campus || data.author || 'XAVALO'}</span>
             </div>
 
@@ -86,12 +89,13 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
       {/* Right Panel Actions */}
       <div className="fus-right-panel">
         <div className="fus-action-stack">
-          {/* Top of stack: View Questions Placeholder Button */}
+          {/* View Questions — active when questions are loaded */}
           <button
             type="button"
-            className="fus-btn-placeholder-view"
-            disabled
-            title="ExamSet Viewing feature coming soon"
+            className={hasQuestions ? 'fus-btn-view-active' : 'fus-btn-placeholder-view'}
+            disabled={!hasQuestions}
+            title={hasQuestions ? 'View exam questions' : 'Fetch or load an exam first'}
+            onClick={onView}
           >
             <EyeIcon size={13} />
             View Questions
