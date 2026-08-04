@@ -4,9 +4,10 @@ import { ExportFormat } from '../types';
 interface FormatSwitcherProps {
   currentFormat: ExportFormat;
   onChange: (format: ExportFormat) => void;
+  className?: string;
 }
 
-export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({ currentFormat, onChange }) => {
+export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({ currentFormat, onChange, className }) => {
   const formats: ExportFormat[] = ['MD', 'PDF', 'JSON'];
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, fmt: ExportFormat) => {
@@ -31,7 +32,7 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({ currentFormat, o
   };
 
   return (
-    <div className="fus-segmented-control" role="radiogroup" aria-label="Export Format Switcher">
+    <div className={`fus-segmented-control ${className || ''}`} role="radiogroup" aria-label="Export Format Switcher">
       {formats.map((fmt) => {
         const isActive = fmt === currentFormat;
         return (

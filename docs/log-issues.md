@@ -39,6 +39,10 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-30**: Session Time Metadata Extraction & Dynamic Fallback to N/A -> Fixed in `src/utils/parser.ts`, `src/utils/compiler.ts`, `src/utils/storage.ts`, and `src/components/ExtractTab.tsx`.
 - [x] **ISSUE-31**: Extension Reload Proofing & State Resilience on Cold/Fetch Reloads -> Fixed in `src/utils/storage.ts` and `src/components/Overlay.tsx`.
 - [x] **ISSUE-32**: Persistent Panel State & Auto-Open Persistence (`isExpanded`, `activeTab`) -> Fixed in `src/utils/storage.ts` and `src/components/Overlay.tsx`.
+- [x] **ISSUE-33**: SavedTab Outline View & Subject Folder Hierarchy -> Fixed in `src/components/SavedTab.tsx` and `src/styles/overlay.css`.
+- [x] **ISSUE-34**: Enhanced Folder & Record Row Badge Layouts -> Fixed in `src/components/SavedTab.tsx` and `src/styles/overlay.css`.
+- [x] **ISSUE-35**: Global Unified Header Format Selector Relocation -> Fixed in `src/components/Overlay.tsx`, `src/components/FormatSwitcher.tsx`, `src/components/ExtractTab.tsx`, and `src/styles/overlay.css`.
+- [x] **ISSUE-36**: ExtractTab Panel Restructuring & SavedTab Sticky Toolbar Overhaul -> Fixed in `src/components/ExtractTab.tsx`, `src/components/SavedTab.tsx`, `src/components/Overlay.tsx`, and `src/styles/overlay.css`.
 
 ---
 
@@ -66,13 +70,13 @@ This document maintains open, deferred, and roadmap issues identified during tes
 ### [ISSUE-16] In-Extension Saved ExamSet Viewing / Preview Mode
 - **Status**: 🔴 **DEFERRED FOR FUTURE IMPLEMENTATION**
 - **Symptom**: Saved examsets in `SavedTab.tsx` cannot be inspected or viewed directly within the extension overlay.
-- **Current State**: Added `[ View Questions ]` placeholder button on `ExtractTab.tsx`.
+- **Current State**: Added `[ View Questions ]` placeholder button on `ExtractTab.tsx` and `SavedTab.tsx`.
 - **Planned Remediation**: Full preview sub-view or expandable accordion viewer inside `SavedTab`.
 
 ### [ISSUE-24] SavedTab Missing Partial Fetch Badge Indicator
-- **Status**: 🟡 **UI ENHANCEMENT**
+- **Status**: 🟢 **RESOLVED & RENDERED**
 - **Symptom**: Saved items in `SavedTab.tsx` display question count (e.g. `45Q`), but do not indicate whether the dataset was saved as a partial fetch (`isPartial`), obscuring fetch quality.
-- **Remediation**: Render a small warning indicator badge `[Partial]` in `SavedTab.tsx` rows when `item.isPartial` is true.
+- **Remediation**: Rendered `[Partial]` badge in `SavedTab.tsx` child rows when `item.isPartial` is true.
 
 ---
 
@@ -84,7 +88,12 @@ This document maintains open, deferred, and roadmap issues identified during tes
 | **ISSUE-11** | Storage | Storage cache normalization for legacy cached datasets | 🟢 Resolved | [src/utils/storage.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/storage.ts) |
 | **ISSUE-12** | Catalog | Catalog route `initialProducts` batch extraction | 🔵 Roadmap | [src/utils/parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts) |
 | **ISSUE-16** | Feature | In-Extension Saved ExamSet Viewing / Preview Mode | 🔴 Deferred | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
-| **ISSUE-24** | Saved UI | Missing partial fetch badge indicator in SavedTab rows | 🟡 UI Enhancement | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
+| **ISSUE-24** | Saved UI | Missing partial fetch badge indicator in SavedTab rows | 🟢 Resolved | [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx) |
+
+---
+
+*Log updated in accordance with Stage 5 completion protocol.*
+
 
 ---
 

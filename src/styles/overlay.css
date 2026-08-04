@@ -557,7 +557,36 @@
   box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25) !important;
 }
 
-/* Saved Tab Layout & Sticky Header */
+/* Compact Header Switcher Variant (ISSUE-35) */
+.fus-header-switcher {
+  width: 100% !important;
+  height: 28px !important;
+  padding: 1.5px !important;
+  gap: 1.5px !important;
+  border-radius: 6px !important;
+}
+
+.fus-header-switcher .fus-radio-item {
+  padding: 3px 6px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  border-radius: 4px !important;
+}
+
+/* Checkbox Style */
+.fus-checkbox {
+  width: 14px;
+  height: 14px;
+  border-radius: 3.5px;
+  border: 1px solid var(--fus-border-dim);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  accent-color: var(--fus-emerald);
+  flex-shrink: 0;
+  margin: 0;
+}
+
+/* Saved Tab Layout & Sticky Header (ISSUE-36B) */
 .fus-saved-wrapper {
   display: flex;
   flex-direction: column;
@@ -575,38 +604,168 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--fus-border-dim);
-  padding: 8px 12px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
+  flex-shrink: 0;
+  height: 38px;
+}
+
+.fus-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 
+.fus-selection-count {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--fus-text-mid);
+  white-space: nowrap;
+}
+
+.fus-search-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.fus-saved-search {
+  width: 100%;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--fus-border-dim);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fus-text);
+  font-size: 11px;
+  font-family: 'Inter', system-ui, sans-serif;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.fus-saved-search:focus {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fus-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.fus-batch-actions.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Scrollable Tree View List (ISSUE-33, ISSUE-34) */
 .fus-saved-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
-.fus-saved-row {
+.fus-folder-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Folder Parent Row */
+.fus-folder-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--fus-border-dim);
   transition: background 0.15s ease;
+}
+
+.fus-folder-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.fus-row-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.fus-folder-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--fus-text);
+  font-family: inherit;
+}
+
+.fus-disclosure {
+  font-size: 9px;
+  color: var(--fus-text-dim);
+  width: 12px;
+  text-align: center;
+}
+
+.fus-folder-count {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text-dim);
+}
+
+.fus-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.fus-saved-row:hover {
-  background: rgba(255, 255, 255, 0.06);
+/* Child Exam Rows (Indented Hierarchy) */
+.fus-folder-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 20px;
+  margin-top: 1px;
+}
+
+.fus-child-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.15s ease;
+}
+
+.fus-child-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fus-child-row.selected {
+  background: rgba(52, 211, 153, 0.06);
+  border-color: rgba(52, 211, 153, 0.2);
 }
 
 .fus-saved-code {
@@ -618,3 +777,21 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.fus-badge-partial {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-rose);
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.fus-btn-view-placeholder {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+}
+

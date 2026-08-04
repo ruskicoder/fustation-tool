@@ -16,6 +16,7 @@ import {
 } from '../utils/storage';
 import { ExtractTab } from './ExtractTab';
 import { SavedTab } from './SavedTab';
+import { FormatSwitcher } from './FormatSwitcher';
 
 function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
   if (/\/marketplace\/exam\//.test(pathname)) return 'exam';
@@ -213,6 +214,101 @@ export const Overlay: React.FC = () => {
     }, 300);
   };
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const handleToggleSelect = (examId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(examId)) {
+        next.delete(examId);
+      } else {
+        next.add(examId);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleFolder = (subjectCode: string, folderExamIds: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const isAllInFolderSelected = folderExamIds.every((id) => next.has(id));
+      if (isAllInFolderSelected) {
+        folderExamIds.forEach((id) => next.delete(id));
+      } else {
+        folderExamIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = (allFilteredIds: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const isAllSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => next.has(id));
+      if (isAllSelected) {
+        allFilteredIds.forEach((id) => next.delete(id));
+      } else {
+        allFilteredIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.size === 0) return;
+    const idsToDelete = Array.from(selectedIds);
+    let remainingMap = { ...savedExams };
+
+    idsToDelete.forEach((id) => {
+      deleteExamFromStorage(id, (updatedMap) => {
+        remainingMap = updatedMap || {};
+      });
+    });
+
+    setSavedExams(remainingMap);
+    setSelectedIds(new Set());
+  };
+
+  const handleBatchDownload = () => {
+    if (selectedIds.size === 0) return;
+    const idsToExport = Array.from(selectedIds);
+    idsToExport.forEach((id, index) => {
+      const item = savedExams[id];
+      if (item && item.dataset) {
+        setTimeout(() => {
+          exportExam(item.dataset, activeFormat);
+        }, index * 200);
+      }
+    });
+  };
+
+  const handleDeleteFolder = (folderExamIds: string[]) => {
+    let remainingMap = { ...savedExams };
+    folderExamIds.forEach((id) => {
+      deleteExamFromStorage(id, (updatedMap) => {
+        remainingMap = updatedMap || {};
+      });
+    });
+    setSavedExams(remainingMap);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      folderExamIds.forEach((id) => next.delete(id));
+      return next;
+    });
+  };
+
+  const handleExportFolder = (folderExamIds: string[]) => {
+    folderExamIds.forEach((id, index) => {
+      const item = savedExams[id];
+      if (item && item.dataset) {
+        setTimeout(() => {
+          exportExam(item.dataset, activeFormat);
+        }, index * 200);
+      }
+    });
+  };
+
   const handleExportSavedItem = (examId: string) => {
     const item = savedExams[examId];
     if (item && item.dataset) {
@@ -223,12 +319,18 @@ export const Overlay: React.FC = () => {
   const handleDeleteItem = (examId: string) => {
     deleteExamFromStorage(examId, (updatedList: SavedExamsMap) => {
       setSavedExams({ ...(updatedList || {}) });
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(examId);
+        return next;
+      });
     });
   };
 
   const handleClearAll = () => {
     clearAllExamsFromStorage(() => {
       setSavedExams({});
+      setSelectedIds(new Set());
     });
   };
 
@@ -324,6 +426,10 @@ export const Overlay: React.FC = () => {
               </button>
             </div>
 
+            <div style={{ flexShrink: 0, width: '130px' }}>
+              <FormatSwitcher currentFormat={activeFormat} onChange={handleFormatChange} className="fus-header-switcher" />
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {renderStatusPill()}
               <button
@@ -342,8 +448,6 @@ export const Overlay: React.FC = () => {
             {activeTab === 'extract' ? (
               <ExtractTab
                 dataset={currentDataset}
-                activeFormat={activeFormat}
-                onFormatChange={handleFormatChange}
                 onFetch={handleFetch}
                 onSave={handleSave}
                 onDownload={handleDownload}
@@ -351,11 +455,18 @@ export const Overlay: React.FC = () => {
             ) : (
               <SavedTab
                 savedExams={savedExams}
-                activeFormat={activeFormat}
-                onFormatChange={handleFormatChange}
-                onClearAll={handleClearAll}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onToggleFolder={handleToggleFolder}
+                onSelectAll={handleSelectAll}
+                onBatchDelete={handleBatchDelete}
+                onBatchDownload={handleBatchDownload}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 onDeleteItem={handleDeleteItem}
                 onExportItem={handleExportSavedItem}
+                onExportFolder={handleExportFolder}
+                onDeleteFolder={handleDeleteFolder}
               />
             )}
           </div>
@@ -364,3 +475,4 @@ export const Overlay: React.FC = () => {
     </>
   );
 };
+

@@ -1,11 +1,8 @@
 import React from 'react';
-import { ExamDataset, ExportFormat } from '../types';
-import { FormatSwitcher } from './FormatSwitcher';
+import { ExamDataset } from '../types';
 
 interface ExtractTabProps {
   dataset: ExamDataset | null;
-  activeFormat: ExportFormat;
-  onFormatChange: (fmt: ExportFormat) => void;
   onFetch: () => void;
   onSave: () => void;
   onDownload: () => void;
@@ -13,8 +10,6 @@ interface ExtractTabProps {
 
 export const ExtractTab: React.FC<ExtractTabProps> = ({
   dataset,
-  activeFormat,
-  onFormatChange,
   onFetch,
   onSave,
   onDownload
@@ -72,23 +67,6 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
             Fetched with fails: {data.successFetchCount || (data.questions ? data.questions.length : 0)} ✓ | {data.failedFetchCount || 0} ✗
           </p>
         )}
-
-        {/* Hairline Divider */}
-        <div className="fus-left-divider" />
-
-        {/* Row 5: View Questions Placeholder Button */}
-        <button
-          type="button"
-          className="fus-btn-placeholder-view"
-          disabled
-          title="ExamSet Viewing feature coming soon"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-          View Questions
-        </button>
       </div>
 
       {/* Divider */}
@@ -96,12 +74,21 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
 
       {/* Right Panel Actions */}
       <div className="fus-right-panel">
-        <div className="fus-switcher-wrapper">
-          <span className="fus-switcher-label">Export format</span>
-          <FormatSwitcher currentFormat={activeFormat} onChange={onFormatChange} />
-        </div>
-
         <div className="fus-action-stack">
+          {/* Top of stack: View Questions Placeholder Button */}
+          <button
+            type="button"
+            className="fus-btn-placeholder-view"
+            disabled
+            title="ExamSet Viewing feature coming soon"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            View Questions
+          </button>
+
           <div className="fus-action-row">
             <button type="button" className="fus-btn-sec" onClick={onFetch}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
