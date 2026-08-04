@@ -44,6 +44,7 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({ currentFormat, o
             aria-checked={isActive}
             tabIndex={isActive ? 0 : -1}
             data-value={fmt}
+            title={`Export as ${fmt}`}
             onClick={() => onChange(fmt)}
             onKeyDown={(e) => handleKeyDown(e, fmt)}
           >

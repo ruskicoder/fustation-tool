@@ -1,197 +1,675 @@
-/* fustation-tool Glassmorphism Overlay & Accessibility Styling */
+/* ================================================================
+   fustation-tool — overlay surface
+   Themes: glass-dark (default) / glass-light / neu-light / neu-dark
+   Layout is intentionally unchanged; only surface, density,
+   responsiveness and motion are enhanced.
+   ================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
+/* ----------------------------------------------------------------
+   1. Root tokens — shared across every theme
+   ---------------------------------------------------------------- */
+
 #fustation-tool-root {
+  /* Type scale */
+  --fus-fs-2xs: 9px;
+  --fus-fs-xs: 10px;
+  --fus-fs-sm: 11px;
+  --fus-fs-md: 12px;
+  --fus-fs-lg: 13px;
+
+  /* Radii */
+  --fus-r-sm: 5px;
+  --fus-r-md: 7px;
+  --fus-r-lg: 10px;
+  --fus-r-xl: 16px;
+
+  /* Motion */
+  --fus-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --fus-ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --fus-dur-fast: 0.14s;
+  --fus-dur: 0.2s;
+  --fus-dur-slow: 0.3s;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--fus-text);
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+#fustation-tool-root *,
+#fustation-tool-root *::before,
+#fustation-tool-root *::after {
+  box-sizing: border-box;
+}
+
+/* ----------------------------------------------------------------
+   2. Theme: Glassmorphism — Dark (default)
+   Semi-transparent panel, strong backdrop blur, 1px translucent
+   white edge, layered soft shadows, gradient backdrop bleed.
+   ---------------------------------------------------------------- */
+
+#fustation-tool-root[data-theme='glass-dark'] {
   --fus-emerald: #34d399;
   --fus-sky: #38bdf8;
   --fus-violet: #a78bfa;
   --fus-amber: #fbbf24;
-  --fus-rose: #f43f5e;
-  --fus-border: rgba(255, 255, 255, 0.10);
-  --fus-border-dim: rgba(255, 255, 255, 0.07);
-  --fus-text: #f1f5f9;
-  --fus-text-mid: rgba(255, 255, 255, 0.65);
-  --fus-text-dim: rgba(255, 255, 255, 0.35);
-  
-  font-family: 'Inter', system-ui, sans-serif;
+  --fus-orange: #fb923c;
+  --fus-rose: #fb7185;
+
+  --fus-surface: rgba(14, 18, 32, 0.6);
+  --fus-surface-blur: 18px;
+  --fus-surface-sat: 150%;
+  --fus-scrim: linear-gradient(140deg, rgba(16, 185, 129, 0.17), rgba(14, 165, 233, 0.13) 46%, rgba(139, 92, 246, 0.16));
+  --fus-edge: 1px solid rgba(255, 255, 255, 0.25);
+  --fus-edge-color: rgba(255, 255, 255, 0.25);
+
+  --fus-raise: 0 18px 48px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --fus-raise-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --fus-inset: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --fus-press: inset 0 1px 3px rgba(0, 0, 0, 0.45);
+
+  --fus-layer: rgba(255, 255, 255, 0.07);
+  --fus-layer-hover: rgba(255, 255, 255, 0.13);
+  --fus-border: rgba(255, 255, 255, 0.14);
+  --fus-border-dim: rgba(255, 255, 255, 0.09);
+
+  --fus-text: #f4f7fb;
+  --fus-text-mid: rgba(244, 247, 251, 0.72);
+  --fus-text-dim: rgba(244, 247, 251, 0.46);
+
+  --fus-accent: #34d399;
+  --fus-accent-soft: rgba(52, 211, 153, 0.16);
+  --fus-brand-a: #059669;
+  --fus-brand-b: #0369a1;
+  --fus-focus: #38bdf8;
+  --fus-shimmer: rgba(255, 255, 255, 0.09);
+  --fus-shimmer-hi: rgba(255, 255, 255, 0.19);
+  color-scheme: dark;
+}
+
+/* ----------------------------------------------------------------
+   3. Theme: Glassmorphism — Light
+   ---------------------------------------------------------------- */
+
+#fustation-tool-root[data-theme='glass-light'] {
+  --fus-emerald: #047857;
+  --fus-sky: #0369a1;
+  --fus-violet: #6d28d9;
+  --fus-amber: #b45309;
+  --fus-orange: #c2410c;
+  --fus-rose: #be123c;
+
+  --fus-surface: rgba(255, 255, 255, 0.58);
+  --fus-surface-blur: 20px;
+  --fus-surface-sat: 170%;
+  --fus-scrim: linear-gradient(140deg, rgba(16, 185, 129, 0.2), rgba(14, 165, 233, 0.16) 48%, rgba(139, 92, 246, 0.18));
+  --fus-edge: 1px solid rgba(255, 255, 255, 0.7);
+  --fus-edge-color: rgba(255, 255, 255, 0.7);
+
+  --fus-raise: 0 18px 44px rgba(15, 32, 62, 0.2), 0 2px 8px rgba(15, 32, 62, 0.1);
+  --fus-raise-sm: 0 3px 12px rgba(15, 32, 62, 0.14);
+  --fus-inset: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --fus-press: inset 0 1px 3px rgba(15, 32, 62, 0.16);
+
+  --fus-layer: rgba(255, 255, 255, 0.55);
+  --fus-layer-hover: rgba(255, 255, 255, 0.85);
+  --fus-border: rgba(15, 32, 62, 0.14);
+  --fus-border-dim: rgba(15, 32, 62, 0.09);
+
+  --fus-text: #0d1a2b;
+  --fus-text-mid: rgba(13, 26, 43, 0.74);
+  --fus-text-dim: rgba(13, 26, 43, 0.52);
+
+  --fus-accent: #047857;
+  --fus-accent-soft: rgba(4, 120, 87, 0.14);
+  --fus-brand-a: #047857;
+  --fus-brand-b: #0369a1;
+  --fus-focus: #0369a1;
+  --fus-shimmer: rgba(15, 32, 62, 0.08);
+  --fus-shimmer-hi: rgba(15, 32, 62, 0.16);
+  color-scheme: light;
+}
+
+/* ----------------------------------------------------------------
+   4. Theme: Neumorphism (Soft UI) — Light
+   Controls share the background's exact matte color. Raised = dual
+   soft shadows (light top-left / dark bottom-right). Pressed =
+   inset. No borders anywhere. No textures or gloss.
+   ---------------------------------------------------------------- */
+
+#fustation-tool-root[data-theme='neu-light'] {
+  --fus-neu-base: #e4e9f2;
+  --fus-neu-hi: rgba(255, 255, 255, 0.9);
+  --fus-neu-lo: rgba(163, 177, 198, 0.62);
+
+  --fus-emerald: #0f766e;
+  --fus-sky: #0e7490;
+  --fus-violet: #6d28d9;
+  --fus-amber: #b45309;
+  --fus-orange: #c2410c;
+  --fus-rose: #be123c;
+
+  --fus-surface: var(--fus-neu-base);
+  --fus-surface-blur: 0px;
+  --fus-surface-sat: 100%;
+  --fus-scrim: none;
+  --fus-edge: none;
+  --fus-edge-color: transparent;
+
+  --fus-raise: -8px -8px 18px var(--fus-neu-hi), 8px 8px 20px var(--fus-neu-lo);
+  --fus-raise-sm: -3px -3px 7px var(--fus-neu-hi), 3px 3px 8px var(--fus-neu-lo);
+  --fus-raise-md: -5px -5px 11px var(--fus-neu-hi), 5px 5px 12px var(--fus-neu-lo);
+  --fus-press: inset -3px -3px 7px var(--fus-neu-hi), inset 3px 3px 8px var(--fus-neu-lo);
+  --fus-inset: none;
+
+  /* Layers stay the SAME matte color — depth comes only from shadow */
+  --fus-layer: var(--fus-neu-base);
+  --fus-layer-hover: var(--fus-neu-base);
+  --fus-border: transparent;
+  --fus-border-dim: transparent;
+
+  --fus-text: #2b3445;
+  --fus-text-mid: rgba(43, 52, 69, 0.76);
+  --fus-text-dim: rgba(43, 52, 69, 0.54);
+
+  --fus-accent: #0f766e;
+  --fus-accent-soft: rgba(15, 118, 110, 0.12);
+  --fus-brand-a: #0f766e;
+  --fus-brand-b: #0f766e;
+  --fus-focus: #0e7490;
+  --fus-shimmer: rgba(163, 177, 198, 0.32);
+  --fus-shimmer-hi: rgba(255, 255, 255, 0.78);
+  color-scheme: light;
+}
+
+/* ----------------------------------------------------------------
+   5. Theme: Neumorphism (Soft UI) — Dark
+   ---------------------------------------------------------------- */
+
+#fustation-tool-root[data-theme='neu-dark'] {
+  --fus-neu-base: #262b36;
+  --fus-neu-hi: rgba(66, 75, 92, 0.85);
+  --fus-neu-lo: rgba(9, 11, 16, 0.72);
+
+  --fus-emerald: #2dd4bf;
+  --fus-sky: #38bdf8;
+  --fus-violet: #a78bfa;
+  --fus-amber: #fbbf24;
+  --fus-orange: #fb923c;
+  --fus-rose: #fb7185;
+
+  --fus-surface: var(--fus-neu-base);
+  --fus-surface-blur: 0px;
+  --fus-surface-sat: 100%;
+  --fus-scrim: none;
+  --fus-edge: none;
+  --fus-edge-color: transparent;
+
+  --fus-raise: -8px -8px 18px var(--fus-neu-hi), 8px 8px 20px var(--fus-neu-lo);
+  --fus-raise-sm: -3px -3px 7px var(--fus-neu-hi), 3px 3px 8px var(--fus-neu-lo);
+  --fus-raise-md: -5px -5px 11px var(--fus-neu-hi), 5px 5px 12px var(--fus-neu-lo);
+  --fus-press: inset -3px -3px 7px var(--fus-neu-hi), inset 3px 3px 8px var(--fus-neu-lo);
+  --fus-inset: none;
+
+  --fus-layer: var(--fus-neu-base);
+  --fus-layer-hover: var(--fus-neu-base);
+  --fus-border: transparent;
+  --fus-border-dim: transparent;
+
+  --fus-text: #e7ecf5;
+  --fus-text-mid: rgba(231, 236, 245, 0.74);
+  --fus-text-dim: rgba(231, 236, 245, 0.5);
+
+  --fus-accent: #2dd4bf;
+  --fus-accent-soft: rgba(45, 212, 191, 0.14);
+  --fus-brand-a: #0d9488;
+  --fus-brand-b: #0d9488;
+  --fus-focus: #38bdf8;
+  --fus-shimmer: rgba(9, 11, 16, 0.4);
+  --fus-shimmer-hi: rgba(66, 75, 92, 0.7);
+  color-scheme: dark;
+}
+
+/* ---- Neumorphic overrides: borderless, shadow-driven depth ---- */
+
+#fustation-tool-root[data-theme^='neu'] .fus-panel,
+#fustation-tool-root[data-theme^='neu'] .fus-folder-row,
+#fustation-tool-root[data-theme^='neu'] .fus-child-row,
+#fustation-tool-root[data-theme^='neu'] .fus-btn-sec,
+#fustation-tool-root[data-theme^='neu'] .fus-ctrl-btn,
+#fustation-tool-root[data-theme^='neu'] .fus-badge,
+#fustation-tool-root[data-theme^='neu'] .fus-status-pill,
+#fustation-tool-root[data-theme^='neu'] .fus-toast,
+#fustation-tool-root[data-theme^='neu'] .fus-saved-search,
+#fustation-tool-root[data-theme^='neu'] .fus-segmented-control,
+#fustation-tool-root[data-theme^='neu'] .fus-logo,
+#fustation-tool-root[data-theme^='neu'] .fus-fab,
+#fustation-tool-root[data-theme^='neu'] .fus-empty-icon,
+#fustation-tool-root[data-theme^='neu'] .fus-btn-placeholder-view,
+#fustation-tool-root[data-theme^='neu'] .fus-btn-primary,
+#fustation-tool-root[data-theme^='neu'] .fus-badge-partial,
+#fustation-tool-root[data-theme^='neu'] .fus-meta-partial {
+  border: none;
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-btn-sec,
+#fustation-tool-root[data-theme^='neu'] .fus-ctrl-btn,
+#fustation-tool-root[data-theme^='neu'] .fus-folder-row,
+#fustation-tool-root[data-theme^='neu'] .fus-status-pill {
+  box-shadow: var(--fus-raise-sm);
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-btn-sec:hover:not(:disabled):not(:active),
+#fustation-tool-root[data-theme^='neu'] .fus-ctrl-btn:hover:not(:disabled):not(:active) {
+  box-shadow: var(--fus-raise-md);
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-btn-sec:active:not(:disabled),
+#fustation-tool-root[data-theme^='neu'] .fus-ctrl-btn:active:not(:disabled),
+#fustation-tool-root[data-theme^='neu'] .fus-tab-btn.active,
+#fustation-tool-root[data-theme^='neu'] .fus-radio-item.active,
+#fustation-tool-root[data-theme^='neu'] .fus-saved-search,
+#fustation-tool-root[data-theme^='neu'] .fus-segmented-control,
+#fustation-tool-root[data-theme^='neu'] .fus-tabs,
+#fustation-tool-root[data-theme^='neu'] .fus-child-row.selected,
+#fustation-tool-root[data-theme^='neu'] .fus-empty-icon,
+#fustation-tool-root[data-theme^='neu'] .fus-btn-placeholder-view {
+  box-shadow: var(--fus-press);
+}
+
+/* Soft UI reserves the single saturated accent for the primary action */
+#fustation-tool-root[data-theme^='neu'] .fus-btn-primary,
+#fustation-tool-root[data-theme^='neu'] .fus-logo,
+#fustation-tool-root[data-theme^='neu'] .fus-fab {
+  background: var(--fus-accent);
+  color: #fff;
+  box-shadow: var(--fus-raise-sm);
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-btn-primary:active:not(:disabled) {
+  box-shadow: var(--fus-press);
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-title {
+  background: none;
+  -webkit-text-fill-color: currentColor;
   color: var(--fus-text);
-  box-sizing: border-box;
 }
 
-#fustation-tool-root *, #fustation-tool-root *::before, #fustation-tool-root *::after {
-  box-sizing: border-box;
+#fustation-tool-root[data-theme^='neu'] .fus-accent-hairline {
+  opacity: 0;
 }
 
-/* FAB Styling */
+/* Tinted chips flatten to the matte base; text color carries the meaning */
+#fustation-tool-root[data-theme^='neu'] .fus-badge,
+#fustation-tool-root[data-theme^='neu'] .fus-badge-partial,
+#fustation-tool-root[data-theme^='neu'] .fus-meta-partial {
+  background: transparent;
+  box-shadow: var(--fus-press);
+}
+
+/* ----------------------------------------------------------------
+   6. FAB
+   ---------------------------------------------------------------- */
+
 .fus-fab-container {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 99999;
+  z-index: 2147483000;
 }
 
 .fus-fab {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #047857, #075985);
-  border: 1.5px solid rgba(52, 211, 153, 0.4);
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, var(--fus-brand-a), var(--fus-brand-b));
+  border: 1px solid var(--fus-edge-color);
+  box-shadow: var(--fus-raise-sm);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--fus-dur) var(--fus-ease-spring), box-shadow var(--fus-dur) var(--fus-ease);
 }
 
 .fus-fab:hover {
-  transform: scale(1.08);
-  background: linear-gradient(135deg, #059669, #0284c7);
-  box-shadow: 0 8px 28px rgba(16, 185, 129, 0.45);
+  transform: scale(1.07);
+  box-shadow: var(--fus-raise);
+}
+
+.fus-fab:active {
+  transform: scale(0.95);
 }
 
 .fus-fab-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 18px;
-  height: 18px;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
   padding: 0 4px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #34d399, #38bdf8);
-  color: #000;
-  font-size: 10px;
+  background: var(--fus-accent);
+  color: #08130f;
+  font-size: var(--fus-fs-2xs);
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
 }
 
-/* Panel Glassmorphism Overlay (STRICT FIXED 2:1 ASPECT RATIO) */
+#fustation-tool-root[data-theme='glass-light'] .fus-fab-badge,
+#fustation-tool-root[data-theme='neu-light'] .fus-fab-badge {
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92);
+}
+
+/* ----------------------------------------------------------------
+   7. Panel shell — draggable + resizable
+   ---------------------------------------------------------------- */
+
 .fus-panel {
   position: fixed;
-  bottom: 84px;
-  right: 24px;
-  z-index: 99999;
-  width: 580px;
-  height: 290px; /* Locked 2:1 Aspect Ratio (580:290) */
-  background: rgba(6, 8, 18, 0.88);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid var(--fus-border);
-  border-radius: 18px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(52, 211, 153, 0.08) inset;
+  z-index: 2147483001;
+  background: var(--fus-surface);
+  backdrop-filter: blur(var(--fus-surface-blur)) saturate(var(--fus-surface-sat));
+  -webkit-backdrop-filter: blur(var(--fus-surface-blur)) saturate(var(--fus-surface-sat));
+  border: var(--fus-edge);
+  border-radius: var(--fus-r-xl);
+  box-shadow: var(--fus-raise), var(--fus-inset);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-  animation: fus-fade-in 0.25s ease-out;
+  transform-origin: bottom right;
+  animation: fus-panel-in var(--fus-dur-slow) var(--fus-ease) both;
+  container-type: inline-size;
+  container-name: fuspanel;
 }
 
-@keyframes fus-fade-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+/* Vivid gradient backdrop whose color bleeds through the glass */
+.fus-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--fus-scrim);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fus-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.fus-panel.is-closing {
+  animation: fus-panel-out 0.18s var(--fus-ease) both;
+}
+
+.fus-panel.is-dragging,
+.fus-panel.is-resizing {
+  animation: none;
+  transition: none;
+  user-select: none;
+}
+
+.fus-panel.is-dragging {
+  box-shadow: 0 30px 74px rgba(0, 0, 0, 0.5), var(--fus-inset);
+}
+
+@keyframes fus-panel-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fus-panel-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
 }
 
 .fus-accent-hairline {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.6), rgba(56, 189, 248, 0.5), transparent);
   flex-shrink: 0;
+  background: linear-gradient(90deg, transparent, var(--fus-accent), var(--fus-sky), transparent);
+  opacity: 0.7;
 }
 
-/* Header */
+/* 8-way resize affordances */
+.fus-resize {
+  position: absolute;
+  z-index: 20;
+  touch-action: none;
+}
+
+.fus-resize-n { top: -3px; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+.fus-resize-s { bottom: -3px; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+.fus-resize-e { right: -3px; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+.fus-resize-w { left: -3px; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+.fus-resize-ne { top: -4px; right: -4px; width: 18px; height: 18px; cursor: nesw-resize; }
+.fus-resize-nw { top: -4px; left: -4px; width: 18px; height: 18px; cursor: nwse-resize; }
+.fus-resize-se { bottom: -4px; right: -4px; width: 18px; height: 18px; cursor: nwse-resize; }
+.fus-resize-sw { bottom: -4px; left: -4px; width: 18px; height: 18px; cursor: nesw-resize; }
+
+.fus-resize-grip {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  color: var(--fus-text-dim);
+  pointer-events: none;
+  z-index: 19;
+  opacity: 0;
+  transition: opacity var(--fus-dur) var(--fus-ease);
+}
+
+.fus-panel:hover .fus-resize-grip {
+  opacity: 0.7;
+}
+
+/* ----------------------------------------------------------------
+   8. Header — single-row layout preserved, now flex-responsive
+   ---------------------------------------------------------------- */
+
 .fus-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 8px 10px 8px 12px;
   border-bottom: 1px solid var(--fus-border-dim);
   flex-shrink: 0;
-  height: 52px;
-  box-sizing: border-box;
+  min-height: 48px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.fus-panel.is-dragging .fus-header {
+  cursor: grabbing;
+}
+
+.fus-header button,
+.fus-header input,
+.fus-header .fus-segmented-control {
+  touch-action: auto;
 }
 
 .fus-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.fus-logo-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--fus-r-md);
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.fus-logo-wrap {
+  position: relative;
+  line-height: 0;
 }
 
 .fus-logo {
   width: 26px;
   height: 26px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #059669, #0284c7);
+  border-radius: var(--fus-r-md);
+  background: linear-gradient(135deg, var(--fus-brand-a), var(--fus-brand-b));
+  border: 1px solid var(--fus-edge-color);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--fus-raise-sm);
+  transition: transform var(--fus-dur) var(--fus-ease-spring);
+}
+
+.fus-logo-btn:hover .fus-logo {
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.fus-logo-btn:active .fus-logo {
+  transform: scale(0.93);
+}
+
+/* Discoverability cue for the theme cycle */
+.fus-logo-hint {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--fus-surface);
+  border: 1px solid var(--fus-border);
+  color: var(--fus-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity var(--fus-dur) var(--fus-ease), transform var(--fus-dur) var(--fus-ease-spring);
+}
+
+.fus-logo-btn:hover .fus-logo-hint,
+.fus-logo-btn:focus-visible .fus-logo-hint {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .fus-title-group {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .fus-title {
-  font-size: 13px;
+  font-size: var(--fus-fs-lg);
   font-weight: 700;
-  background: linear-gradient(90deg, #34d399, #38bdf8);
+  letter-spacing: -0.01em;
+  background: linear-gradient(90deg, var(--fus-emerald), var(--fus-sky));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
 }
 
 .fus-subtitle {
-  font-size: 10px;
+  font-size: var(--fus-fs-2xs);
   font-family: 'JetBrains Mono', monospace;
   color: var(--fus-text-dim);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 .fus-tabs {
   display: flex;
-  gap: 4px;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 2px;
+  border-radius: var(--fus-r-lg);
+  background: var(--fus-layer);
 }
 
 .fus-tab-btn {
-  padding: 4px 12px;
-  border-radius: 7px;
-  font-size: 11px;
-  font-weight: 500;
+  padding: 4px 11px;
+  border-radius: var(--fus-r-md);
+  font-family: inherit;
+  font-size: var(--fus-fs-sm);
+  font-weight: 600;
   background: transparent;
   color: var(--fus-text-dim);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s ease;
+  white-space: nowrap;
+  transition: color var(--fus-dur-fast) var(--fus-ease), background var(--fus-dur-fast) var(--fus-ease),
+    box-shadow var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-tab-btn:hover {
+  color: var(--fus-text-mid);
 }
 
 .fus-tab-btn.active {
-  background: rgba(52, 211, 153, 0.12);
-  color: var(--fus-emerald);
-  border-color: rgba(52, 211, 153, 0.3);
+  background: var(--fus-accent-soft);
+  color: var(--fus-accent);
+  border-color: var(--fus-border);
 }
 
-/* Status Pill (LOCKED FIXED WIDTH - NO HEADER PIXEL JUMPS) */
+.fus-tab-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fus-fs-2xs);
+  opacity: 0.8;
+  margin-left: 3px;
+}
+
+/* Right cluster absorbs leftover space and collapses gracefully */
+.fus-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.fus-header-switcher-slot {
+  width: 118px;
+  min-width: 74px;
+  flex-shrink: 1;
+}
+
+/* ----------------------------------------------------------------
+   9. Status pill
+   ---------------------------------------------------------------- */
+
 .fus-status-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 140px;
-  min-width: 140px;
-  max-width: 140px;
+  gap: 5px;
+  width: 116px;
+  min-width: 58px;
+  flex-shrink: 1;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: var(--fus-fs-sm);
+  font-weight: 600;
+  border: 1px solid var(--fus-border);
+  background: var(--fus-layer);
+  color: var(--fus-text-mid);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  box-sizing: border-box;
 }
 
 .fus-status-pill span {
@@ -205,211 +683,142 @@
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
 }
 
-.fus-status-ready { background: rgba(56, 189, 248, 0.12); color: var(--fus-sky); border-color: rgba(56, 189, 248, 0.3); }
-.fus-status-ready .fus-status-dot { background: var(--fus-sky); box-shadow: 0 0 6px var(--fus-sky); }
+.fus-status-ready { color: var(--fus-sky); background: rgba(56, 189, 248, 0.13); }
+.fus-status-fetching { color: var(--fus-violet); background: rgba(167, 139, 250, 0.13); }
+.fus-status-processing { color: var(--fus-amber); background: rgba(251, 191, 36, 0.13); }
+.fus-status-downloading { color: var(--fus-sky); background: rgba(56, 189, 248, 0.13); }
+.fus-status-extracted { color: var(--fus-emerald); background: rgba(52, 211, 153, 0.13); }
+.fus-status-autosaving { color: var(--fus-orange); background: rgba(251, 146, 60, 0.13); }
+.fus-status-error { color: var(--fus-rose); background: rgba(251, 113, 133, 0.13); }
 
-.fus-status-fetching { background: rgba(167, 139, 250, 0.12); color: var(--fus-violet); border-color: rgba(167, 139, 250, 0.3); }
-.fus-status-fetching .fus-status-dot { background: var(--fus-violet); box-shadow: 0 0 6px var(--fus-violet); }
+/* Pulse only for genuinely in-flight states */
+.fus-status-fetching .fus-status-dot,
+.fus-status-processing .fus-status-dot,
+.fus-status-downloading .fus-status-dot,
+.fus-status-autosaving .fus-status-dot {
+  animation: fus-pulse 1.15s ease-in-out infinite;
+}
 
-.fus-status-processing { background: rgba(251, 191, 36, 0.12); color: var(--fus-amber); border-color: rgba(251, 191, 36, 0.3); }
-.fus-status-processing .fus-status-dot { background: var(--fus-amber); box-shadow: 0 0 6px var(--fus-amber); }
+@keyframes fus-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.78); }
+}
 
-.fus-status-extracted { background: rgba(52, 211, 153, 0.12); color: var(--fus-emerald); border-color: rgba(52, 211, 153, 0.3); }
-.fus-status-extracted .fus-status-dot { background: var(--fus-emerald); box-shadow: 0 0 6px var(--fus-emerald); }
+/* ----------------------------------------------------------------
+   10. Buttons
+   ---------------------------------------------------------------- */
 
-.fus-status-autosaving { background: rgba(251, 146, 60, 0.12); color: #fb923c; border-color: rgba(251, 146, 60, 0.3); }
-.fus-status-autosaving .fus-status-dot { background: #fb923c; box-shadow: 0 0 6px #fb923c; animation: fus-pulse 1.2s infinite; }
-
-.fus-status-error { background: rgba(244, 63, 94, 0.12); color: var(--fus-rose); border-color: rgba(244, 63, 94, 0.3); }
-.fus-status-error .fus-status-dot { background: var(--fus-rose); box-shadow: 0 0 6px var(--fus-rose); }
-
-/* Control Buttons */
 .fus-ctrl-btn {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--fus-r-md);
   border: 1px solid var(--fus-border-dim);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--fus-text-dim);
-  font-family: monospace;
-  font-size: 13px;
+  background: var(--fus-layer);
+  color: var(--fus-text-mid);
+  font-family: inherit;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
   flex-shrink: 0;
+  transition: background var(--fus-dur-fast) var(--fus-ease), color var(--fus-dur-fast) var(--fus-ease),
+    transform var(--fus-dur-fast) var(--fus-ease), box-shadow var(--fus-dur-fast) var(--fus-ease);
 }
 
-.fus-ctrl-btn:hover {
-  background: rgba(255, 255, 255, 0.10);
+.fus-ctrl-btn:hover:not(:disabled) {
+  background: var(--fus-layer-hover);
+  color: var(--fus-text);
+}
+
+.fus-ctrl-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.fus-ctrl-btn:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+
+.fus-btn-danger-icon {
+  color: var(--fus-rose);
+}
+
+.fus-btn-danger-icon:hover:not(:disabled) {
+  background: rgba(225, 29, 72, 0.16);
+  border-color: rgba(225, 29, 72, 0.34);
+  color: var(--fus-rose);
+}
+
+.fus-btn-primary {
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--fus-r-lg);
+  border: 1px solid var(--fus-edge-color);
+  background: linear-gradient(135deg, var(--fus-brand-a), var(--fus-brand-b));
   color: #fff;
-}
-
-.fus-close-btn:hover {
-  background: rgba(239, 68, 68, 0.2) !important;
-  color: #f87171 !important;
-}
-
-/* Red Clear All Danger Button */
-.fus-btn-danger {
-  padding: 5px 12px;
-  border-radius: 7px;
-  background: rgba(244, 63, 94, 0.15);
-  color: #f43f5e;
-  border: 1px solid rgba(244, 63, 94, 0.35);
-  font-size: 11px;
+  font-family: inherit;
+  font-size: var(--fus-fs-md);
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
+  gap: 6px;
+  box-shadow: var(--fus-raise-sm);
+  transition: transform var(--fus-dur-fast) var(--fus-ease), box-shadow var(--fus-dur) var(--fus-ease),
+    filter var(--fus-dur-fast) var(--fus-ease);
 }
 
-.fus-btn-danger:hover {
-  background: rgba(244, 63, 94, 0.28);
-  color: #ff6b81;
-  border-color: rgba(244, 63, 94, 0.5);
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.25);
+.fus-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.09);
+  box-shadow: var(--fus-raise);
 }
 
-/* Panel Body Container */
-#fus-panel-body {
+.fus-btn-primary:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.fus-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fus-btn-sec {
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: var(--fus-r-lg);
+  border: 1px solid var(--fus-border);
+  background: var(--fus-layer);
+  color: var(--fus-text);
+  font-family: inherit;
+  font-size: var(--fus-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-}
-
-/* Body Split Grid */
-.fus-body-grid {
-  display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  height: 100%;
-  flex: 1;
-  min-height: 0;
-}
-
-.fus-left-panel {
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-}
-
-.fus-divider {
-  background: var(--fus-border-dim);
-  align-self: stretch;
-}
-
-.fus-right-panel {
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  overflow-y: auto;
-}
-
-/* Metadata Badges & 5-Row Structured Layout Grid */
-.fus-meta-row-1 {
-  display: grid;
-  grid-template-columns: 30% 40% 30%;
-  gap: 4px;
-  align-items: center;
-  width: 100%;
-}
-
-.fus-meta-row-2 {
-  display: grid;
-  grid-template-columns: 70% 30%;
-  gap: 4px;
-  align-items: center;
-  width: 100%;
-}
-
-.fus-badge {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 5px;
   white-space: nowrap;
+  transition: background var(--fus-dur-fast) var(--fus-ease), transform var(--fus-dur-fast) var(--fus-ease),
+    box-shadow var(--fus-dur-fast) var(--fus-ease);
 }
 
-.fus-badge-subject { background: rgba(52, 211, 153, 0.12); color: var(--fus-emerald); border: 1px solid rgba(52, 211, 153, 0.25); }
-.fus-badge-type { background: rgba(56, 189, 248, 0.12); color: var(--fus-sky); border: 1px solid rgba(56, 189, 248, 0.25); }
-.fus-badge-campus { background: rgba(167, 139, 250, 0.12); color: var(--fus-violet); border: 1px solid rgba(167, 139, 250, 0.25); }
-
-.fus-meta-date {
-  font-size: 11px;
-  color: var(--fus-text-mid);
-  font-family: 'JetBrains Mono', monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.fus-btn-sec:hover:not(:disabled) {
+  background: var(--fus-layer-hover);
 }
 
-.fus-subject-title {
-  font-size: 12px;
-  color: var(--fus-text-mid);
-  margin: 0;
-  line-height: 1.4;
-  word-break: break-word;
+.fus-btn-sec:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
-.fus-exam-code {
-  font-size: 12px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--fus-text);
-  margin: 0;
-  letter-spacing: 0.04em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.fus-meta-partial {
-  font-size: 10px;
-  font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-  color: #f87171;
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.25);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin: 2px 0 0 0;
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.fus-q-count {
-  font-size: 11px;
-  color: var(--fus-sky);
-  font-weight: 600;
-  text-align: right;
-}
-
-.fus-left-divider {
-  height: 1px;
-  background: var(--fus-border-dim);
-  margin: 4px 0;
+.fus-btn-sec:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .fus-btn-placeholder-view {
@@ -419,80 +828,211 @@
   gap: 6px;
   width: 100%;
   padding: 6px 10px;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--fus-text-dim);
-  border: 1px dashed var(--fus-border-dim);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.fus-btn-danger-icon {
-  color: #f43f5e !important;
-}
-
-.fus-btn-danger-icon:hover {
-  background: rgba(244, 63, 94, 0.2) !important;
-  border-color: rgba(244, 63, 94, 0.4) !important;
-  color: #ff6b81 !important;
-}
-
-/* Format Switcher (Segmented Control) */
-.fus-switcher-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-}
-
-.fus-switcher-label {
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--fus-text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.fus-segmented-control {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--fus-border);
-  gap: 2px;
-  width: 100%;
-}
-
-.fus-radio-item {
-  flex: 1;
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: none;
+  border-radius: var(--fus-r-lg);
   background: transparent;
   color: var(--fus-text-dim);
-  font-size: 11px;
+  border: 1px dashed var(--fus-border);
+  font-family: inherit;
+  font-size: var(--fus-fs-sm);
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+.fus-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.6px solid currentColor;
+  border-top-color: transparent;
+  animation: fus-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes fus-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------------
+   11. Focus visibility — a real outline, never shadow alone.
+   Soft UI shadows cannot satisfy WCAG non-text contrast.
+   ---------------------------------------------------------------- */
+
+#fustation-tool-root :focus-visible {
+  outline: 2px solid var(--fus-focus);
+  outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------------
+   12. Body & Extract tab — layout preserved, made fluid
+   ---------------------------------------------------------------- */
+
+#fus-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fus-tab-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: fus-tab-in var(--fus-dur) var(--fus-ease) both;
+}
+
+@keyframes fus-tab-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fus-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 0.85fr);
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.fus-left-panel {
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.fus-divider {
+  background: var(--fus-border-dim);
+  align-self: stretch;
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-divider {
+  background: var(--fus-neu-lo);
+  opacity: 0.35;
+}
+
+.fus-right-panel {
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.fus-meta-row-1 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+}
+
+.fus-meta-row-2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.fus-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 5px;
+  border-radius: var(--fus-r-sm);
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.fus-badge-subject {
+  background: rgba(52, 211, 153, 0.14);
+  color: var(--fus-emerald);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.fus-badge-type {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--fus-sky);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.fus-badge-campus {
+  background: rgba(167, 139, 250, 0.14);
+  color: var(--fus-violet);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+.fus-meta-date {
+  font-size: var(--fus-fs-sm);
+  color: var(--fus-text-mid);
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.fus-q-count {
+  font-size: var(--fus-fs-sm);
+  color: var(--fus-sky);
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.fus-radio-item:hover {
+.fus-subject-title {
+  font-size: var(--fus-fs-md);
   color: var(--fus-text-mid);
-  background: rgba(255, 255, 255, 0.05);
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.fus-radio-item.active {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(52, 211, 153, 0.25));
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.4);
+.fus-exam-code {
+  font-size: var(--fus-fs-md);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text);
+  margin: 0;
+  letter-spacing: 0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Action Buttons Stack */
+.fus-meta-partial {
+  font-size: var(--fus-fs-xs);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-rose);
+  background: rgba(225, 29, 72, 0.12);
+  border: 1px solid rgba(225, 29, 72, 0.26);
+  padding: 2px 6px;
+  border-radius: var(--fus-r-sm);
+  margin: 2px 0 0;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
 .fus-action-stack {
   display: flex;
   flex-direction: column;
@@ -506,87 +1046,114 @@
   width: 100%;
 }
 
-.fus-btn-primary {
-  width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(52, 211, 153, 0.4);
-  background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+/* Empty states */
+.fus-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
-  transition: all 0.18s ease;
-}
-
-.fus-btn-sec {
+  gap: 7px;
+  padding: 22px 16px;
+  text-align: center;
   flex: 1;
-  padding: 7px;
-  border-radius: 8px;
-  border: 1px solid var(--fus-border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--fus-text);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
+}
+
+.fus-empty-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  transition: all 0.18s ease;
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border-dim);
+  color: var(--fus-text-dim);
 }
 
-.fus-btn-sec:hover {
-  background: rgba(255, 255, 255, 0.12);
+.fus-empty-title {
+  font-size: var(--fus-fs-md);
+  font-weight: 600;
+  color: var(--fus-text-mid);
+  margin: 0;
 }
 
-/* Focus Ring Accessibility */
-.fus-btn-primary:focus-visible,
-.fus-btn-sec:focus-visible,
-.fus-btn-danger:focus-visible,
-.fus-radio-item:focus-visible,
-.fus-ctrl-btn:focus-visible,
-.fus-tab-btn:focus-visible {
-  outline: 2px solid var(--fus-sky) !important;
-  outline-offset: 3px !important;
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25) !important;
+.fus-empty-sub {
+  font-size: var(--fus-fs-sm);
+  color: var(--fus-text-dim);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 32ch;
 }
 
-/* Compact Header Switcher Variant (ISSUE-35) */
+/* ----------------------------------------------------------------
+   13. Format switcher
+   ---------------------------------------------------------------- */
+
+.fus-segmented-control {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--fus-r-lg);
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border);
+  gap: 2px;
+  width: 100%;
+}
+
+.fus-radio-item {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: var(--fus-r-md);
+  border: none;
+  background: transparent;
+  color: var(--fus-text-dim);
+  font-size: var(--fus-fs-sm);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--fus-dur-fast) var(--fus-ease), color var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-radio-item:hover:not(.active) {
+  color: var(--fus-text-mid);
+  background: var(--fus-layer-hover);
+}
+
+.fus-radio-item.active {
+  background: var(--fus-accent-soft);
+  color: var(--fus-accent);
+  box-shadow: inset 0 0 0 1px var(--fus-border);
+}
+
 .fus-header-switcher {
-  width: 100% !important;
-  height: 28px !important;
-  padding: 1.5px !important;
-  gap: 1.5px !important;
-  border-radius: 6px !important;
+  height: 26px;
+  padding: 1.5px;
+  gap: 1.5px;
+  border-radius: var(--fus-r-md);
 }
 
 .fus-header-switcher .fus-radio-item {
-  padding: 3px 6px !important;
-  font-size: 10px !important;
-  line-height: 1 !important;
-  border-radius: 4px !important;
+  padding: 2px 4px;
+  font-size: var(--fus-fs-xs);
+  line-height: 1;
+  border-radius: var(--fus-r-sm);
 }
 
-/* Checkbox Style */
+/* ----------------------------------------------------------------
+   14. Saved tab
+   ---------------------------------------------------------------- */
+
 .fus-checkbox {
   width: 14px;
   height: 14px;
-  border-radius: 3.5px;
-  border: 1px solid var(--fus-border-dim);
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
   cursor: pointer;
-  accent-color: var(--fus-emerald);
+  accent-color: var(--fus-accent);
   flex-shrink: 0;
   margin: 0;
 }
 
-/* Saved Tab Layout & Sticky Header (ISSUE-36B) */
 .fus-saved-wrapper {
   display: flex;
   flex-direction: column;
@@ -597,19 +1164,13 @@
 }
 
 .fus-saved-header-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(6, 8, 18, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--fus-border-dim);
-  padding: 6px 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--fus-border-dim);
   flex-shrink: 0;
-  height: 38px;
+  min-height: 36px;
 }
 
 .fus-toolbar-left {
@@ -620,61 +1181,100 @@
 }
 
 .fus-selection-count {
-  font-size: 10px;
+  font-size: var(--fus-fs-xs);
   font-family: 'JetBrains Mono', monospace;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--fus-text-mid);
   white-space: nowrap;
+  min-width: 32px;
 }
 
 .fus-search-wrapper {
   flex: 1;
   min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fus-search-icon {
+  position: absolute;
+  left: 7px;
+  color: var(--fus-text-dim);
+  pointer-events: none;
+  display: flex;
 }
 
 .fus-saved-search {
   width: 100%;
-  height: 24px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  height: 25px;
+  padding: 2px 8px 2px 23px;
+  border-radius: var(--fus-r-md);
   border: 1px solid var(--fus-border-dim);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fus-layer);
   color: var(--fus-text);
-  font-size: 11px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-size: var(--fus-fs-sm);
+  font-family: inherit;
   outline: none;
-  transition: all 0.15s ease;
+  transition: border-color var(--fus-dur-fast) var(--fus-ease), background var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-saved-search::placeholder {
+  color: var(--fus-text-dim);
 }
 
 .fus-saved-search:focus {
-  border-color: rgba(56, 189, 248, 0.4);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--fus-focus);
+  background: var(--fus-layer-hover);
 }
 
 .fus-batch-actions {
   display: flex;
   align-items: center;
   gap: 4px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
   flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(6px);
+  pointer-events: none;
+  transition: opacity var(--fus-dur) var(--fus-ease), transform var(--fus-dur) var(--fus-ease);
 }
 
 .fus-batch-actions.visible {
   opacity: 1;
+  transform: translateX(0);
   pointer-events: auto;
 }
 
-/* Scrollable Tree View List (ISSUE-33, ISSUE-34) */
 .fus-saved-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 10px;
+  overscroll-behavior: contain;
+  padding: 7px 9px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* Themed scrollbars */
+.fus-saved-list::-webkit-scrollbar,
+.fus-left-panel::-webkit-scrollbar,
+.fus-right-panel::-webkit-scrollbar {
+  width: 7px;
+}
+
+.fus-saved-list::-webkit-scrollbar-track,
+.fus-left-panel::-webkit-scrollbar-track,
+.fus-right-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fus-saved-list::-webkit-scrollbar-thumb,
+.fus-left-panel::-webkit-scrollbar-thumb,
+.fus-right-panel::-webkit-scrollbar-thumb {
+  background: var(--fus-text-dim);
+  border-radius: 99px;
+  opacity: 0.4;
 }
 
 .fus-folder-group {
@@ -683,20 +1283,20 @@
   gap: 2px;
 }
 
-/* Folder Parent Row */
 .fus-folder-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   padding: 5px 8px;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--fus-r-lg);
+  background: var(--fus-layer);
   border: 1px solid var(--fus-border-dim);
-  transition: background 0.15s ease;
+  transition: background var(--fus-dur-fast) var(--fus-ease);
 }
 
 .fus-folder-row:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--fus-layer-hover);
 }
 
 .fus-row-left {
@@ -717,60 +1317,88 @@
   cursor: pointer;
   color: var(--fus-text);
   font-family: inherit;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
 }
 
 .fus-disclosure {
-  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
   color: var(--fus-text-dim);
-  width: 12px;
-  text-align: center;
+  flex-shrink: 0;
+  transition: transform var(--fus-dur) var(--fus-ease), color var(--fus-dur-fast) var(--fus-ease);
+}
+
+.fus-disclosure.open {
+  transform: rotate(90deg);
+  color: var(--fus-accent);
 }
 
 .fus-folder-count {
-  font-size: 10px;
+  font-size: var(--fus-fs-xs);
   font-family: 'JetBrains Mono', monospace;
   color: var(--fus-text-dim);
+  flex-shrink: 0;
 }
 
 .fus-row-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity var(--fus-dur-fast) var(--fus-ease);
 }
 
-/* Child Exam Rows (Indented Hierarchy) */
+.fus-folder-row:hover .fus-row-actions,
+.fus-child-row:hover .fus-row-actions,
+.fus-folder-row:focus-within .fus-row-actions,
+.fus-child-row:focus-within .fus-row-actions {
+  opacity: 1;
+}
+
 .fus-folder-children {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-left: 20px;
+  padding-left: 18px;
   margin-top: 1px;
+  animation: fus-expand var(--fus-dur) var(--fus-ease) both;
+}
+
+@keyframes fus-expand {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .fus-child-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  transition: all 0.15s ease;
+  border-radius: var(--fus-r-md);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background var(--fus-dur-fast) var(--fus-ease), border-color var(--fus-dur-fast) var(--fus-ease);
 }
 
 .fus-child-row:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fus-layer);
 }
 
 .fus-child-row.selected {
-  background: rgba(52, 211, 153, 0.06);
-  border-color: rgba(52, 211, 153, 0.2);
+  background: var(--fus-accent-soft);
+  border-color: var(--fus-border);
 }
 
 .fus-saved-code {
   flex: 1;
-  font-size: 11px;
+  min-width: 0;
+  font-size: var(--fus-fs-sm);
   font-family: 'JetBrains Mono', monospace;
   color: var(--fus-text-mid);
   overflow: hidden;
@@ -779,19 +1407,214 @@
 }
 
 .fus-badge-partial {
-  font-size: 9px;
+  font-size: var(--fus-fs-2xs);
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   color: var(--fus-rose);
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.25);
+  background: rgba(225, 29, 72, 0.12);
+  border: 1px solid rgba(225, 29, 72, 0.26);
   padding: 1px 4px;
-  border-radius: 3px;
+  border-radius: 4px;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
-.fus-btn-view-placeholder {
-  opacity: 0.4;
-  cursor: not-allowed !important;
+/* ----------------------------------------------------------------
+   15. Skeletons
+   ---------------------------------------------------------------- */
+
+.fus-skeleton {
+  display: block;
+  background: linear-gradient(90deg, var(--fus-shimmer) 25%, var(--fus-shimmer-hi) 37%, var(--fus-shimmer) 63%);
+  background-size: 320px 100%;
+  animation: fus-shimmer 1.3s ease-in-out infinite;
 }
 
+@keyframes fus-shimmer {
+  from { background-position: -160px 0; }
+  to { background-position: 320px 0; }
+}
+
+.fus-meta-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.fus-saved-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 4px 0;
+}
+
+.fus-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ----------------------------------------------------------------
+   16. Toasts — anchored inside the panel, above the content
+   ---------------------------------------------------------------- */
+
+.fus-toast-host {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100% - 28px);
+}
+
+.fus-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--fus-surface);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: var(--fus-edge);
+  box-shadow: var(--fus-raise-sm);
+  color: var(--fus-text);
+  font-family: inherit;
+  font-size: var(--fus-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100%;
+  animation: fus-toast-in var(--fus-dur) var(--fus-ease-spring) both;
+}
+
+#fustation-tool-root[data-theme^='neu'] .fus-toast {
+  background: var(--fus-neu-base);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@keyframes fus-toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.fus-toast-icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.fus-toast-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fus-toast-success .fus-toast-icon { color: var(--fus-emerald); }
+.fus-toast-error .fus-toast-icon { color: var(--fus-rose); }
+.fus-toast-warn .fus-toast-icon { color: var(--fus-amber); }
+.fus-toast-info .fus-toast-icon { color: var(--fus-sky); }
+
+/* ----------------------------------------------------------------
+   17. Responsive — the panel reacts to its OWN size, so resizing
+   behaves exactly like a viewport breakpoint.
+   ---------------------------------------------------------------- */
+
+@container fuspanel (max-width: 540px) {
+  .fus-title-group { display: none; }
+  .fus-header-switcher-slot { width: 96px; min-width: 68px; }
+  .fus-status-pill { width: 96px; }
+}
+
+@container fuspanel (max-width: 470px) {
+  .fus-status-pill { width: 26px; min-width: 26px; padding: 3px; gap: 0; }
+  .fus-status-pill span { display: none; }
+  .fus-header-switcher-slot { width: 84px; }
+  .fus-tab-btn { padding: 4px 8px; }
+}
+
+/* Stack the Extract split when two columns no longer fit */
+@container fuspanel (max-width: 430px) {
+  .fus-body-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1px auto;
+    overflow-y: auto;
+  }
+  .fus-divider { height: 1px; width: 100%; }
+  .fus-left-panel, .fus-right-panel { overflow: visible; }
+}
+
+@media (max-width: 560px) {
+  .fus-fab-container { bottom: 16px; right: 16px; }
+}
+
+/* ----------------------------------------------------------------
+   18. Accessibility fallbacks
+   ---------------------------------------------------------------- */
+
+/* Reduced transparency: drop the blur, keep text readable */
+@media (prefers-reduced-transparency: reduce) {
+  #fustation-tool-root[data-theme='glass-dark'] { --fus-surface: #101422; }
+  #fustation-tool-root[data-theme='glass-light'] { --fus-surface: #f3f6fb; }
+
+  .fus-panel,
+  .fus-toast {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .fus-panel::before { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #fustation-tool-root *,
+  #fustation-tool-root *::before,
+  #fustation-tool-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .fus-skeleton {
+    animation: none !important;
+    background: var(--fus-shimmer);
+  }
+}
+
+/* Forced high contrast: restore explicit edges on every surface */
+@media (prefers-contrast: more) {
+  #fustation-tool-root {
+    --fus-border: currentColor;
+    --fus-border-dim: currentColor;
+    --fus-text-dim: var(--fus-text-mid);
+  }
+
+  .fus-panel,
+  .fus-btn-sec,
+  .fus-ctrl-btn,
+  .fus-folder-row,
+  .fus-status-pill,
+  .fus-toast,
+  .fus-saved-search {
+    border: 1px solid currentColor;
+  }
+}
+
+.fus-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

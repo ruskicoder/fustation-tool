@@ -2,6 +2,39 @@ export type ExportFormat = 'MD' | 'PDF' | 'JSON';
 
 export type StatusState = 'ready' | 'fetching' | 'autosaving' | 'processing' | 'downloading' | 'extracted' | 'error';
 
+/** Surface themes. `glass-dark` is the default; clicking the header logo cycles them. */
+export type ThemeName = 'glass-dark' | 'glass-light' | 'neu-light' | 'neu-dark';
+
+export const THEME_ORDER: ThemeName[] = ['glass-dark', 'glass-light', 'neu-light', 'neu-dark'];
+
+export const THEME_LABELS: Record<ThemeName, string> = {
+  'glass-dark': 'Glass · Dark',
+  'glass-light': 'Glass · Light',
+  'neu-light': 'Soft UI · Light',
+  'neu-dark': 'Soft UI · Dark'
+};
+
+/** Persisted panel position + size, in viewport pixels, top-left anchored. */
+export interface PanelGeometry {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export const PANEL_MIN_W = 380;
+export const PANEL_MIN_H = 240;
+export const PANEL_DEFAULT_W = 600;
+export const PANEL_DEFAULT_H = 330;
+
+export type ToastKind = 'success' | 'error' | 'info' | 'warn';
+
+export interface ToastItem {
+  id: number;
+  kind: ToastKind;
+  message: string;
+}
+
 export interface Option {
   id: string; // "A", "B", "C", "D"
   text: string;

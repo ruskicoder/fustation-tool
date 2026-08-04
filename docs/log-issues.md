@@ -43,6 +43,11 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-34**: Enhanced Folder & Record Row Badge Layouts -> Fixed in `src/components/SavedTab.tsx` and `src/styles/overlay.css`.
 - [x] **ISSUE-35**: Global Unified Header Format Selector Relocation -> Fixed in `src/components/Overlay.tsx`, `src/components/FormatSwitcher.tsx`, `src/components/ExtractTab.tsx`, and `src/styles/overlay.css`.
 - [x] **ISSUE-36**: ExtractTab Panel Restructuring & SavedTab Sticky Toolbar Overhaul -> Fixed in `src/components/ExtractTab.tsx`, `src/components/SavedTab.tsx`, `src/components/Overlay.tsx`, and `src/styles/overlay.css`.
+- [x] **ISSUE-37**: Panel Geometry Integration & Drag/Resize Handlers Wiring -> Fixed in `src/components/Overlay.tsx`, `src/hooks/usePanelGeometry.ts`, and `src/components/ResizeHandles.tsx`.
+- [x] **ISSUE-38**: Dynamic Theme Switching & Theme Storage Integration -> Fixed in `src/components/Overlay.tsx`, `src/utils/storage.ts`, `src/types/index.ts`, and `src/styles/overlay.css`.
+- [x] **ISSUE-39**: Transient Toast Notification Queue Wiring -> Fixed in `src/components/Overlay.tsx`, `src/hooks/useToasts.ts`, and `src/components/ToastHost.tsx`.
+- [x] **ISSUE-40**: Skeleton Shimmer Loading Feedback Integration -> Fixed in `src/components/ExtractTab.tsx`, `src/components/SavedTab.tsx`, and `src/components/Skeleton.tsx`.
+- [x] **ISSUE-41**: Icon Dictionary Consolidation (`Icons.tsx`) -> Fixed across `src/components/Overlay.tsx`, `ExtractTab.tsx`, `SavedTab.tsx`, `FormatSwitcher.tsx`, `ToastHost.tsx`, and `ResizeHandles.tsx`.
 
 ---
 
@@ -95,6 +100,3 @@ This document maintains open, deferred, and roadmap issues identified during tes
 *Log updated in accordance with Stage 5 completion protocol.*
 
 
----
-
-*Log updated in accordance with Stage 5 completion protocol.*

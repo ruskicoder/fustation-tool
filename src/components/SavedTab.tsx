@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SavedExamsMap, SavedExamItem } from '../types';
+import { TrashIcon, DownloadIcon, EyeIcon, InboxIcon } from './Icons';
+import { SavedListSkeleton } from './Skeleton';
 
 interface SavedTabProps {
   savedExams: SavedExamsMap;
   selectedIds: Set<string>;
+  isLoading?: boolean;
   onToggleSelect: (examId: string) => void;
   onToggleFolder: (subjectCode: string, folderExamIds: string[]) => void;
   onSelectAll: (allFilteredIds: string[]) => void;
@@ -47,6 +50,7 @@ const IndeterminateCheckbox: React.FC<{
 export const SavedTab: React.FC<SavedTabProps> = ({
   savedExams,
   selectedIds,
+  isLoading,
   onToggleSelect,
   onToggleFolder,
   onSelectAll,
@@ -114,7 +118,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
 
   return (
     <div className="fus-saved-wrapper">
-      {/* Sticky Redesigned Top Toolbar (ISSUE-36B) */}
+      {/* Sticky Top Toolbar */}
       <div className="fus-saved-header-sticky">
         <div className="fus-toolbar-left">
           <IndeterminateCheckbox
@@ -147,10 +151,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
             title={`Delete ${selectedCount} selected items`}
             onClick={onBatchDelete}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
+            <TrashIcon size={13} />
           </button>
 
           <button
@@ -159,24 +160,24 @@ export const SavedTab: React.FC<SavedTabProps> = ({
             title={`Download ${selectedCount} selected items`}
             onClick={onBatchDownload}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <DownloadIcon size={13} />
           </button>
         </div>
       </div>
 
-      {/* Scrollable Tree View List (ISSUE-33, ISSUE-34) */}
+      {/* Scrollable Tree View List */}
       <div className="fus-saved-list" role="tree">
-        {savedList.length === 0 ? (
-          <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fus-text-dim)', fontSize: '12px' }}>
-            No saved exams in local cache
+        {isLoading ? (
+          <SavedListSkeleton rows={4} />
+        ) : savedList.length === 0 ? (
+          <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fus-text-dim)', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <InboxIcon size={24} />
+            <span>No saved exams in local cache</span>
           </div>
         ) : groupedFolders.length === 0 ? (
-          <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fus-text-dim)', fontSize: '12px' }}>
-            No matching exams found
+          <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fus-text-dim)', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <InboxIcon size={24} />
+            <span>No matching exams found</span>
           </div>
         ) : (
           groupedFolders.map((group) => {
@@ -220,10 +221,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                       title={`Delete entire ${group.subjectCode} folder`}
                       onClick={() => onDeleteFolder(folderIds)}
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
+                      <TrashIcon size={12} />
                     </button>
 
                     <button
@@ -232,11 +230,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                       title={`Download all in ${group.subjectCode}`}
                       onClick={() => onExportFolder(folderIds)}
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
+                      <DownloadIcon size={12} />
                     </button>
                   </div>
                 </div>
@@ -277,10 +271,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                               disabled
                               title="View questions (placeholder)"
                             >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
+                              <EyeIcon size={12} />
                             </button>
 
                             {/* Delete Item */}
@@ -290,10 +281,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                               title="Delete item"
                               onClick={() => onDeleteItem(item.id)}
                             >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              </svg>
+                              <TrashIcon size={12} />
                             </button>
 
                             {/* Export Item */}
@@ -303,11 +291,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                               title="Export item"
                               onClick={() => onExportItem(item.id)}
                             >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
-                              </svg>
+                              <DownloadIcon size={12} />
                             </button>
                           </div>
                         </div>

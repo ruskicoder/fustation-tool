@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ExamDataset, ExportFormat, SavedExamsMap, StatusState } from '../types';
+import { ExamDataset, ExportFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS } from '../types';
 import { extractExamFromScripts, crawlExamFromDOM, getExamIdFromUrl } from '../utils/parser';
 import { exportExam } from '../utils/exporter';
 import {
@@ -12,11 +12,18 @@ import {
   getPanelStateFromStorage,
   setPanelStateInStorage,
   getPendingFetchFromStorage,
-  setPendingFetchInStorage
+  setPendingFetchInStorage,
+  getThemeFromStorage,
+  setThemeInStorage
 } from '../utils/storage';
+import { usePanelGeometry } from '../hooks/usePanelGeometry';
+import { useToasts } from '../hooks/useToasts';
 import { ExtractTab } from './ExtractTab';
 import { SavedTab } from './SavedTab';
 import { FormatSwitcher } from './FormatSwitcher';
+import { ResizeHandles } from './ResizeHandles';
+import { ToastHost } from './ToastHost';
+import { BoltIcon, MinimizeIcon, PaletteIcon } from './Icons';
 
 function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
   if (/\/marketplace\/exam\//.test(pathname)) return 'exam';
@@ -28,10 +35,17 @@ export const Overlay: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'extract' | 'saved'>('extract');
   const [activeFormat, setActiveFormat] = useState<ExportFormat>('MD');
+  const [theme, setTheme] = useState<ThemeName>('glass-dark');
   const [currentDataset, setCurrentDataset] = useState<ExamDataset | null>(null);
   const [savedExams, setSavedExams] = useState<SavedExamsMap>({});
   const [status, setStatus] = useState<StatusState>('ready');
   const [progressLabel, setProgressLabel] = useState<string>('');
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const { geometry, hydrated, isDragging, isResizing, startDrag, startResize } = usePanelGeometry(isExpanded);
+  const { toasts, push, dismiss } = useToasts();
 
   const runFetch = async (isManual = false) => {
     setStatus('fetching');
@@ -44,12 +58,14 @@ export const Overlay: React.FC = () => {
     if (fastData && fastData.questions && fastData.questions.length > 0) {
       setCurrentDataset(fastData);
       setStatus('ready');
+      push(`Extracted ${fastData.questions.length} questions`, 'success');
       return;
     }
 
     // If manual fetch triggered and fastData is missing/empty, reload page to re-hydrate RSC script tags
     if (isManual) {
       console.warn('[fustation-tool] Script payload missing on manual fetch. Setting pending fetch & reloading page...');
+      push('Re-hydrating scripts...', 'info');
       setPendingFetchInStorage(true, () => {
         if (typeof window !== 'undefined') {
           window.location.reload();
@@ -67,12 +83,15 @@ export const Overlay: React.FC = () => {
       if (crawled && crawled.questions && crawled.questions.length > 0) {
         setCurrentDataset(crawled);
         setStatus('ready');
+        push(`Crawled ${crawled.questions.length} questions`, 'success');
       } else {
         setStatus('error');
+        push('Failed to parse exam page', 'error');
       }
     } catch (e) {
       console.error('[fustation-tool] DOM Crawler error:', e);
       setStatus('error');
+      push('DOM crawler error', 'error');
     } finally {
       setProgressLabel('');
     }
@@ -83,6 +102,11 @@ export const Overlay: React.FC = () => {
     getPanelStateFromStorage(({ isExpanded: savedExpanded, activeTab: savedTab }) => {
       if (typeof savedExpanded === 'boolean') setIsExpanded(savedExpanded);
       if (savedTab) setActiveTab(savedTab);
+    });
+
+    // Hydrate theme
+    getThemeFromStorage((t) => {
+      setTheme(t);
     });
 
     // Load initial storage settings & auto extract on initial mount
@@ -126,6 +150,7 @@ export const Overlay: React.FC = () => {
                 saveExamToStorage(prevDataset, (updatedList) => {
                   setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
                   setStatus('ready');
+                  push(`Autosaved dataset (${prevDataset.questions.length}Q)`, 'info');
                 });
               } else {
                 setStatus('ready');
@@ -149,9 +174,18 @@ export const Overlay: React.FC = () => {
     };
   }, [savedExams]);
 
+  const handleThemeCycle = () => {
+    const idx = THEME_ORDER.indexOf(theme);
+    const nextTheme = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+    setTheme(nextTheme);
+    setThemeInStorage(nextTheme);
+    push(`Theme: ${THEME_LABELS[nextTheme]}`, 'info');
+  };
+
   const handleFormatChange = (fmt: ExportFormat) => {
     setActiveFormat(fmt);
     setActiveFormatInStorage(fmt);
+    push(`Format: ${fmt}`, 'info');
   };
 
   const handleFetch = async () => {
@@ -182,6 +216,7 @@ export const Overlay: React.FC = () => {
     const dataToSave = await ensureDatasetLoaded();
     if (!dataToSave || !dataToSave.questions || dataToSave.questions.length === 0) {
       setStatus('error');
+      push('No question data to save', 'error');
       return;
     }
 
@@ -189,6 +224,7 @@ export const Overlay: React.FC = () => {
     saveExamToStorage(dataToSave, (updatedList) => {
       setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
       setStatus('extracted'); // Display Saved state
+      push('Exam saved to local cache', 'success');
     });
   };
 
@@ -196,6 +232,7 @@ export const Overlay: React.FC = () => {
     const dataToExport = await ensureDatasetLoaded();
     if (!dataToExport || !dataToExport.questions || dataToExport.questions.length === 0) {
       setStatus('error');
+      push('No question data to export', 'error');
       return;
     }
 
@@ -207,15 +244,13 @@ export const Overlay: React.FC = () => {
 
       setStatus('downloading');
       exportExam(dataToExport, activeFormat);
+      push(`Exported ${dataToExport.subjectCode} in ${activeFormat}`, 'info');
 
       setTimeout(() => {
         setStatus('extracted');
       }, 600);
     }, 300);
   };
-
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const handleToggleSelect = (examId: string) => {
     setSelectedIds((prev) => {
@@ -268,11 +303,13 @@ export const Overlay: React.FC = () => {
 
     setSavedExams(remainingMap);
     setSelectedIds(new Set());
+    push(`Deleted ${idsToDelete.length} saved exams`, 'warn');
   };
 
   const handleBatchDownload = () => {
     if (selectedIds.size === 0) return;
     const idsToExport = Array.from(selectedIds);
+    push(`Exporting ${idsToExport.length} exams in ${activeFormat}...`, 'info');
     idsToExport.forEach((id, index) => {
       const item = savedExams[id];
       if (item && item.dataset) {
@@ -296,9 +333,11 @@ export const Overlay: React.FC = () => {
       folderExamIds.forEach((id) => next.delete(id));
       return next;
     });
+    push(`Deleted folder (${folderExamIds.length} items)`, 'warn');
   };
 
   const handleExportFolder = (folderExamIds: string[]) => {
+    push(`Exporting folder (${folderExamIds.length} items)...`, 'info');
     folderExamIds.forEach((id, index) => {
       const item = savedExams[id];
       if (item && item.dataset) {
@@ -313,6 +352,7 @@ export const Overlay: React.FC = () => {
     const item = savedExams[examId];
     if (item && item.dataset) {
       exportExam(item.dataset, activeFormat);
+      push(`Exported ${item.title} in ${activeFormat}`, 'info');
     }
   };
 
@@ -324,13 +364,7 @@ export const Overlay: React.FC = () => {
         next.delete(examId);
         return next;
       });
-    });
-  };
-
-  const handleClearAll = () => {
-    clearAllExamsFromStorage(() => {
-      setSavedExams({});
-      setSelectedIds(new Set());
+      push('Deleted exam item', 'warn');
     });
   };
 
@@ -374,7 +408,10 @@ export const Overlay: React.FC = () => {
   };
 
   return (
-    <>
+    <div id="fustation-tool-root" data-theme={theme}>
+      {/* Toast Notification Queue Host */}
+      <ToastHost toasts={toasts} onDismiss={dismiss} />
+
       {/* FAB Button */}
       <div className="fus-fab-container">
         <button
@@ -383,25 +420,42 @@ export const Overlay: React.FC = () => {
           aria-label="Toggle fustation-tool overlay"
           onClick={handleToggleExpand}
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-          </svg>
+          <BoltIcon size={19} />
           {savedCount > 0 && <div className="fus-fab-badge">{savedCount}</div>}
         </button>
       </div>
 
-      {/* Expanded Panel (LOCKED 2:1 ASPECT RATIO) */}
+      {/* Expanded Drag & Resizable Panel */}
       {isExpanded && (
-        <div className="fus-panel">
+        <div
+          className="fus-panel"
+          data-dragging={isDragging ? 'true' : undefined}
+          data-resizing={isResizing ? 'true' : undefined}
+          style={{
+            position: 'fixed',
+            left: `${geometry.x}px`,
+            top: `${geometry.y}px`,
+            width: `${geometry.w}px`,
+            height: `${geometry.h}px`,
+            bottom: 'auto',
+            right: 'auto'
+          }}
+        >
           <div className="fus-accent-hairline" />
 
-          {/* Header */}
+          {/* 8-Way Resize Handles */}
+          <ResizeHandles onStart={startResize} />
+
+          {/* Header (Acts as Drag Bar) */}
           <div className="fus-header">
-            <div className="fus-brand">
+            <div
+              className="fus-brand"
+              onPointerDown={startDrag}
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+              title="Drag to move panel"
+            >
               <div className="fus-logo">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
+                <BoltIcon size={12} />
               </div>
               <div className="fus-title-group">
                 <span className="fus-title">fustation-tool</span>
@@ -430,15 +484,27 @@ export const Overlay: React.FC = () => {
               <FormatSwitcher currentFormat={activeFormat} onChange={handleFormatChange} className="fus-header-switcher" />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {renderStatusPill()}
+              
+              {/* Theme Switcher Button */}
+              <button
+                type="button"
+                className="fus-ctrl-btn"
+                aria-label="Switch theme"
+                title={`Theme: ${THEME_LABELS[theme]}`}
+                onClick={handleThemeCycle}
+              >
+                <PaletteIcon size={13} />
+              </button>
+
               <button
                 type="button"
                 className="fus-ctrl-btn"
                 aria-label="Minimize"
                 onClick={handleMinimize}
               >
-                –
+                <MinimizeIcon size={13} />
               </button>
             </div>
           </div>
@@ -448,6 +514,7 @@ export const Overlay: React.FC = () => {
             {activeTab === 'extract' ? (
               <ExtractTab
                 dataset={currentDataset}
+                status={status}
                 onFetch={handleFetch}
                 onSave={handleSave}
                 onDownload={handleDownload}
@@ -456,6 +523,7 @@ export const Overlay: React.FC = () => {
               <SavedTab
                 savedExams={savedExams}
                 selectedIds={selectedIds}
+                isLoading={!hydrated}
                 onToggleSelect={handleToggleSelect}
                 onToggleFolder={handleToggleFolder}
                 onSelectAll={handleSelectAll}
@@ -472,7 +540,6 @@ export const Overlay: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
-

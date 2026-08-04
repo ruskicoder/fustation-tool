@@ -1,12 +1,16 @@
-import { ExamDataset, ExportFormat, SavedExamsMap } from '../types';
+import { ExamDataset, ExportFormat, SavedExamsMap, ThemeName, PanelGeometry } from '../types';
 
 const STORAGE_KEYS = {
   SAVED_EXAMS: 'fustation_saved_exams',
   ACTIVE_FORMAT: 'fustation_active_format',
   PANEL_EXPANDED: 'fustation_panel_expanded',
   ACTIVE_TAB: 'fustation_active_tab',
-  PENDING_FETCH: 'fustation_pending_fetch'
+  PENDING_FETCH: 'fustation_pending_fetch',
+  THEME: 'fustation_theme',
+  GEOMETRY: 'fustation_panel_geometry'
 };
+
+const VALID_THEMES: ThemeName[] = ['glass-dark', 'glass-light', 'neu-light', 'neu-dark'];
 
 export function normalizeSavedDataset(dataset: any): ExamDataset {
   if (!dataset) {
@@ -213,6 +217,70 @@ export function setPendingFetchInStorage(pending: boolean, callback?: () => void
   }
 
   chrome.storage.local.set({ [STORAGE_KEYS.PENDING_FETCH]: pending }, () => {
+    if (callback) callback();
+  });
+}
+
+/* ---------------------------------------------------------------- *
+ * Theme persistence
+ * ---------------------------------------------------------------- */
+
+export function getThemeFromStorage(callback: (theme: ThemeName) => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback('glass-dark');
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.THEME], (res) => {
+    const raw = res[STORAGE_KEYS.THEME] as ThemeName | undefined;
+    callback(raw && VALID_THEMES.indexOf(raw) !== -1 ? raw : 'glass-dark');
+  });
+}
+
+export function setThemeInStorage(theme: ThemeName, callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.set({ [STORAGE_KEYS.THEME]: theme }, () => {
+    if (callback) callback();
+  });
+}
+
+/* ---------------------------------------------------------------- *
+ * Panel geometry (drag position + resize dimensions)
+ * ---------------------------------------------------------------- */
+
+export function getGeometryFromStorage(callback: (geo: PanelGeometry | null) => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback(null);
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.GEOMETRY], (res) => {
+    const raw = res[STORAGE_KEYS.GEOMETRY];
+    if (
+      raw &&
+      typeof raw.x === 'number' &&
+      typeof raw.y === 'number' &&
+      typeof raw.w === 'number' &&
+      typeof raw.h === 'number'
+    ) {
+      callback(raw as PanelGeometry);
+    } else {
+      callback(null);
+    }
+  });
+}
+
+export function setGeometryInStorage(geo: PanelGeometry, callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  chrome.storage.local.set({ [STORAGE_KEYS.GEOMETRY]: geo }, () => {
     if (callback) callback();
   });
 }
