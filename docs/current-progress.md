@@ -34,6 +34,20 @@
 - [x] **Dynamic Session Time Extraction & N/A Fallback (ISSUE-30)**: Replaced hardcoded default session time `'09:10'` with `extractSessionTimeFromText()` 3-pass extraction, outputting explicit `'N/A'` when session time is missing.
 - [x] **Extension Reload Proofing & Fetch State Resilience (ISSUE-31)**: Added `fustation_pending_fetch` storage flag to `chrome.storage.local`. Automatically resumes manual fetch extraction post-reload without user re-intervention.
 - [x] **Persistent Panel State & Auto-Open Persistence (ISSUE-32)**: Added `fustation_panel_expanded` and `fustation_active_tab` to `chrome.storage.local`. Automatically restores panel open/closed state (`isExpanded`) and active tab (`activeTab`) across page reloads and SPA navigation.
+- [x] **SavedTab Outline View & Subject Folder Hierarchy (ISSUE-33)**: Grouped saved exams by subject code with expandable folder accordions in `SavedTab.tsx`.
+- [x] **Enhanced Folder & Record Row Badge Layouts (ISSUE-34)**: Updated badges for subject folders, exam type, term, and partial fetch flags.
+- [x] **Global Format Switcher Relocation (ISSUE-35)**: Moved `FormatSwitcher` to the header in `Overlay.tsx`.
+- [x] **ExtractTab Panel Restructuring & SavedTab Sticky Toolbar Overhaul (ISSUE-36)**: Redesigned ExtractTab metadata layout and SavedTab sticky header controls.
+- [x] **Panel Geometry & Drag/Resize Handlers (ISSUE-37)**: Implemented draggable, resizable overlay panel with bounds safety in `usePanelGeometry.ts` and `ResizeHandles.tsx`.
+- [x] **Dynamic Theme System (ISSUE-38)**: Supported 4 visual themes (`glass-dark`, `glass-light`, `cyberpunk`, `nordic`) saved in local storage.
+- [x] **Transient Toast Notification Queue (ISSUE-39)**: Managed toast notifications via `useToasts.ts` and `ToastHost.tsx`.
+- [x] **Skeleton Shimmer Loaders (ISSUE-40)**: Replaced empty loading states with shimmering skeleton components in `Skeleton.tsx`.
+- [x] **Icon Dictionary Consolidation (ISSUE-41)**: Consolidated SVG icons into `Icons.tsx`.
+- [x] **Unified 4-Phase RSC Pipeline (ISSUE-42, ISSUE-44, ISSUE-45)**: Replaced two-branch `isManual` design with a unified 4-phase pipeline (0ms instant parse -> 300ms x10 polling retry -> single guarded reload -> surface error). Removed DOM crawler from auto-fetch paths. Added `fustation_reload_attempted` guard in `src/utils/storage.ts` and `runFetchRef` in `src/components/Overlay.tsx` to fix stale closure issues.
+- [x] **Deprecated DOM Crawler (ISSUE-43)**: Marked `crawlExamFromDOM` as `@deprecated` with explanatory JSDoc and removed it from the primary fetch flow.
+- [x] **RSC Parser Quote Escape Fix (ISSUE-46)**: Implemented `isEscapedQuote` helper in `src/utils/parser.ts` to count preceding backslashes, handling literal backslashes before string-closing quotes (e.g., `\\"` in JPD113 payload).
+- [x] **In-Extension ExamSet Viewer Panel (ISSUE-16)**: Built `ViewerPanel.tsx`, `QuestionCard.tsx`, `QuestionList.tsx`, `ScrollspyRail.tsx`, `ImageLightbox.tsx`, `highlight.ts`, and `panelCollision.ts` for inline exam inspection.
+- [x] **ImageLightbox Dialog Hotfix**: Ensured `ImageLightbox` returns `null` when image URL is falsy so empty `<dialog>` element is never rendered in the DOM.
 
 ---
 
