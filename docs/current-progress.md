@@ -48,6 +48,8 @@
 - [x] **RSC Parser Quote Escape Fix (ISSUE-46)**: Implemented `isEscapedQuote` helper in `src/utils/parser.ts` to count preceding backslashes, handling literal backslashes before string-closing quotes (e.g., `\\"` in JPD113 payload).
 - [x] **In-Extension ExamSet Viewer Panel (ISSUE-16)**: Built `ViewerPanel.tsx`, `QuestionCard.tsx`, `QuestionList.tsx`, `ScrollspyRail.tsx`, `ImageLightbox.tsx`, `highlight.ts`, and `panelCollision.ts` for inline exam inspection.
 - [x] **ImageLightbox Dialog Hotfix**: Ensured `ImageLightbox` returns `null` when image URL is falsy so empty `<dialog>` element is never rendered in the DOM.
+- [x] **Batch Exam Extraction System & Interactive Preview Flow (ISSUE-12)**: Implemented catalog product discovery, background RSC API worker queue, interactive preview verification flow, `chrome.storage.local` state persistence, responsive preview controls, and full exam code header display.
+
 
 ---
 

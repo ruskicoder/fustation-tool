@@ -1696,8 +1696,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex-shrink: 1;
   min-width: 0;
+  max-width: 60%;
   user-select: none;
   color: var(--fus-text-dim);
 }
@@ -1705,8 +1706,9 @@
 .fus-viewer-examcode {
   font-size: var(--fus-fs-xs);
   letter-spacing: 0.04em;
-  flex-shrink: 0;
-  max-width: 120px;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: clamp(140px, 45cqw, 320px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2128,3 +2130,146 @@ mark.fus-highlight {
     animation: none;
   }
 }
+
+/* ================================================================
+   23. Batch Mode UI
+   ================================================================ */
+
+.fus-batch-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.fus-batch-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border-dim);
+  border-radius: var(--fus-r-md);
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text-mid);
+}
+
+.fus-batch-progress-pill {
+  height: 6px;
+  flex: 1;
+  background: var(--fus-layer-hover);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+
+.fus-batch-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--fus-emerald), var(--fus-sky));
+  transition: width 0.3s var(--fus-ease);
+}
+
+.fus-batch-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.fus-batch-stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--fus-r-md);
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border-dim);
+  font-size: var(--fus-fs-xs);
+  color: var(--fus-text-mid);
+}
+
+.fus-stepper-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--fus-border-dim);
+  background: var(--fus-layer-hover);
+  color: var(--fus-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.fus-stepper-btn:hover:not(:disabled) {
+  background: var(--fus-accent-soft);
+  color: var(--fus-accent);
+}
+
+.fus-stepper-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fus-batch-preview-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: var(--fus-r-md);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: var(--fus-fs-xs);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.fus-preview-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--fus-sky);
+  font-weight: 700;
+}
+
+.fus-preview-nav-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.fus-btn-preview-nav {
+  padding: 3px 2px !important;
+  font-size: 10px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.fus-batch-log-box {
+  width: 100%;
+  height: 62px;
+  padding: 5px 7px;
+  border-radius: var(--fus-r-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--fus-border-dim);
+  color: #a7f3d0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+

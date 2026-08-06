@@ -166,6 +166,17 @@ export const Overlay: React.FC = () => {
       setSavedExams(exams || {});
     });
 
+    // Storage change listener to keep savedExams up-to-date during batch background saves
+    const handleStorageChange = (changes: any, areaName: string) => {
+      if (areaName === 'local' && changes.fustation_saved_exams) {
+        setSavedExams(changes.fustation_saved_exams.newValue || {});
+      }
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+    }
+
     // Restore viewer open state (but don't re-open without a dataset)
     getViewerOpenFromStorage((wasOpen) => {
       // Viewer open state is restored only if there's a dataset available;
@@ -188,7 +199,14 @@ export const Overlay: React.FC = () => {
         runFetchRef.current?.();
       }
     });
+
+    return () => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
+    };
   }, []);
+
 
   // Background SPA Route Observer
   useEffect(() => {
@@ -486,6 +504,7 @@ export const Overlay: React.FC = () => {
     const statusMap: Record<StatusState, { label: string; className: string }> = {
       ready: { label: 'Ready', className: 'fus-status-ready' },
       fetching: { label: `Fetching${progressLabel}...`, className: 'fus-status-fetching' },
+      batch_fetching: { label: 'Batching...', className: 'fus-status-fetching' },
       autosaving: { label: 'Autosaving...', className: 'fus-status-autosaving' },
       processing: { label: 'Processing...', className: 'fus-status-processing' },
       downloading: { label: 'Downloading...', className: 'fus-status-downloading' },
@@ -615,6 +634,8 @@ export const Overlay: React.FC = () => {
                 onSave={handleSave}
                 onDownload={handleDownload}
                 onView={handleViewCurrentExam}
+                onViewPreviewDataset={handleViewExam}
+                onCloseViewer={handleViewerClose}
               />
             ) : (
               <SavedTab

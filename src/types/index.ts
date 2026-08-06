@@ -1,6 +1,38 @@
 export type ExportFormat = 'MD' | 'PDF' | 'JSON';
 
-export type StatusState = 'ready' | 'fetching' | 'autosaving' | 'processing' | 'downloading' | 'extracted' | 'error';
+export type StatusState = 'ready' | 'fetching' | 'autosaving' | 'processing' | 'downloading' | 'extracted' | 'error' | 'batch_fetching';
+
+export type ExtractMode = 'single' | 'batch';
+
+export type BatchFetchStatus =
+  | 'idle'
+  | 'discovering'
+  | 'preview_fetching'
+  | 'preview_paused'
+  | 'batch_fetching'
+  | 'paused'
+  | 'completed'
+  | 'cancelled'
+  | 'error';
+
+export interface BatchItemTask {
+  id: string;
+  title: string;
+  subjectCode?: string;
+  examUrl: string;
+  rscUrl: string;
+}
+
+export interface BatchState {
+  status: BatchFetchStatus;
+  isPreviewEnabled: boolean;
+  previewCount: number;
+  totalDiscovered: number;
+  completedCount: number;
+  logs: string[];
+  previewDatasets: ExamDataset[];
+  previewIndex: number;
+}
 
 /** Surface themes. `glass-dark` is the default; clicking the header logo cycles them. */
 export type ThemeName = 'glass-dark' | 'glass-light' | 'neu-light' | 'neu-dark';

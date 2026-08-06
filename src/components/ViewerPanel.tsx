@@ -142,7 +142,8 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
   // ----------------------------------------------------------------
   // Derived exam metadata for header
   // ----------------------------------------------------------------
-  const examCode = [dataset.subjectCode, dataset.examType].filter(Boolean).join(' · ');
+  const displayCode = dataset.title || dataset.parsedTitle || dataset.subjectCode;
+  const examCode = [displayCode, dataset.examType].filter(Boolean).join(' · ');
   const questionCount = dataset.questions?.length ?? 0;
 
   return (
@@ -178,7 +179,7 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
           {/* Exam Code Badge — drag area */}
           <div className="fus-viewer-brand" title="Drag to move panel">
             <EyeIcon size={12} />
-            <span className="fus-badge fus-badge-subject fus-viewer-examcode">
+            <span className="fus-badge fus-badge-subject fus-viewer-examcode" title={examCode}>
               {examCode}
             </span>
             <span className="fus-viewer-qcount">{questionCount}Q</span>

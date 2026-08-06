@@ -56,6 +56,7 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-44**: RSC Payload Streaming Retry Loop (300ms x10) -> Fixed in `src/components/Overlay.tsx`.
 - [x] **ISSUE-45**: `runFetch` Stale Closure Ref Pattern (`runFetchRef`) -> Fixed in `src/components/Overlay.tsx`.
 - [x] **ISSUE-46**: `tryParsePartialJson` Quote Escape Handling (`isEscapedQuote`) -> Fixed in `src/utils/parser.ts`.
+- [x] **ISSUE-12**: Catalog Discovery, RSC API Queue & Interactive Batch Extraction -> Fixed in `src/utils/batchFetcher.ts`, `src/components/ExtractTab.tsx`, `src/components/Overlay.tsx`, `src/styles/overlay.css`.
 
 ---
 
@@ -70,21 +71,11 @@ This document maintains open, deferred, and roadmap issues identified during tes
 
 ---
 
-### [ISSUE-12] Catalog Discovery & Server Action Pagination
-- **Status**: 🔵 **FUTURE ROADMAP**
-- **Routes**: `/home` and `/subjects/[subjectCode]`
-- **Mechanism**:
-  - Parse `initialProducts` array from catalog page RSC stream.
-  - Intercept POST Server Action requests to fetch full product list for batch extraction.
-
----
-
 ## Summary Matrix of Remaining Open Issues
 
 | Issue ID | Category | Description | Status | Target File |
 | :--- | :--- | :--- | :--- | :--- |
 | **ISSUE-07** | Exporter | Enhanced `# [info]` block for Markdown & PDF cover | 🟡 Nice-to-Have | [src/utils/compiler.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/compiler.ts) |
-| **ISSUE-12** | Catalog | Catalog route `initialProducts` batch extraction | 🔵 Roadmap | [src/utils/parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts) |
 
 ---
 

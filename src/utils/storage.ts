@@ -1,4 +1,4 @@
-import { ExamDataset, ExportFormat, SavedExamsMap, ThemeName, PanelGeometry } from '../types';
+import { ExamDataset, ExportFormat, SavedExamsMap, ThemeName, PanelGeometry, BatchState } from '../types';
 
 const STORAGE_KEYS = {
   SAVED_EXAMS: 'fustation_saved_exams',
@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   GEOMETRY: 'fustation_panel_geometry',
   VIEWER_GEOMETRY: 'fustation_viewer_geometry',
   VIEWER_OPEN: 'fustation_viewer_open',
-  RELOAD_ATTEMPTED: 'fustation_reload_attempted'
+  RELOAD_ATTEMPTED: 'fustation_reload_attempted',
+  BATCH_STATE: 'fustation_batch_state'
 };
 
 const VALID_THEMES: ThemeName[] = ['glass-dark', 'glass-light', 'neu-light', 'neu-dark'];
@@ -397,3 +398,41 @@ export function clearReloadAttemptedFromStorage(callback?: () => void): void {
     if (callback) callback();
   });
 }
+
+/* ----------------------------------------------------------------
+ * Batch state persistence
+ * ---------------------------------------------------------------- */
+
+export function getBatchStateFromStorage(callback: (state: BatchState | null) => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    callback(null);
+    return;
+  }
+
+  chrome.storage.local.get([STORAGE_KEYS.BATCH_STATE], (res) => {
+    const raw = res[STORAGE_KEYS.BATCH_STATE];
+    if (raw && typeof raw === 'object') {
+      callback(raw as BatchState);
+    } else {
+      callback(null);
+    }
+  });
+}
+
+export function setBatchStateInStorage(state: BatchState | null, callback?: () => void): void {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+    if (callback) callback();
+    return;
+  }
+
+  if (state === null) {
+    chrome.storage.local.remove(STORAGE_KEYS.BATCH_STATE, () => {
+      if (callback) callback();
+    });
+  } else {
+    chrome.storage.local.set({ [STORAGE_KEYS.BATCH_STATE]: state }, () => {
+      if (callback) callback();
+    });
+  }
+}
+
