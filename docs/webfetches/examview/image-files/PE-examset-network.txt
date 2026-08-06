@@ -1,0 +1,196 @@
+fetch
+
+Request URL
+https://www.fustation.net/marketplace/exam/cmorg7cck000004l2z128jojc
+Request Method
+POST
+Status Code
+200 OK
+Remote Address
+172.67.208.138:443
+Referrer Policy
+strict-origin-when-cross-origin
+alt-svc
+h3=":443"; ma=86400
+cache-control
+no-cache, no-store, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a26afae8b996d846-SIN
+content-encoding
+br
+content-type
+text/x-component
+date
+Thu, 06 Aug 2026 03:33:26 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=1YfbQoBkEJXjDf3mMyku0QKOoRKWOov%2B6c79vYxqPWXOmAd4WSAJJD9DubvhlKd7PxwigcoGTylODyfbwV2%2Fk28JvAnMrsUALNiNxsJAIL0Se9faLzQcmj5hWeBgq5gLW7r8SQ%3D%3D"}]}
+server
+cloudflare
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/marketplace/exam/[id]
+x-vercel-cache
+MISS
+x-vercel-id
+sin1::sin1::gjpk8-1785987206524-c4cc8c853246
+:authority
+www.fustation.net
+:method
+POST
+:path
+/marketplace/exam/cmorg7cck000004l2z128jojc
+:scheme
+https
+accept
+text/x-component
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+content-length
+2
+content-type
+text/plain;charset=UTF-8
+cookie
+__Secure-better-auth.session_token=N6vDlBeVOH8SE252kCb0q7vBoCrfV3N6.RRLuoEJANX04ZaucjP5MelkwX0Te51OvIIGJfwhRoPE%3D; __Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0xMFQwOToxMzoxOC4zNTlaIiwidG9rZW4iOiJONnZEbEJlVk9IOFNFMjUya0NiMHE3dkJvQ3JmVjNONiIsImNyZWF0ZWRBdCI6IjIwMjYtMDgtMDNUMDk6MTM6MTguMzU5WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDgtMDNUMDk6MTM6MTguMzU5WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4xNjQuMTQiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6InVzQ3pvblNlRHhWOGFVbmhkTnA4MnFHY3hoRDRlSFZLIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTk4ODEwMjYwOSwic2lnbmF0dXJlIjoiRGlJMjN6ZEVHUDE3X01YcmJLc3MwUDYxZHBoUVFwc0Z4anNlVzJ0blROMCJ9; cf_clearance=TiGb2IDFkrx0wNuq9.klnuvXVAwpFgm7nayn4Z0OlbU-1785987202-1.2.1.1-CAinfd3aWVQ_93p5cIBeOeL6qzgxqtM3rxsCVdqvkAPCsiE0t1PSnjw.CReWxO.yJowL8UCmd7WD12foQz_wRTVbeF3zFREksg79RcMPgeYCJWs1z0jRuyqIP83iaKGqqbFs4bvavXeX61MBxCgEqjtJBTl7jd690WMJU3WXlNPpMuc7hdyHBh3w1tTeoQoGTxmoLHKY4fG4rX3tUww82FXEyFnYY3AZ15jvzykioJYDqprT0qh3y.ujnCssO3AGxmjPEYgB2leGXZUcrRxTLpahYXoKXLa2hXj1NpBP0FBYkMKaSRTrxLFbj98OQ4tjx5Xt_PwvsiKSOyAPCXhjoNKBZz8WJMjPMq.al3FzSfc
+dnt
+1
+next-action
+003a825bc650d130fa22cac19ba3dee7c051f79e0b
+next-router-state-tree
+%5B%22%22%2C%7B%22children%22%3A%5B%22marketplace%22%2C%7B%22children%22%3A%5B%22exam%22%2C%7B%22children%22%3A%5B%5B%22id%22%2C%22cmorg7cck000004l2z128jojc%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D
+origin
+https://www.fustation.net
+priority
+u=1, i
+referer
+https://www.fustation.net/marketplace/exam/cmorg7cck000004l2z128jojc
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+x-deployment-id
+dpl_DiGK9FBLCoGhpXZrK84MDyqG7eLa
+
+Payload: []
+
+response:
+
+0:{"a":"$@1","f":"","b":"ssRxc0o-f80yIOFdgk2I2","q":"","i":false}
+1:{"success":true,"data":{"success":true,"user":{"id":"cms51qjn6000904ibjd3nj1q4","email":"khoado7577@gmail.com","name":"Do Dang Khoa","username":"khoado7577","avatarUrl":"https://lh3.googleusercontent.com/a/ACg8ocIfP41ANUgmyX7ScxoECva8XmSsY8ubqzBjOHnyEYjVh0E2-mDm=s96-c","mssv":"SE192357","role":"STUDENT","majorProgramId":"cmot19i120000dktomy9njp54","majorProgram":{"id":"cmot19i120000dktomy9njp54","slug":"ky-thuat-phan-mem","name":"Ká»¹ thuáº­t pháº§n má»m"},"emailVerified":true,"trustScore":0,"successfulTransactions":0,"fiveStarRatings":0,"bio":null,"phone":null,"fusVerified":false,"foundingMember":false,"waitlistPosition":null,"createdAt":"$D2026-07-28T19:26:04.530Z","updatedAt":"$D2026-07-28T19:27:33.247Z"}}}
+
+Request URL
+https://www.fustation.net/home/subject/WED201C?_rsc=1v9ti
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+172.67.208.138:443
+Referrer Policy
+strict-origin-when-cross-origin
+age
+0
+alt-svc
+h3=":443"; ma=86400
+cache-control
+private, no-cache, no-store, max-age=0, must-revalidate
+cf-cache-status
+DYNAMIC
+cf-ray
+a26afae95ba2d846-SIN
+content-encoding
+br
+content-type
+text/x-component
+date
+Thu, 06 Aug 2026 03:33:26 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=XVNtTIO8kS85hLexxQ6onSEJcXgmtdxvIZ34IMsKmbjB6%2BjzrlBODgkPmZKrFamox0AZc4kMYn%2B6qttFREnnEI6oO%2BGwcIkjH4F%2FfVfYo0%2Fzq%2BYjnQoHilotnxNlFqH4I%2Fzzwg%3D%3D"}]}
+server
+cloudflare
+strict-transport-security
+max-age=63072000
+vary
+rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary
+accept-encoding
+x-matched-path
+/home/subject/[code].rsc
+x-vercel-cache
+MISS
+x-vercel-id
+sin1::sin1::57m2v-1785987206620-77fc34ce1733
+:authority
+www.fustation.net
+:method
+GET
+:path
+/home/subject/WED201C?_rsc=1v9ti
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9
+cookie
+__Secure-better-auth.session_token=N6vDlBeVOH8SE252kCb0q7vBoCrfV3N6.RRLuoEJANX04ZaucjP5MelkwX0Te51OvIIGJfwhRoPE%3D; __Secure-better-auth.session_data=eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0xMFQwOToxMzoxOC4zNTlaIiwidG9rZW4iOiJONnZEbEJlVk9IOFNFMjUya0NiMHE3dkJvQ3JmVjNONiIsImNyZWF0ZWRBdCI6IjIwMjYtMDgtMDNUMDk6MTM6MTguMzU5WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDgtMDNUMDk6MTM6MTguMzU5WiIsImlwQWRkcmVzcyI6IjE3Mi42OC4xNjQuMTQiLCJ1c2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoWDExOyBMaW51eCB4ODZfNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xNTAuMC4wLjAgU2FmYXJpLzUzNy4zNiIsInVzZXJJZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQiLCJpZCI6InVzQ3pvblNlRHhWOGFVbmhkTnA4MnFHY3hoRDRlSFZLIn0sInVzZXIiOnsibmFtZSI6IkRvIERhbmcgS2hvYSIsImVtYWlsIjoia2hvYWRvNzU3N0BnbWFpbC5jb20iLCJlbWFpbFZlcmlmaWVkIjp0cnVlLCJpbWFnZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lmUDQxQU5VZ215WDdTY3hvRUN2YThYbVNzWTh1YnF6QmpPSG55RVlqVmgwRTItbURtPXM5Ni1jIiwiY3JlYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNjowNC41MzBaIiwidXBkYXRlZEF0IjoiMjAyNi0wNy0yOFQxOToyNzozMy4yNDdaIiwibXNzdiI6IlNFMTkyMzU3IiwidXNlcm5hbWUiOiJraG9hZG83NTc3Iiwicm9sZSI6IlNUVURFTlQiLCJ0cnVzdFNjb3JlIjowLCJzdWNjZXNzZnVsVHJhbnNhY3Rpb25zIjowLCJmaXZlU3RhclJhdGluZ3MiOjAsImJpbyI6bnVsbCwicGhvbmUiOm51bGwsImZ1c1ZlcmlmaWVkIjpmYWxzZSwiZm91bmRpbmdNZW1iZXIiOmZhbHNlLCJ3YWl0bGlzdFBvc2l0aW9uIjpudWxsLCJpZCI6ImNtczUxcWpuNjAwMDkwNGliamQzbmoxcTQifX0sImV4cGlyZXNBdCI6MTc4NTk4ODEwMjYwOSwic2lnbmF0dXJlIjoiRGlJMjN6ZEVHUDE3X01YcmJLc3MwUDYxZHBoUVFwc0Z4anNlVzJ0blROMCJ9; cf_clearance=TiGb2IDFkrx0wNuq9.klnuvXVAwpFgm7nayn4Z0OlbU-1785987202-1.2.1.1-CAinfd3aWVQ_93p5cIBeOeL6qzgxqtM3rxsCVdqvkAPCsiE0t1PSnjw.CReWxO.yJowL8UCmd7WD12foQz_wRTVbeF3zFREksg79RcMPgeYCJWs1z0jRuyqIP83iaKGqqbFs4bvavXeX61MBxCgEqjtJBTl7jd690WMJU3WXlNPpMuc7hdyHBh3w1tTeoQoGTxmoLHKY4fG4rX3tUww82FXEyFnYY3AZ15jvzykioJYDqprT0qh3y.ujnCssO3AGxmjPEYgB2leGXZUcrRxTLpahYXoKXLa2hXj1NpBP0FBYkMKaSRTrxLFbj98OQ4tjx5Xt_PwvsiKSOyAPCXhjoNKBZz8WJMjPMq.al3FzSfc
+dnt
+1
+next-router-prefetch
+1
+next-router-segment-prefetch
+/_tree
+next-url
+/marketplace/exam/cmorg7cck000004l2z128jojc
+priority
+i
+referer
+https://www.fustation.net/marketplace/exam/cmorg7cck000004l2z128jojc
+rsc
+1
+sec-ch-ua
+"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+x-deployment-id
+dpl_DiGK9FBLCoGhpXZrK84MDyqG7eLa
+
+Payload: _rsc=1v9ti
+
+Reponse: 0:{"b":"ssRxc0o-f80yIOFdgk2I2","f":[[["",{"children":["home",{"children":["subject",{"children":[["code","WED201C","d"],{"children":["__PAGE__",{},"$undefined","$undefined","$undefined",3]},"$undefined","$undefined","$undefined",3]},"$undefined","$undefined","$undefined",3]},"$undefined","$undefined","$undefined",1]},"$undefined","$undefined",true,2],null,[null,null],true]],"q":"","i":false,"S":false}
+
+
