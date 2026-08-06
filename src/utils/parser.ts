@@ -167,12 +167,47 @@ export function getExamIdFromUrl(): string | null {
   return m ? m[1] : null;
 }
 
+function resolveRscRefs(obj: any, refs: Record<string, string>) {
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      if (typeof obj[i] === 'string' && obj[i].startsWith('$') && refs[obj[i]]) {
+        obj[i] = refs[obj[i]];
+      } else if (typeof obj[i] === 'object' && obj[i] !== null) {
+        resolveRscRefs(obj[i], refs);
+      }
+    }
+  } else if (typeof obj === 'object' && obj !== null) {
+    for (const key in obj) {
+      if (typeof obj[key] === 'string' && obj[key].startsWith('$') && refs[obj[key]]) {
+        obj[key] = refs[obj[key]];
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        resolveRscRefs(obj[key], refs);
+      }
+    }
+  }
+}
+
 export function unescapeNextFChunk(text: string, targetId?: string): any {
   try {
     const matches = Array.from(text.matchAll(/self\.__next_f\.push\(\[\d+,\s*"([\s\S]*?)"\]\)/g));
     let fallbackParsed: any = null;
 
-    // Pass 1: Try matching targetId specifically if provided
+    // Pass 1: Build RSC dictionary for string references
+    const rscRefs: Record<string, string> = {};
+    for (const match of matches) {
+      try {
+        const unescaped = JSON.parse(`"${match[1]}"`);
+        const refMatches = Array.from(unescaped.matchAll(/([a-zA-Z0-9]+):T(\d+),/g)) as RegExpMatchArray[];
+        for (const rMatch of refMatches) {
+          const id = rMatch[1];
+          const len = parseInt(rMatch[2], 10);
+          const startIdx = (rMatch.index || 0) + rMatch[0].length;
+          rscRefs[`$${id}`] = unescaped.substring(startIdx, startIdx + len);
+        }
+      } catch (e) {}
+    }
+
+    // Pass 2: Try matching targetId specifically if provided
     for (const match of matches) {
       const escaped = match[1];
       if (escaped.includes('initialData') || escaped.includes('questions')) {
@@ -186,6 +221,7 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
           if (objStart !== -1) {
             const parsed = tryParsePartialJson(unescaped.substring(objStart));
             if (parsed && parsed.initialData) {
+              resolveRscRefs(parsed, rscRefs);
               if (targetId && (escaped.includes(targetId) || (parsed.initialData.product && parsed.initialData.product.id === targetId))) {
                 return parsed;
               }
@@ -198,6 +234,7 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
         if (prodIdx !== -1) {
           const parsed = tryParsePartialJson(unescaped.substring(prodIdx));
           if (parsed && parsed.initialData) {
+            resolveRscRefs(parsed, rscRefs);
             if (targetId && (escaped.includes(targetId) || (parsed.initialData.product && parsed.initialData.product.id === targetId))) {
               return parsed;
             }
@@ -218,6 +255,7 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
       if (objStart !== -1) {
         const parsed = tryParsePartialJson(text.substring(objStart));
         if (parsed && parsed.initialData) {
+          resolveRscRefs(parsed, rscRefs);
           if (targetId && parsed.initialData.product && parsed.initialData.product.id !== targetId) {
             return null; // Stale data, ID mismatch
           }

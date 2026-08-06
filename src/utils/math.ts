@@ -45,7 +45,7 @@ export function renderMathInText(text: string, searchQuery?: string): string {
       if (part.startsWith('$$') && part.endsWith('$$') && part.length > 4) {
         const formula = part.slice(2, -2).trim();
         try {
-          return `<span class="fus-math-block">${katex.renderToString(formula, { displayMode: true, throwOnError: false })}</span>`;
+          return `<span class="fus-math-block">${katex.renderToString(formula, { displayMode: true, throwOnError: false, strict: "ignore" })}</span>`;
         } catch {
           return `<code class="fus-math-raw">${escapeHtml(part)}</code>`;
         }
@@ -55,7 +55,7 @@ export function renderMathInText(text: string, searchQuery?: string): string {
       if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
         const formula = part.slice(1, -1).trim();
         try {
-          return `<span class="fus-math-inline">${katex.renderToString(formula, { displayMode: false, throwOnError: false })}</span>`;
+          return `<span class="fus-math-inline">${katex.renderToString(formula, { displayMode: false, throwOnError: false, strict: "ignore" })}</span>`;
         } catch {
           return `<code class="fus-math-raw">${escapeHtml(part)}</code>`;
         }
