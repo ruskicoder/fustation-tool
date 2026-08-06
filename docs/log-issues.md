@@ -56,7 +56,10 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-44**: RSC Payload Streaming Retry Loop (300ms x10) -> Fixed in `src/components/Overlay.tsx`.
 - [x] **ISSUE-45**: `runFetch` Stale Closure Ref Pattern (`runFetchRef`) -> Fixed in `src/components/Overlay.tsx`.
 - [x] **ISSUE-46**: `tryParsePartialJson` Quote Escape Handling (`isEscapedQuote`) -> Fixed in `src/utils/parser.ts`.
-- [x] **ISSUE-12**: Catalog Discovery, RSC API Queue & Interactive Batch Extraction -> Fixed in `src/utils/batchFetcher.ts`, `src/components/ExtractTab.tsx`, `src/components/Overlay.tsx`, `src/styles/overlay.css`.
+- [x] **ISSUE-48**: KaTeX Math Typesetting Engine & RSC Entity Unescaping -> Fixed in `src/utils/math.ts`, `src/components/MathText.tsx`, `src/components/QuestionCard.tsx`.
+- [x] **ISSUE-49**: Relative Image Path Normalization & Base64 Self-Contained Exports -> Fixed in `src/utils/images.ts`, `src/utils/compiler.ts`, `src/utils/exporter.ts`.
+- [x] **ISSUE-50 / Sub-Issue**: Pure React Lightbox Portal & Event Propagation Lock -> Fixed in `src/components/ImageLightbox.tsx`, `src/components/QuestionCard.tsx`, `src/styles/overlay.css`.
+- [x] **ISSUE-51**: Blob Image API Proxy Routing Failure -> Fixed in `src/utils/images.ts`.
 
 ---
 
@@ -69,6 +72,14 @@ This document maintains open, deferred, and roadmap issues identified during tes
   - Update `compileMarkdown()` in `src/utils/compiler.ts`.
   - Update `generatePrintHtml()` in `src/utils/exporter.ts`.
 
+### [ISSUE-47] PE (Practical Exam) Asset Link & Document Extraction
+- **Status**: 🔴 **CRITICAL**
+- **Symptom**: PE examsets (`WED201c_PE_2_SP26_162873`) contain 0 multiple choice questions, but provide downloadable PDF exam papers (`/api/exams/pdf?productId=...`) and ZIP answer keys (`answer-key.zip`). Extraction currently records 0 questions without saving or surfacing PDF/ZIP links.
+- **Remediation**:
+  - Extend `ExamDataset` schema with `examCategory` (`'FE' | 'PE'`), `pdfUrl`, and `zipUrl`.
+  - Update RSC parser `extractExamFromScripts` to parse PDF and ZIP URLs.
+  - Add PE mode support in `ViewerPanel.tsx`, `ExtractTab.tsx`, and `SavedTab.tsx` with direct PDF/ZIP action buttons.
+
 ---
 
 ## Summary Matrix of Remaining Open Issues
@@ -76,7 +87,9 @@ This document maintains open, deferred, and roadmap issues identified during tes
 | Issue ID | Category | Description | Status | Target File |
 | :--- | :--- | :--- | :--- | :--- |
 | **ISSUE-07** | Exporter | Enhanced `# [info]` block for Markdown & PDF cover | 🟡 Nice-to-Have | [src/utils/compiler.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/compiler.ts) |
+| **ISSUE-47** | Extractor / PE | PE Examset PDF & ZIP asset link capture & extraction | 🔴 Critical | [src/utils/parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts), [src/types/index.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/types/index.ts) |
 
 ---
 
 *Log updated in accordance with Stage 5 Issue Purge protocol.*
+

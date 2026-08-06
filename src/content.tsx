@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Overlay } from './components/Overlay';
+import 'katex/dist/katex.min.css';
 import './styles/overlay.css';
 
 console.log('[fustation-tool] Content Script Loaded');

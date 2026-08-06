@@ -49,6 +49,10 @@
 - [x] **In-Extension ExamSet Viewer Panel (ISSUE-16)**: Built `ViewerPanel.tsx`, `QuestionCard.tsx`, `QuestionList.tsx`, `ScrollspyRail.tsx`, `ImageLightbox.tsx`, `highlight.ts`, and `panelCollision.ts` for inline exam inspection.
 - [x] **ImageLightbox Dialog Hotfix**: Ensured `ImageLightbox` returns `null` when image URL is falsy so empty `<dialog>` element is never rendered in the DOM.
 - [x] **Batch Exam Extraction System & Interactive Preview Flow (ISSUE-12)**: Implemented catalog product discovery, background RSC API worker queue, interactive preview verification flow, `chrome.storage.local` state persistence, responsive preview controls, and full exam code header display.
+- [x] **Mathematical Syntax Typesetting Engine (ISSUE-48)**: Integrated KaTeX math formula rendering (`<MathText />`), RSC entity unescaping (`\u0026` -> `&`, `\\\\` -> `\`), and offline KaTeX font bundling (`dist/assets/fonts/`). Pre-renders KaTeX math HTML spans for PDF printing.
+- [x] **Relative Image Path Normalization & Base64 Self-Contained Exports (ISSUE-49)**: Implemented `normalizeImageUrl` to resolve relative paths (`exams/fe/...`) to absolute origin (`https://www.fustation.net/`), and on-demand async `fetchImageAsBase64` for 100% self-contained Markdown (`data:image/png;base64,...`), PDF, and JSON (`imageBase64` property) file exports.
+- [x] **Pure React Lightbox & Event Propagation Lock (ISSUE-50 / Sub-Issue)**: Re-implemented `ImageLightbox.tsx` as a pure React fixed backdrop portal scoped inside `#fustation-tool-root` with `e.stopPropagation()` & `e.preventDefault()` event locks, preventing host SPA unmounting on thumbnail clicks. Added `[ Question Illustration ]` label for empty-text questions.
+- [x] **Image API Proxy Routing (ISSUE-51)**: Fixed 404 image broken links by intercepting `exams/` blob keys in `normalizeImageUrl()` and routing them through `https://www.fustation.net/api/exams/question-image?key=` with proper URL encoding.
 
 
 ---

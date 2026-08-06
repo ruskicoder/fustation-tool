@@ -1,7 +1,8 @@
 import React from 'react';
 import { Question } from '../types';
 import { CheckIcon } from './Icons';
-import { highlightText } from '../utils/highlight';
+import { MathText } from './MathText';
+import { normalizeImageUrl } from '../utils/images';
 
 interface QuestionCardProps {
   question: Question;
@@ -11,13 +12,12 @@ interface QuestionCardProps {
 }
 
 /**
- * Individual question card.
- * - Section anchor: id="q-{index}" — targeted by ScrollspyRail & search nav.
- * - Correct answers are always highlighted (green accent) without any toggle.
- * - Keyword matches in question text and option text are wrapped in
- *   <mark class="fus-highlight"> via dangerouslySetInnerHTML.
- *   highlightText() HTML-escapes the source before inserting marks (XSS-safe).
- * - Images render as clickable thumbnails that open in ImageLightbox.
+ * Individual question card component.
+ * - Section anchor: id="q-{index}" — targeted by ScrollspyRail & search navigation.
+ * - LaTeX math typesetting via KaTeX (<MathText />).
+ * - Relative image path normalization via normalizeImageUrl().
+ * - Event propagation lock on thumbnail click to prevent host SPA unmounting.
+ * - Fallback label "[ Question Illustration ]" for questions with empty text.
  */
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
@@ -25,7 +25,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isMatch,
   onImageClick
 }) => {
-  const questionHtml = highlightText(question.text, searchQuery);
+  const normalizedImg = normalizeImageUrl(question.imageUrl);
+  const isTextEmpty = !question.text || !question.text.trim();
+
+  const handleThumbClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (normalizedImg) {
+      onImageClick(normalizedImg);
+    }
+  };
 
   return (
     <section
@@ -37,24 +46,31 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <span className="fus-q-index" aria-label={`Question ${question.index}`}>
           {question.index}
         </span>
-        <p
-          className="fus-q-text"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: questionHtml }}
-        />
+        {isTextEmpty ? (
+          <span className="fus-q-text fus-q-text-fallback">
+            [ Question Illustration ]
+          </span>
+        ) : (
+          <MathText
+            text={question.text}
+            searchQuery={searchQuery}
+            className="fus-q-text"
+          />
+        )}
       </div>
 
       {/* Optional image thumbnail */}
-      {question.imageUrl && (
+      {normalizedImg && (
         <button
           type="button"
           className="fus-q-img-thumb"
-          onClick={() => onImageClick(question.imageUrl!)}
+          onClick={handleThumbClick}
+          onPointerDown={(e) => e.stopPropagation()}
           title="Click to view full size"
           aria-label="View question image in full size"
         >
           <img
-            src={question.imageUrl}
+            src={normalizedImg}
             alt={`Question ${question.index} illustration`}
             loading="lazy"
           />
@@ -66,7 +82,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       <ol className="fus-q-options" aria-label="Answer options">
         {question.options.map((opt) => {
           const isCorrect = question.correctAnswers.includes(opt.id);
-          const optHtml = highlightText(opt.text, searchQuery);
           return (
             <li
               key={opt.id}
@@ -74,10 +89,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               aria-label={`Option ${opt.id}${isCorrect ? ' — correct answer' : ''}`}
             >
               <span className="fus-q-opt-id">{opt.id}</span>
-              <span
+              <MathText
+                text={opt.text}
+                searchQuery={searchQuery}
                 className="fus-q-opt-text"
-                // eslint-disable-next-line react/no-danger
-                dangerouslySetInnerHTML={{ __html: optHtml }}
               />
               {isCorrect && (
                 <CheckIcon size={12} className="fus-q-check" aria-hidden="true" />

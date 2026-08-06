@@ -83,6 +83,7 @@ export interface Question {
   id: string;
   text: string;
   imageUrl: string | null;
+  imageBase64?: string | null;
   correctAnswers: string[];
   options: Option[];
 }

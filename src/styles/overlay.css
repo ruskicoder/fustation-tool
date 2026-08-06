@@ -2044,48 +2044,50 @@ mark.fus-highlight {
    23. Image Lightbox (native <dialog>)
    ================================================================ */
 
-.fus-lightbox {
+.fus-lightbox-backdrop {
   position: fixed;
   inset: 0;
-  margin: auto;
-  max-width: min(90vw, 1200px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  padding: 16px;
+  animation: fus-panel-in var(--fus-dur-fast) var(--fus-ease) both;
+}
+
+.fus-lightbox-content {
+  position: relative;
+  max-width: min(92vw, 1200px);
   max-height: 90vh;
-  width: fit-content;
-  height: fit-content;
   background: var(--fus-surface);
   backdrop-filter: blur(var(--fus-surface-blur)) saturate(var(--fus-surface-sat));
   -webkit-backdrop-filter: blur(var(--fus-surface-blur)) saturate(var(--fus-surface-sat));
   border: var(--fus-edge);
   border-radius: var(--fus-r-xl);
   box-shadow: var(--fus-raise), var(--fus-inset);
-  padding: 10px;
-  overflow: hidden;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2147483647;
-  animation: fus-panel-in var(--fus-dur-slow) var(--fus-ease) both;
-}
-
-.fus-lightbox::backdrop {
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  overflow: hidden;
 }
 
 .fus-lightbox-img {
   display: block;
   max-width: min(88vw, 1180px);
-  max-height: 85vh;
+  max-height: 84vh;
   object-fit: contain;
   border-radius: var(--fus-r-lg);
 }
 
 .fus-lightbox-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 1;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
   width: 28px;
   height: 28px;
   border-radius: var(--fus-r-md);
@@ -2103,6 +2105,37 @@ mark.fus-highlight {
 .fus-lightbox-close:hover {
   background: var(--fus-layer-hover);
   color: var(--fus-text);
+}
+
+/* KaTeX Math Styling */
+.fus-math-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.fus-math-block {
+  display: block;
+  margin: 8px 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--fus-r-md);
+  overflow-x: auto;
+  text-align: center;
+}
+
+.fus-math-raw {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fus-fs-xs);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.fus-q-text-fallback {
+  font-style: italic;
+  color: var(--fus-text-dim);
+  font-size: var(--fus-fs-sm);
 }
 
 /* ================================================================

@@ -11,6 +11,10 @@ export default defineConfig({
         {
           src: 'src/manifest.json',
           dest: '.'
+        },
+        {
+          src: 'node_modules/katex/dist/fonts/*',
+          dest: 'assets/fonts'
         }
       ]
     })
@@ -18,6 +22,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    minify: 'terser',
+    terserOptions: {
+      format: {
+        ascii_only: true,
+      },
+    },
     rollupOptions: {
       input: {
         content: resolve(__dirname, 'src/content.tsx'),

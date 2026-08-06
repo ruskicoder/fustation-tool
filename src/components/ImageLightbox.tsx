@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { XIcon } from './Icons';
+import { normalizeImageUrl } from '../utils/images';
 
 interface ImageLightboxProps {
   url: string | null;
@@ -7,56 +8,75 @@ interface ImageLightboxProps {
 }
 
 /**
- * Full-resolution image preview using the native <dialog> element.
- * Native showModal() provides focus trapping + Escape-to-close automatically.
- * Backdrop click (clicking the <dialog> element itself, not its children) closes.
+ * Full-resolution image preview modal.
+ * Uses a pure React fixed backdrop container inside #fustation-tool-root to prevent
+ * native <dialog> top-layer intrusion and lock event bubbling away from host page listeners.
  */
 export const ImageLightbox: React.FC<ImageLightboxProps> = ({ url, onClose }) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  // Don't render the <dialog> element at all when there's no image to show.
-  if (!url) return null;
+  const normalizedUrl = normalizeImageUrl(url);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (!dialog.open) dialog.showModal();
-  }, [url]);
+    if (!url) return;
 
-  // The native 'close' event fires on Escape key AND programmatic close().
-  const handleDialogClose = () => {
-    onClose();
-  };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+    };
 
-  // Clicking the <dialog> backdrop (the dialog element itself, not children)
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
-    if (e.target === dialogRef.current) {
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [url, onClose]);
+
+  if (!normalizedUrl) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
+  const handleCloseButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  };
+
   return (
-    <dialog
-      ref={dialogRef}
-      className="fus-lightbox"
-      aria-label="Image preview"
-      aria-modal="true"
-      onClose={handleDialogClose}
+    <div
+      className="fus-lightbox-backdrop"
       onClick={handleBackdropClick}
+      onPointerDown={(e) => e.stopPropagation()}
+      aria-label="Image preview backdrop"
+      role="dialog"
+      aria-modal="true"
     >
-      <button
-        type="button"
-        className="fus-lightbox-close fus-ctrl-btn"
-        onClick={onClose}
-        aria-label="Close image preview"
+      <div
+        className="fus-lightbox-content"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        <XIcon size={14} />
-      </button>
-      <img
-        src={url}
-        alt="Full resolution question image"
-        className="fus-lightbox-img"
-      />
-    </dialog>
+        <button
+          type="button"
+          className="fus-lightbox-close fus-ctrl-btn"
+          onClick={handleCloseButtonClick}
+          aria-label="Close image preview"
+        >
+          <XIcon size={14} />
+        </button>
+        <img
+          src={normalizedUrl}
+          alt="Full resolution question image"
+          className="fus-lightbox-img"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    </div>
   );
 };
