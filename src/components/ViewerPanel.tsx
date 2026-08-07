@@ -8,13 +8,16 @@ import { ResizeHandles } from './ResizeHandles';
 import { ScrollspyRail } from './ScrollspyRail';
 import { QuestionList } from './QuestionList';
 import { ImageLightbox } from './ImageLightbox';
+import { downloadPdfAsset, downloadZipAsset } from '../utils/exporter';
 import {
   EyeIcon,
   MinimizeIcon,
   SearchIcon,
   ChevronIcon,
   ChevronLeftIcon,
-  XIcon
+  XIcon,
+  DownloadIcon,
+  InboxIcon
 } from './Icons';
 
 interface ViewerPanelProps {
@@ -41,8 +44,17 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
   mainGeo
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedPdfSearchQuery, setDebouncedPdfSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  // Debounce PDF iframe search fragment to prevent reloads on every keystroke
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedPdfSearchQuery(searchQuery.trim());
+    }, 600);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -135,6 +147,7 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      setDebouncedPdfSearchQuery(searchQuery.trim());
       handleNextMatch();
     }
   };
@@ -145,6 +158,37 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
   const displayCode = dataset.title || dataset.parsedTitle || dataset.subjectCode;
   const examCode = [displayCode, dataset.examType].filter(Boolean).join(' · ');
   const questionCount = dataset.questions?.length ?? 0;
+
+  // Helper to extract 5-8 digit numeric product ID from dataset attributes
+  const extractNumericProductId = (ds: ExamDataset): string | null => {
+    if (!ds) return null;
+    if (ds.id && /^\d+$/.test(ds.id)) return ds.id;
+    if (ds.pdfUrl) {
+      const m = ds.pdfUrl.match(/productId=(\d+)/i);
+      if (m && m[1]) return m[1];
+    }
+    const titleMatch = (ds.title || ds.parsedTitle || '').match(/\d{5,8}$/);
+    if (titleMatch && titleMatch[0]) return titleMatch[0];
+    return null;
+  };
+
+  const pdfIframeUrl = useMemo(() => {
+    let rawPdfUrl = dataset.pdfUrl;
+    if (!rawPdfUrl) {
+      const numId = extractNumericProductId(dataset);
+      if (numId) {
+        rawPdfUrl = `/api/exams/pdf?productId=${numId}`;
+      }
+    }
+    if (!rawPdfUrl) return null;
+    const baseUrl = rawPdfUrl.startsWith('http')
+      ? rawPdfUrl
+      : `https://www.fustation.net${rawPdfUrl.startsWith('/') ? '' : '/'}${rawPdfUrl}`;
+    const queryFragment = debouncedPdfSearchQuery
+      ? `#toolbar=1&search=${encodeURIComponent(debouncedPdfSearchQuery)}`
+      : '#toolbar=1';
+    return `${baseUrl}${queryFragment}`;
+  }, [dataset, debouncedPdfSearchQuery]);
 
   return (
     <>
@@ -182,7 +226,7 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
             <span className="fus-badge fus-badge-subject fus-viewer-examcode" title={examCode}>
               {examCode}
             </span>
-            <span className="fus-viewer-qcount">{questionCount}Q</span>
+            <span className="fus-viewer-qcount">{dataset.examCategory === 'PE' ? 'PE' : `${questionCount}Q`}</span>
           </div>
 
           {/* Search Input */}
@@ -194,53 +238,55 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
             <input
               type="text"
               className="fus-saved-search fus-viewer-search"
-              placeholder="Search questions &amp; answers..."
+              placeholder={dataset.examCategory === 'PE' ? 'Find in PDF paper...' : 'Search questions & answers...'}
               value={searchQuery}
               onChange={handleSearchChange}
               onKeyDown={handleSearchKeyDown}
-              aria-label="Search exam questions and answers"
+              aria-label="Search exam content"
             />
           </div>
 
-          {/* Result Navigation — visible only when there are matches */}
-          <div
-            className={`fus-viewer-result-nav${matchCount > 0 ? ' visible' : ''}`}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <span className="fus-viewer-result-count">
-              {matchCount > 0 ? `${activeMatchIndex + 1}/${matchCount}` : '0/0'}
-            </span>
-            <button
-              type="button"
-              className="fus-ctrl-btn"
-              onClick={handlePrevMatch}
-              disabled={matchCount === 0}
-              aria-label="Previous match"
-              title="Previous match"
+          {/* Result Navigation — visible only for FE matches */}
+          {dataset.examCategory !== 'PE' && (
+            <div
+              className={`fus-viewer-result-nav${matchCount > 0 ? ' visible' : ''}`}
+              onPointerDown={(e) => e.stopPropagation()}
             >
-              <ChevronLeftIcon size={11} />
-            </button>
-            <button
-              type="button"
-              className="fus-ctrl-btn"
-              onClick={handleNextMatch}
-              disabled={matchCount === 0}
-              aria-label="Next match"
-              title="Next match"
-            >
-              <ChevronIcon size={11} />
-            </button>
-            {/* Clear search */}
-            <button
-              type="button"
-              className="fus-ctrl-btn"
-              onClick={() => { setSearchQuery(''); setActiveMatchIndex(0); }}
-              aria-label="Clear search"
-              title="Clear search"
-            >
-              <XIcon size={11} />
-            </button>
-          </div>
+              <span className="fus-viewer-result-count">
+                {matchCount > 0 ? `${activeMatchIndex + 1}/${matchCount}` : '0/0'}
+              </span>
+              <button
+                type="button"
+                className="fus-ctrl-btn"
+                onClick={handlePrevMatch}
+                disabled={matchCount === 0}
+                aria-label="Previous match"
+                title="Previous match"
+              >
+                <ChevronLeftIcon size={11} />
+              </button>
+              <button
+                type="button"
+                className="fus-ctrl-btn"
+                onClick={handleNextMatch}
+                disabled={matchCount === 0}
+                aria-label="Next match"
+                title="Next match"
+              >
+                <ChevronIcon size={11} />
+              </button>
+              {/* Clear search */}
+              <button
+                type="button"
+                className="fus-ctrl-btn"
+                onClick={() => { setSearchQuery(''); setActiveMatchIndex(0); }}
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <XIcon size={11} />
+              </button>
+            </div>
+          )}
 
           {/* Close / Minimize */}
           <div
@@ -259,23 +305,65 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
           </div>
         </div>
 
-        {/* Viewer Body: 20% scrollspy | 80% question list */}
-        <div className="fus-viewer-body">
-          {/* Left: Scrollspy Nav */}
-          <ScrollspyRail
-            questions={dataset.questions ?? []}
-            scrollRef={scrollRef}
-            matchIndices={matchIndices}
-          />
+        {/* Viewer Body: Full-height PDF iframe for PE vs 20/80 split for FE */}
+        <div className={`fus-viewer-body ${(dataset.examCategory === 'PE' || questionCount === 0) ? 'pe-mode' : ''}`} style={{ overflow: 'hidden' }}>
+          {dataset.examCategory === 'PE' || questionCount === 0 ? (
+            <div style={{ gridColumn: '1 / -1', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {pdfIframeUrl ? (
+                <iframe
+                  src={pdfIframeUrl}
+                  title={dataset.title || 'PE Exam PDF Viewer'}
+                  style={{ width: '100%', height: '100%', border: 'none', background: '#525659' }}
+                />
+              ) : (
+                <div style={{ flex: 1, padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', textAlign: 'center', color: 'var(--fus-text-main)' }}>
+                  <InboxIcon size={32} />
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Practical Exam (PE) Asset Set</h3>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--fus-text-muted)', maxWidth: '360px' }}>
+                    This exam set contains downloadable Practical Exam papers and Answer Key archives.
+                  </p>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                    {dataset.pdfUrl && (
+                      <button
+                        type="button"
+                        className="fus-btn-primary"
+                        onClick={() => downloadPdfAsset(dataset)}
+                      >
+                        <DownloadIcon size={14} /> Download PDF Exam Paper
+                      </button>
+                    )}
+                    {dataset.zipUrl && (
+                      <button
+                        type="button"
+                        className="fus-btn-sec"
+                        onClick={() => downloadZipAsset(dataset)}
+                      >
+                        <DownloadIcon size={14} /> Download ZIP Answer Key
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Left: Scrollspy Nav */}
+              <ScrollspyRail
+                questions={dataset.questions ?? []}
+                scrollRef={scrollRef}
+                matchIndices={matchIndices}
+              />
 
-          {/* Right: Question List */}
-          <QuestionList
-            questions={dataset.questions ?? []}
-            searchQuery={searchQuery}
-            matchIndices={matchIndices}
-            scrollRef={scrollRef}
-            onImageClick={(url) => setLightboxUrl(url)}
-          />
+              {/* Right: Question List */}
+              <QuestionList
+                questions={dataset.questions ?? []}
+                searchQuery={searchQuery}
+                matchIndices={matchIndices}
+                scrollRef={scrollRef}
+                onImageClick={(url) => setLightboxUrl(url)}
+              />
+            </>
+          )}
         </div>
       </div>
 

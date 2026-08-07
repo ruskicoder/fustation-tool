@@ -1,4 +1,6 @@
-export type ExportFormat = 'MD' | 'PDF' | 'JSON';
+export type FEFormat = 'MD' | 'PDF' | 'JSON';
+export type PEFormat = 'PE_PDF' | 'PE_ZIP' | 'PE_BOTH';
+export type ExportFormat = FEFormat | PEFormat;
 
 export type StatusState = 'ready' | 'fetching' | 'autosaving' | 'processing' | 'downloading' | 'extracted' | 'error' | 'batch_fetching';
 
@@ -98,6 +100,9 @@ export interface ExamDataset {
   term?: string;
   termCode?: string;
   examType?: string;
+  examCategory?: 'FE' | 'PE';
+  pdfUrl?: string | null;
+  zipUrl?: string | null;
   examSessionTime?: string;
   examSessionDate?: string;
   parsedTitle?: string;
@@ -118,6 +123,9 @@ export interface SavedExamItem {
   term?: string;
   termCode?: string;
   examType?: string;
+  examCategory?: 'FE' | 'PE';
+  pdfUrl?: string | null;
+  zipUrl?: string | null;
   examSessionTime?: string;
   examSessionDate?: string;
   totalQuestions: number;

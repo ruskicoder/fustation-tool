@@ -4,6 +4,8 @@ import { RefreshIcon, SaveIcon, DownloadIcon, EyeIcon } from './Icons';
 import { MetaSkeleton } from './Skeleton';
 import { batchFetchManager } from '../utils/batchFetcher';
 
+import { downloadPdfAsset, downloadZipAsset } from '../utils/exporter';
+
 interface ExtractTabProps {
   dataset: ExamDataset | null;
   status?: StatusState;
@@ -42,6 +44,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
     term: 'SP26',
     termCode: 'SP26',
     examType: 'FE',
+    examCategory: 'FE',
     examSessionTime: 'N/A',
     examSessionDate: '29/04/2026',
     title: 'Open an exam page on fustation.net',
@@ -57,6 +60,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
   const termExamType = `${termStr} - ${typeStr}`;
   const sessionStr = `${data.examSessionTime || 'N/A'} | ${data.examSessionDate || '29/04/2026'}`;
   const isLoading = status === 'fetching' || status === 'processing';
+  const isPe = data.examCategory === 'PE';
   const hasQuestions = !!(dataset && dataset.questions && dataset.questions.length > 0);
 
   const activePreviewDataset = batchState.previewDatasets[batchState.previewIndex] || null;
@@ -79,7 +83,9 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
             {/* Row 2: 70% / 30% grid */}
             <div className="fus-meta-row-2">
               <span className="fus-meta-date" title="Exam Session Date">{sessionStr}</span>
-              <span className="fus-q-count" title="Question Count">{data.totalQuestions} Questions</span>
+              <span className="fus-q-count" title="Question Count">
+                {isPe ? 'PE Exam Assets' : `${data.totalQuestions} Questions`}
+              </span>
             </div>
 
             {/* Row 3: Full Width Subject Name */}
@@ -125,32 +131,66 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
           {extractMode === 'single' ? (
             /* Single Tab Action Stack */
             <>
-              <button
-                type="button"
-                className={hasQuestions ? 'fus-btn-view-active' : 'fus-btn-placeholder-view'}
-                disabled={!hasQuestions}
-                title={hasQuestions ? 'View exam questions' : 'Fetch or load an exam first'}
-                onClick={onView}
-              >
-                <EyeIcon size={13} />
-                View Questions
-              </button>
+              {isPe ? (
+                /* PE Asset Action Stack */
+                <>
+                  <button
+                    type="button"
+                    className="fus-btn-view-active"
+                    onClick={onView}
+                    title="View embedded PDF paper"
+                  >
+                    <EyeIcon size={13} />
+                    View PDF
+                  </button>
 
-              <div className="fus-action-row">
-                <button type="button" className="fus-btn-sec" onClick={onFetch}>
-                  <RefreshIcon size={13} />
-                  Fetch
-                </button>
-                <button type="button" className="fus-btn-sec" onClick={onSave}>
-                  <SaveIcon size={13} />
-                  Save
-                </button>
-              </div>
+                  <div className="fus-action-row">
+                    <button type="button" className="fus-btn-sec" onClick={onFetch}>
+                      <RefreshIcon size={13} />
+                      Fetch
+                    </button>
+                    <button type="button" className="fus-btn-sec" onClick={onSave}>
+                      <SaveIcon size={13} />
+                      Save
+                    </button>
+                  </div>
 
-              <button type="button" className="fus-btn-primary" onClick={onDownload}>
-                <DownloadIcon size={14} />
-                Download
-              </button>
+                  <button type="button" className="fus-btn-primary" onClick={onDownload}>
+                    <DownloadIcon size={14} />
+                    Download
+                  </button>
+                </>
+              ) : (
+                /* Standard FE Action Stack */
+                <>
+                  <button
+                    type="button"
+                    className={hasQuestions ? 'fus-btn-view-active' : 'fus-btn-placeholder-view'}
+                    disabled={!hasQuestions}
+                    title={hasQuestions ? 'View exam questions' : 'Fetch or load an exam first'}
+                    onClick={onView}
+                  >
+                    <EyeIcon size={13} />
+                    View Questions
+                  </button>
+
+                  <div className="fus-action-row">
+                    <button type="button" className="fus-btn-sec" onClick={onFetch}>
+                      <RefreshIcon size={13} />
+                      Fetch
+                    </button>
+                    <button type="button" className="fus-btn-sec" onClick={onSave}>
+                      <SaveIcon size={13} />
+                      Save
+                    </button>
+                  </div>
+
+                  <button type="button" className="fus-btn-primary" onClick={onDownload}>
+                    <DownloadIcon size={14} />
+                    Download
+                  </button>
+                </>
+              )}
             </>
           ) : (
             /* Batch Tab Action Stack */

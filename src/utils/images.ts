@@ -67,7 +67,9 @@ export async function fetchImageAsBase64(url: string | null | undefined): Promis
  * Clones an ExamDataset and populates `imageBase64` for all questions containing an `imageUrl`.
  */
 export async function embedBase64ImagesInDataset(dataset: ExamDataset): Promise<ExamDataset> {
-  if (!dataset || !dataset.questions) return dataset;
+  if (!dataset || !dataset.questions || dataset.examCategory === 'PE' || (dataset.examType || '').toUpperCase().includes('PE')) {
+    return dataset;
+  }
 
   const updatedQuestions: Question[] = await Promise.all(
     dataset.questions.map(async (q) => {

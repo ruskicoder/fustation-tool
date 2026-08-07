@@ -86,6 +86,14 @@
   --fus-focus: #38bdf8;
   --fus-shimmer: rgba(255, 255, 255, 0.09);
   --fus-shimmer-hi: rgba(255, 255, 255, 0.19);
+  --fus-modal-bg: #0f172a;
+  --fus-modal-header-bg: #1e293b;
+  --fus-modal-sub-bg: rgba(255, 255, 255, 0.05);
+  --fus-modal-border: rgba(255, 255, 255, 0.15);
+  --fus-modal-text: #f8fafc;
+  --fus-modal-text-muted: #94a3b8;
+  --fus-modal-accent: #38bdf8;
+  --fus-modal-code-bg: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
 }
 
@@ -129,6 +137,14 @@
   --fus-focus: #0369a1;
   --fus-shimmer: rgba(15, 32, 62, 0.08);
   --fus-shimmer-hi: rgba(15, 32, 62, 0.16);
+  --fus-modal-bg: #ffffff;
+  --fus-modal-header-bg: #f1f5f9;
+  --fus-modal-sub-bg: #f8fafc;
+  --fus-modal-border: rgba(15, 32, 62, 0.15);
+  --fus-modal-text: #0f172a;
+  --fus-modal-text-muted: #64748b;
+  --fus-modal-accent: #0284c7;
+  --fus-modal-code-bg: #e2e8f0;
   color-scheme: light;
 }
 
@@ -181,6 +197,14 @@
   --fus-focus: #0e7490;
   --fus-shimmer: rgba(163, 177, 198, 0.32);
   --fus-shimmer-hi: rgba(255, 255, 255, 0.78);
+  --fus-modal-bg: #e4e9f2;
+  --fus-modal-header-bg: #d8e0ed;
+  --fus-modal-sub-bg: #dbe2ef;
+  --fus-modal-border: rgba(163, 177, 198, 0.4);
+  --fus-modal-text: #1e293b;
+  --fus-modal-text-muted: #64748b;
+  --fus-modal-accent: #0284c7;
+  --fus-modal-code-bg: #d8e0ed;
   color-scheme: light;
 }
 
@@ -229,6 +253,14 @@
   --fus-focus: #38bdf8;
   --fus-shimmer: rgba(9, 11, 16, 0.4);
   --fus-shimmer-hi: rgba(66, 75, 92, 0.7);
+  --fus-modal-bg: #262b36;
+  --fus-modal-header-bg: #1d212b;
+  --fus-modal-sub-bg: #1f232d;
+  --fus-modal-border: rgba(255, 255, 255, 0.12);
+  --fus-modal-text: #f8fafc;
+  --fus-modal-text-muted: #94a3b8;
+  --fus-modal-accent: #38bdf8;
+  --fus-modal-code-bg: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
 }
 
@@ -650,6 +682,40 @@
   width: 118px;
   min-width: 74px;
   flex-shrink: 1;
+}
+
+.fus-format-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  max-width: 140px;
+}
+
+.fus-matrix-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.fus-matrix-tag {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.fus-matrix-control {
+  padding: 1px;
+  gap: 1px;
+}
+
+.fus-matrix-control .fus-radio-item {
+  padding: 1px 4px;
+  font-size: 9px;
+  line-height: 1.1;
 }
 
 /* ----------------------------------------------------------------
@@ -1771,6 +1837,11 @@
   overflow: hidden;
 }
 
+.fus-viewer-body.pe-mode {
+  grid-template-columns: 1fr;
+}
+
+
 /* ================================================================
    21. Scrollspy Rail — "On this page" sticky nav
    ================================================================ */
@@ -2304,5 +2375,68 @@ mark.fus-highlight {
   outline: none;
   overflow-y: auto;
   box-sizing: border-box;
+}
+
+/* Modal Overlay & Inspector / Delete Dialogs */
+.fus-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fusFadeIn 0.15s ease-out;
+}
+
+.fus-modal-content {
+  background: var(--fus-modal-bg, #0f172a);
+  border: 1px solid var(--fus-modal-border, rgba(255, 255, 255, 0.18));
+  border-radius: 10px;
+  box-shadow: var(--fus-raise, 0 25px 50px -12px rgba(0, 0, 0, 0.5));
+  width: 100%;
+  max-width: 450px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--fus-modal-text, #f8fafc);
+  animation: fusZoomIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fus-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--fus-modal-header-bg, #1e293b);
+  border-bottom: 1px solid var(--fus-modal-border, rgba(255, 255, 255, 0.12));
+  color: var(--fus-modal-text, #f8fafc);
+}
+
+.fus-metadata-table td {
+  padding: 5px 8px 5px 0;
+  vertical-align: top;
+  color: var(--fus-modal-text, #e2e8f0);
+}
+
+.fus-metadata-table td:first-child {
+  color: var(--fus-modal-text-muted, #94a3b8);
+  font-weight: 500;
+}
+
+@keyframes fusFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fusZoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 

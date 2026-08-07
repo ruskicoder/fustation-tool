@@ -1,4 +1,5 @@
-import { ExamDataset, ExportFormat, SavedExamsMap, ThemeName, PanelGeometry, BatchState } from '../types';
+import { ExamDataset, SavedExamItem, ExportFormat, SavedExamsMap, ThemeName, PanelGeometry, BatchState } from '../types';
+import { extractPeZipUrl } from './parser';
 
 const STORAGE_KEYS = {
   SAVED_EXAMS: 'fustation_saved_exams',
@@ -16,11 +17,11 @@ const STORAGE_KEYS = {
 
 const VALID_THEMES: ThemeName[] = ['glass-dark', 'glass-light', 'neu-light', 'neu-dark'];
 
-export function normalizeSavedDataset(dataset: any): ExamDataset {
+export function normalizeSavedDataset(dataset: ExamDataset): ExamDataset {
   if (!dataset) {
     return {
-      id: 'unknown',
-      title: 'Exam Set',
+      id: `exam_UNKNOWN_${Date.now()}`,
+      title: 'Unknown Exam',
       subjectCode: 'EXAM',
       subjectName: 'Subject',
       author: 'XAVALO',
@@ -28,10 +29,13 @@ export function normalizeSavedDataset(dataset: any): ExamDataset {
       term: 'SP26',
       termCode: 'SP26',
       examType: 'FE',
-      examSessionTime: '09:10',
+      examCategory: 'FE',
+      pdfUrl: null,
+      zipUrl: null,
+      examSessionTime: 'N/A',
       examSessionDate: '29/04/2026',
-      parsedTitle: 'Exam Set',
       totalQuestions: 0,
+      isPartial: false,
       questions: []
     };
   }
@@ -40,6 +44,21 @@ export function normalizeSavedDataset(dataset: any): ExamDataset {
   const safeId = (rawId && rawId !== 'unknown')
     ? rawId
     : `exam_${(dataset.subjectCode || 'EXAM').toUpperCase()}_${Date.now()}`;
+
+  const typeStr = (dataset.examType || '').toUpperCase();
+  const titleStr = (dataset.title || '').toUpperCase();
+  const isPeFallback = typeStr.includes('PE') || ['PE', 'PE1', 'PE2', 'B5PE'].includes(typeStr) || 
+                       titleStr.includes('_PE_') || titleStr.includes('_PE') || titleStr.includes('PRACTICAL');
+  const examCategory: 'FE' | 'PE' = dataset.examCategory || (isPeFallback ? 'PE' : 'FE');
+
+  let pdfUrl: string | null = dataset.pdfUrl ?? null;
+  if (!pdfUrl && examCategory === 'PE' && safeId && safeId !== 'unknown') {
+    pdfUrl = `/api/exams/pdf?productId=${safeId}`;
+  }
+  let zipUrl: string | null = dataset.zipUrl ?? null;
+  if (!zipUrl && (examCategory === 'PE' || (dataset.questions ? dataset.questions.length === 0 : true))) {
+    zipUrl = extractPeZipUrl(typeof document !== 'undefined' ? document.documentElement.innerHTML : '');
+  }
 
   return {
     id: safeId,
@@ -50,16 +69,36 @@ export function normalizeSavedDataset(dataset: any): ExamDataset {
     campus: dataset.campus || dataset.author || 'XAVALO',
     term: dataset.term || dataset.termCode || 'SP26',
     termCode: dataset.termCode || dataset.term || 'SP26',
-    examType: dataset.examType || 'FE',
+    examType: dataset.examType || (examCategory === 'PE' ? 'PE' : 'FE'),
+    examCategory,
+    pdfUrl,
+    zipUrl,
     examSessionTime: dataset.examSessionTime || 'N/A',
     examSessionDate: dataset.examSessionDate || '29/04/2026',
-    parsedTitle: dataset.parsedTitle || dataset.title || 'Exam Set',
     totalQuestions: dataset.totalQuestions || (dataset.questions ? dataset.questions.length : 0),
     isPartial: dataset.isPartial || false,
     successFetchCount: dataset.successFetchCount,
     failedFetchCount: dataset.failedFetchCount,
     questions: dataset.questions || []
   };
+}
+
+let storageWriteQueue: Promise<void> = Promise.resolve();
+
+function enqueueStorageTask<T>(task: () => Promise<T>): Promise<T> {
+  let resolveTask: (val: T) => void;
+  let rejectTask: (err: any) => void;
+  const resultPromise = new Promise<T>((res, rej) => {
+    resolveTask = res;
+    rejectTask = rej;
+  });
+
+  storageWriteQueue = storageWriteQueue
+    .then(() => task())
+    .then((val) => resolveTask(val))
+    .catch((err) => rejectTask(err));
+
+  return resultPromise;
 }
 
 export function saveExamToStorage(dataset: ExamDataset, callback?: (exams: SavedExamsMap) => void): void {
@@ -70,37 +109,46 @@ export function saveExamToStorage(dataset: ExamDataset, callback?: (exams: Saved
 
   const normalized = normalizeSavedDataset(dataset);
   dataset.id = normalized.id;
+  dataset.examCategory = normalized.examCategory;
+  dataset.pdfUrl = normalized.pdfUrl;
+  dataset.zipUrl = normalized.zipUrl;
 
-  getSavedExamsFromStorage((exams) => {
-    // Produce a new shallow map copy to ensure React state identity changes
-    const list: SavedExamsMap = { ...(exams || {}) };
-    list[normalized.id] = {
-      id: normalized.id,
-      title: normalized.title,
-      subjectCode: normalized.subjectCode,
-      subjectName: normalized.subjectName,
-      author: normalized.author,
-      campus: normalized.campus,
-      term: normalized.term,
-      termCode: normalized.termCode,
-      examType: normalized.examType,
-      examSessionTime: normalized.examSessionTime,
-      examSessionDate: normalized.examSessionDate,
-      totalQuestions: normalized.totalQuestions,
-      isPartial: normalized.isPartial,
-      successFetchCount: normalized.successFetchCount,
-      failedFetchCount: normalized.failedFetchCount,
-      extractedAt: new Date().toLocaleString(),
-      dataset: normalized
-    };
+  enqueueStorageTask(() => new Promise<SavedExamsMap>((resolve) => {
+    getSavedExamsFromStorage((exams) => {
+      // Produce a new shallow map copy to ensure React state identity changes
+      const list: SavedExamsMap = { ...(exams || {}) };
+      list[normalized.id] = {
+        id: normalized.id,
+        title: normalized.title,
+        subjectCode: normalized.subjectCode,
+        subjectName: normalized.subjectName,
+        author: normalized.author,
+        campus: normalized.campus,
+        term: normalized.term,
+        termCode: normalized.termCode,
+        examType: normalized.examType,
+        examCategory: normalized.examCategory,
+        pdfUrl: normalized.pdfUrl,
+        zipUrl: normalized.zipUrl,
+        examSessionTime: normalized.examSessionTime,
+        examSessionDate: normalized.examSessionDate,
+        totalQuestions: normalized.totalQuestions,
+        isPartial: normalized.isPartial,
+        successFetchCount: normalized.successFetchCount,
+        failedFetchCount: normalized.failedFetchCount,
+        extractedAt: new Date().toLocaleString(),
+        dataset: normalized
+      };
 
-    chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: list }, () => {
-      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
-        console.error('[fustation-tool] Storage write error:', chrome.runtime.lastError);
-      }
-      if (callback) callback(list);
+      chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: list }, () => {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
+          console.error('[fustation-tool] Storage write error:', chrome.runtime.lastError);
+        }
+        if (callback) callback(list);
+        resolve(list);
+      });
     });
-  });
+  }));
 }
 
 export function getSavedExamsFromStorage(callback: (exams: SavedExamsMap) => void): void {
@@ -114,19 +162,38 @@ export function getSavedExamsFromStorage(callback: (exams: SavedExamsMap) => voi
   });
 }
 
-export function deleteExamFromStorage(examId: string, callback?: (exams: SavedExamsMap) => void): void {
+export function deleteExamsFromStorage(examIds: string[], callback?: (exams: SavedExamsMap) => void): void {
   if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
     if (callback) callback({});
     return;
   }
-
-  getSavedExamsFromStorage((exams) => {
-    const list = exams || {};
-    delete list[examId];
-    chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: list }, () => {
-      if (callback) callback(list);
+  if (!examIds || examIds.length === 0) {
+    getSavedExamsFromStorage((exams) => {
+      if (callback) callback(exams || {});
     });
-  });
+    return;
+  }
+
+  enqueueStorageTask(() => new Promise<SavedExamsMap>((resolve) => {
+    getSavedExamsFromStorage((exams) => {
+      const list = { ...(exams || {}) };
+      const deleteSet = new Set(examIds);
+      deleteSet.forEach((id) => {
+        delete list[id];
+      });
+      chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: list }, () => {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
+          console.error('[fustation-tool] Storage batch delete error:', chrome.runtime.lastError);
+        }
+        if (callback) callback(list);
+        resolve(list);
+      });
+    });
+  }));
+}
+
+export function deleteExamFromStorage(examId: string, callback?: (exams: SavedExamsMap) => void): void {
+  deleteExamsFromStorage([examId], callback);
 }
 
 export function clearAllExamsFromStorage(callback?: () => void): void {
@@ -135,9 +202,12 @@ export function clearAllExamsFromStorage(callback?: () => void): void {
     return;
   }
 
-  chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: {} }, () => {
-    if (callback) callback();
-  });
+  enqueueStorageTask(() => new Promise<void>((resolve) => {
+    chrome.storage.local.set({ [STORAGE_KEYS.SAVED_EXAMS]: {} }, () => {
+      if (callback) callback();
+      resolve();
+    });
+  }));
 }
 
 export function getActiveFormatFromStorage(callback: (format: ExportFormat) => void): void {

@@ -1,7 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SavedExamsMap, SavedExamItem } from '../types';
-import { TrashIcon, DownloadIcon, EyeIcon, InboxIcon } from './Icons';
+import { TrashIcon, DownloadIcon, EyeIcon, InboxIcon, InfoIcon, XIcon } from './Icons';
 import { SavedListSkeleton } from './Skeleton';
+
+type DeleteTarget =
+  | { type: 'item'; id: string; name: string }
+  | { type: 'folder'; folderIds: string[]; name: string; isFiltered?: boolean; totalCount?: number }
+  | { type: 'batch'; count: number };
 
 interface SavedTabProps {
   savedExams: SavedExamsMap;
@@ -48,6 +53,25 @@ const IndeterminateCheckbox: React.FC<{
   );
 };
 
+const isPeItem = (item: SavedExamItem): boolean => {
+  const ds = item.dataset;
+  const category = item.examCategory || ds?.examCategory;
+  if (category === 'PE' || category === 'FE') return category === 'PE';
+
+  const typeStr = (item.examType || ds?.examType || '').toUpperCase();
+  if (typeStr.includes('PE') || ['PE', 'PE1', 'PE2', 'B5PE'].includes(typeStr)) return true;
+  if (typeStr.includes('FE') || typeStr === 'FE') return false;
+
+  const titleStr = (item.title || ds?.title || '').toUpperCase();
+  if (titleStr.includes('_PE_') || titleStr.includes('_PE') || titleStr.includes('PRACTICAL')) return true;
+  if (titleStr.includes('_FE_') || titleStr.includes('_FE')) return false;
+
+  const totalQ = item.totalQuestions ?? ds?.totalQuestions ?? ds?.questions?.length ?? 0;
+  if (totalQ === 0) return true;
+
+  return false;
+};
+
 export const SavedTab: React.FC<SavedTabProps> = ({
   savedExams,
   selectedIds,
@@ -67,6 +91,8 @@ export const SavedTab: React.FC<SavedTabProps> = ({
 }) => {
   // Folder expanded state: default is empty Set (all collapsed)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [inspectItem, setInspectItem] = useState<SavedExamItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<DeleteTarget | null>(null);
 
   const savedList: SavedExamItem[] = useMemo(() => Object.values(savedExams || {}), [savedExams]);
 
@@ -151,7 +177,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
             type="button"
             className="fus-ctrl-btn fus-btn-danger-icon"
             title={`Delete ${selectedCount} selected items`}
-            onClick={onBatchDelete}
+            onClick={() => setPendingDelete({ type: 'batch', count: selectedCount })}
           >
             <TrashIcon size={13} />
           </button>
@@ -220,8 +246,12 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                     <button
                       type="button"
                       className="fus-ctrl-btn fus-btn-danger-icon"
-                      title={`Delete entire ${group.subjectCode} folder`}
-                      onClick={() => onDeleteFolder(folderIds)}
+                      title={searchQuery.trim() ? `Delete ${folderIds.length} search results in ${group.subjectCode}` : `Delete entire ${group.subjectCode} folder`}
+                      onClick={() => {
+                        const totalSubjectItems = savedList.filter(i => (i.subjectCode || 'UNASSIGNED').toUpperCase() === group.subjectCode).length;
+                        const isFiltered = searchQuery.trim().length > 0 && folderIds.length < totalSubjectItems;
+                        setPendingDelete({ type: 'folder', folderIds, name: group.subjectCode, isFiltered, totalCount: totalSubjectItems });
+                      }}
                     >
                       <TrashIcon size={12} />
                     </button>
@@ -260,12 +290,23 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                               onChange={() => onToggleSelect(item.id)}
                             />
                             <span className="fus-badge fus-badge-type" title="Term">{termStr}</span>
-                            <span className="fus-badge fus-badge-campus" title="Exam Type">{typeStr}</span>
+                            {typeStr !== 'PE' && <span className="fus-badge fus-badge-campus" title="Exam Type">{typeStr}</span>}
+                            {item.examCategory === 'PE' && <span className="fus-badge fus-badge-subject" style={{ background: 'rgba(236,72,153,0.15)', color: '#ec4899', borderColor: 'rgba(236,72,153,0.3)' }} title="Practical Exam">PE</span>}
                             <span className="fus-saved-code" title={item.title}>{item.title}</span>
                             {item.isPartial && <span className="fus-badge-partial" title="Partial fetch">Partial</span>}
                           </div>
 
                           <div className="fus-row-actions">
+                            {/* Inspect Info Button */}
+                            <button
+                              type="button"
+                              className="fus-ctrl-btn"
+                              title="View dataset metadata details"
+                              onClick={() => setInspectItem(item)}
+                            >
+                              <InfoIcon size={12} />
+                            </button>
+
                             {/* View Item Button */}
                             <button
                               type="button"
@@ -281,7 +322,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                               type="button"
                               className="fus-ctrl-btn fus-btn-danger-icon"
                               title="Delete item"
-                              onClick={() => onDeleteItem(item.id)}
+                              onClick={() => setPendingDelete({ type: 'item', id: item.id, name: item.title })}
                             >
                               <TrashIcon size={12} />
                             </button>
@@ -306,6 +347,130 @@ export const SavedTab: React.FC<SavedTabProps> = ({
           })
         )}
       </div>
+
+      {/* Metadata Inspector Modal */}
+      {inspectItem && (() => {
+        const isPe = isPeItem(inspectItem);
+        const pdfLink = inspectItem.pdfUrl || inspectItem.dataset?.pdfUrl || (inspectItem.id && inspectItem.id !== 'unknown' ? `/api/exams/pdf?productId=${inspectItem.id}` : null);
+        const zipLink = inspectItem.zipUrl || inspectItem.dataset?.zipUrl;
+
+        return (
+          <div className="fus-modal-overlay" onClick={() => setInspectItem(null)}>
+            <div className="fus-modal-content fus-inspect-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="fus-modal-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <InfoIcon size={16} />
+                  <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--fus-modal-text)' }}>Dataset Metadata Inspector</span>
+                </div>
+                <button type="button" className="fus-ctrl-btn" onClick={() => setInspectItem(null)}>
+                  <XIcon size={13} />
+                </button>
+              </div>
+
+              <div className="fus-modal-body" style={{ maxHeight: '380px', overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Core Attributes */}
+                <table className="fus-metadata-table" style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    <tr><td style={{ width: '120px' }}>Subject Code:</td><td><strong style={{ color: 'var(--fus-modal-accent)' }}>{inspectItem.subjectCode || 'N/A'}</strong></td></tr>
+                    <tr><td>Title:</td><td style={{ wordBreak: 'break-all', color: 'var(--fus-modal-text)' }}>{inspectItem.title || inspectItem.id}</td></tr>
+                    <tr><td>Product ID:</td><td><code style={{ fontSize: '11px', background: 'var(--fus-modal-code-bg)', padding: '2px 6px', borderRadius: '4px', color: 'var(--fus-modal-text-muted)' }}>{inspectItem.id}</code></td></tr>
+                    <tr><td>Category:</td><td><span className="fus-badge" style={{ background: isPe ? 'rgba(236,72,153,0.2)' : 'rgba(59,130,246,0.2)', color: isPe ? '#ec4899' : '#60a5fa', borderColor: isPe ? 'rgba(236,72,153,0.4)' : 'rgba(59,130,246,0.4)' }}>{isPe ? 'PE' : 'FE'}</span></td></tr>
+                    <tr><td>Term & Type:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.term || 'SP26'} · {inspectItem.examType || 'FE'}</td></tr>
+                    <tr><td>Campus:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.campus || inspectItem.campus || 'XAVALO'}</td></tr>
+                    <tr><td>Session Time:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.examSessionTime || inspectItem.examSessionTime || 'N/A'}</td></tr>
+                    <tr><td>Session Date:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.examSessionDate || inspectItem.examSessionDate || 'N/A'}</td></tr>
+                    <tr><td>Saved Date:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.extractedAt ? new Date(inspectItem.extractedAt).toLocaleString() : 'N/A'}</td></tr>
+                    <tr><td>Total Questions:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.totalQuestions ?? inspectItem.dataset?.totalQuestions ?? inspectItem.dataset?.questions?.length ?? 0}</td></tr>
+                  </tbody>
+                </table>
+
+                {/* Asset & Image Links */}
+                {isPe ? (
+                  <div style={{ background: 'var(--fus-modal-sub-bg)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--fus-modal-border)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#ec4899', marginBottom: '6px' }}>PRACTICAL EXAM (PE) ASSETS</div>
+                    <div style={{ fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div><strong style={{ color: 'var(--fus-modal-text-muted)' }}>PDF Paper:</strong> {pdfLink ? <a href={pdfLink.startsWith('http') ? pdfLink : `https://www.fustation.net${pdfLink.startsWith('/') ? '' : '/'}${pdfLink}`} target="_blank" rel="noreferrer" style={{ color: 'var(--fus-modal-accent)', wordBreak: 'break-all' }}>{pdfLink}</a> : <span style={{ color: '#ef4444' }}>Not Available</span>}</div>
+                      <div><strong style={{ color: 'var(--fus-modal-text-muted)' }}>ZIP AnswerKey:</strong> {zipLink ? <a href={zipLink.startsWith('http') ? zipLink : `https://www.fustation.net${zipLink.startsWith('/') ? '' : '/'}${zipLink}`} target="_blank" rel="noreferrer" style={{ color: 'var(--fus-modal-accent)', wordBreak: 'break-all' }}>{zipLink}</a> : <span style={{ color: 'var(--fus-modal-text-muted)' }}>None Attached</span>}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: 'var(--fus-modal-sub-bg)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--fus-modal-border)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#60a5fa', marginBottom: '6px' }}>FE QUESTION IMAGE ATTACHMENTS</div>
+                    {(() => {
+                      const questions = inspectItem.dataset?.questions || [];
+                      const withImages = questions.filter((q) => q.imageUrl);
+                      if (withImages.length === 0) {
+                        return <div style={{ fontSize: '11px', color: 'var(--fus-modal-text-muted)' }}>No image attachments in this exam set.</div>;
+                      }
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '130px', overflowY: 'auto' }}>
+                          {withImages.map((q) => (
+                            <div key={q.id || q.index} style={{ fontSize: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--fus-modal-code-bg)', padding: '4px 6px', borderRadius: '4px', gap: '8px' }}>
+                              <span style={{ wordBreak: 'break-all', color: 'var(--fus-modal-text)' }}>Q{q.index}: {q.imageUrl}</span>
+                              <span style={{ flexShrink: 0, color: q.imageBase64 ? '#34d399' : '#fbbf24', fontSize: '9px', fontWeight: 600 }}>{q.imageBase64 ? 'BASE64' : 'REMOTE'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Delete Confirmation Modal */}
+      {pendingDelete && (
+        <div className="fus-modal-overlay" onClick={() => setPendingDelete(null)}>
+          <div className="fus-modal-content fus-delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fus-modal-header" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}>
+                <TrashIcon size={16} />
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>Confirm Permanent Deletion</span>
+              </div>
+              <button type="button" className="fus-ctrl-btn" onClick={() => setPendingDelete(null)}>
+                <XIcon size={13} />
+              </button>
+            </div>
+
+            <div style={{ padding: '16px' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--fus-modal-text)', lineHeight: 1.5 }}>
+                {pendingDelete.type === 'item' && `Are you sure you want to delete "${pendingDelete.name}" from your saved exams cache?`}
+                {pendingDelete.type === 'folder' && (
+                  pendingDelete.isFiltered
+                    ? `Are you sure you want to delete the ${pendingDelete.folderIds.length} search-matching exam(s) in "${pendingDelete.name}"? (${(pendingDelete.totalCount || 0) - pendingDelete.folderIds.length} hidden exams will be kept)`
+                    : `Are you sure you want to delete the entire subject folder "${pendingDelete.name}" (${pendingDelete.folderIds.length} exams)?`
+                )}
+                {pendingDelete.type === 'batch' && `Are you sure you want to delete all ${pendingDelete.count} selected saved exams?`}
+              </p>
+              <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: 'var(--fus-modal-text-muted)' }}>
+                This action cannot be undone.
+              </p>
+            </div>
+
+            <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--fus-modal-border)', background: 'var(--fus-modal-sub-bg)' }}>
+              <button type="button" className="fus-btn-secondary" style={{ padding: '4px 12px', fontSize: '12px' }} onClick={() => setPendingDelete(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="fus-btn-danger"
+                style={{ padding: '4px 12px', fontSize: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                onClick={() => {
+                  if (pendingDelete.type === 'item') onDeleteItem(pendingDelete.id);
+                  else if (pendingDelete.type === 'folder') onDeleteFolder(pendingDelete.folderIds);
+                  else if (pendingDelete.type === 'batch') onBatchDelete();
+                  setPendingDelete(null);
+                }}
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

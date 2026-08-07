@@ -296,6 +296,64 @@ export function extractSessionTimeFromText(text?: string, prod?: any): string {
   return 'N/A'; // Clear, explicit fallback indicating missing session time
 }
 
+export function sanitizeAssetUrl(url: string | null): string | null {
+  if (!url) return null;
+  return url
+    .replace(/\\\\u0026/gi, '&')
+    .replace(/\\u0026/gi, '&')
+    .replace(/&amp;/gi, '&')
+    .replace(/\\/g, '')
+    .trim();
+}
+
+export function extractPeZipUrl(fullHtml: string): string | null {
+  if (!fullHtml) return null;
+
+  // Pre-sanitize raw HTML string escapes
+  const cleanHtml = fullHtml
+    .replace(/\\\\u0026/gi, '&')
+    .replace(/\\u0026/gi, '&')
+    .replace(/&amp;/gi, '&')
+    .replace(/\\\\/g, '/');
+
+  // Stage 1: Live DOM query if executing in browser context
+  if (typeof document !== 'undefined') {
+    try {
+      const zipAnchor = (document.querySelector('a[href*=".zip" i]') ||
+                         document.querySelector('a[href*="material" i]') ||
+                         document.querySelector('a[href*="answer-key" i]') ||
+                         Array.from(document.querySelectorAll('a')).find((a) =>
+                           /Tải\s*Bộ\s*Đáp\s*án|Đáp\s*án|ZIP|material|answer-key|lucide-archive/i.test(a.textContent || a.innerHTML || '')
+                         )
+                        ) as HTMLAnchorElement | null;
+      if (zipAnchor && zipAnchor.href && !zipAnchor.href.includes('/api/exams/pdf')) {
+        return sanitizeAssetUrl(zipAnchor.href);
+      }
+    } catch (e) {}
+  }
+
+  // Stage 2: HTML Anchor tag string matching (handles single/double quotes & lucide-archive icons)
+  const dapanAnchorMatch = cleanHtml.match(/<a[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?(?:Tải Bộ Đáp án|Bộ Đáp án|Đáp án|\.zip|lucide-archive|material|answer-key)[\s\S]*?<\/a>/i);
+  if (dapanAnchorMatch && dapanAnchorMatch[1] && !dapanAnchorMatch[1].includes('/api/exams/pdf')) {
+    return sanitizeAssetUrl(dapanAnchorMatch[1]);
+  }
+
+  // Stage 3: Flexible Href attribute matching (_material.zip, material.zip, answer-key.zip, .zip)
+  const zipHrefMatch = cleanHtml.match(/href=["']([^"']*(?:\.zip|material|answer-key|_material)[^"']*)["']/i);
+  if (zipHrefMatch && !zipHrefMatch[1].includes('/api/exams/pdf')) {
+    return sanitizeAssetUrl(zipHrefMatch[1]);
+  }
+
+  // Stage 4: Raw S3 / HTTP presigned ZIP URL matching (supports case-insensitive .zip and S3 query strings)
+  const rawZipMatch = cleanHtml.match(/https?:\/\/[^\s"'\>]+\.zip(?:\?[^\s"'\>]*)?/i) ||
+                      cleanHtml.match(/https?:\/\/[^\s"'\>]*(?:material|answer-key)[^\s"'\>]*/i);
+  if (rawZipMatch && !rawZipMatch[0].includes('/api/exams/pdf')) {
+    return sanitizeAssetUrl(rawZipMatch[0]);
+  }
+
+  return null;
+}
+
 export function formatExamDataset(initialData: any): ExamDataset {
   const prod = initialData.product || {};
   const subj = prod.subject || {};
@@ -303,9 +361,12 @@ export function formatExamDataset(initialData: any): ExamDataset {
   const parsedCode = parseExamCode(title);
 
   const campus = prod.description || prod.campus || 'XAVALO';
-  // Title token precedence: parsedCode.term / parsedCode.examType override default DB enums
   const term = parsedCode.term || prod.term || 'SP26';
-  const examType = parsedCode.examType || prod.examType || 'FE';
+
+  const rawProdType = (prod.examType || prod.category || '').toString().toUpperCase();
+  const isProdPe = rawProdType === 'PE' || rawProdType === 'PRACTICAL_EXAM' || rawProdType.includes('PE');
+  const examType = isProdPe ? 'PE' : (parsedCode.examType !== 'FE' ? parsedCode.examType : (prod.examType || 'FE'));
+
   const fullHtml = typeof document !== 'undefined' ? document.documentElement.innerHTML : '';
   const examSessionTime = extractSessionTimeFromText(fullHtml, prod);
   const examSessionDate = sanitizeRscDate(prod.createdAt || prod.examSessionDate || '$D2026-04-29T00:00:00.000Z');
@@ -314,6 +375,21 @@ export function formatExamDataset(initialData: any): ExamDataset {
 
   // Deterministic ID resolution
   const deterministicId = prod.id || initialData.productId || (parsedCode.subjectCode && parsedCode.examCode ? `${parsedCode.subjectCode}_${parsedCode.examCode}` : getExamIdFromUrl()) || `exam_${parsedCode.subjectCode}_${Date.now()}`;
+
+  // PE Asset links (PDF & ZIP) extraction
+  let pdfUrl: string | null = initialData.examUrl || prod.pdfUrl || prod.pdf || initialData.pdfUrl || null;
+  if (!pdfUrl && deterministicId && deterministicId !== 'unknown') {
+    pdfUrl = `/api/exams/pdf?productId=${deterministicId}`;
+  }
+
+  let zipUrl: string | null = prod.materialUrl || prod.fileUrl || prod.zipUrl || prod.zip || prod.answerKeyUrl || prod.answerKey || prod.assetUrl || prod.downloadUrl || initialData.zipUrl || initialData.materialUrl || null;
+  if (!zipUrl && fullHtml) {
+    zipUrl = extractPeZipUrl(fullHtml);
+  }
+
+  // Category classification (FE vs PE)
+  const isPeType = isProdPe || ['PE', 'PE1', 'PE2', 'B5PE'].includes(examType.toUpperCase()) || parsedCode.examType.toUpperCase().includes('PE');
+  const examCategory: 'FE' | 'PE' = (isPeType || (questionsList.length === 0 && (pdfUrl || zipUrl))) ? 'PE' : 'FE';
 
   return {
     id: deterministicId,
@@ -325,37 +401,79 @@ export function formatExamDataset(initialData: any): ExamDataset {
     term: term,
     termCode: term,
     examType: examType,
+    examCategory: examCategory,
+    pdfUrl: sanitizeAssetUrl(pdfUrl),
+    zipUrl: sanitizeAssetUrl(zipUrl),
     examSessionTime: examSessionTime,
     examSessionDate: examSessionDate,
     parsedTitle: title,
     totalQuestions: initialData.totalQuestions || questionsList.length,
-    isPartial: initialData.isPartial || false,
-    successFetchCount: initialData.successFetchCount,
-    failedFetchCount: initialData.failedFetchCount,
-    questions: questionsList.map((q: any, idx: number): Question => {
-      const validOptions = (q.options || []).map((opt: any): Option => {
-        const optId = (opt.id || '').trim().toUpperCase();
-        const rawText = (opt.text || '').trim();
-        return {
-          id: optId,
-          text: sanitizeOptionText(rawText, optId)
-        };
-      });
+    isPartial: false,
+    questions: questionsList.map((q: any, idx: number) => {
+      const qIndex = q.index !== undefined ? q.index : idx + 1;
+      const opts: Option[] = (q.options || []).map((opt: any) => ({
+        id: opt.id || 'A',
+        text: sanitizeOptionText(decodeHtmlEntities(opt.text || ''), opt.id)
+      }));
 
-      const validAnswers = (q.correctAnswers || []).map((ans: string) => {
-        const str = (ans || '').trim().toUpperCase();
-        return str.length === 1 ? str : str.charAt(0);
-      });
+      let correctAns: string[] = [];
+      if (Array.isArray(q.correctAnswers)) {
+        correctAns = q.correctAnswers;
+      } else if (typeof q.correctAnswer === 'string') {
+        correctAns = [q.correctAnswer];
+      }
 
       return {
-        index: idx + 1,
-        id: q.id || `q_${idx}`,
-        text: decodeHtmlEntities((q.text || '').trim()),
+        index: qIndex,
+        id: q.id || `q_${qIndex}`,
+        text: decodeHtmlEntities(q.text || ''),
         imageUrl: q.imageUrl || null,
-        correctAnswers: validAnswers,
-        options: validOptions
+        correctAnswers: correctAns,
+        options: opts
       };
     })
+  };
+}
+
+export function extractPeFromDOM(html?: string): ExamDataset | null {
+  const fullHtml = html || (typeof document !== 'undefined' ? document.documentElement.innerHTML : '');
+  if (!fullHtml) return null;
+
+  const pdfMatch = fullHtml.match(/\/api\/exams\/pdf\?productId=([a-zA-Z0-9]+)/i);
+  const h1Match = fullHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  const isPePage = /PE|Thi\s*PE|Tả\i\s*Đề\s*thi/i.test(fullHtml) || !!pdfMatch;
+
+  if (!isPePage && !pdfMatch && !h1Match) return null;
+
+  const title = h1Match ? h1Match[1].trim() : 'PE Exam';
+  const parsedCode = parseExamCode(title);
+
+  const productId = pdfMatch ? pdfMatch[1] : (parsedCode.subjectCode && parsedCode.examCode ? `${parsedCode.subjectCode}_${parsedCode.examCode}` : getExamIdFromUrl()) || `pe_${Date.now()}`;
+  const pdfUrl = pdfMatch ? `/api/exams/pdf?productId=${productId}` : null;
+
+  const zipUrl = extractPeZipUrl(fullHtml);
+
+  const subjBadgeMatch = fullHtml.match(/<span[^>]*data-slot="badge"[^>]*>([^<]+)<\/span>/i);
+  const subjectName = subjBadgeMatch ? subjBadgeMatch[1].trim() : (parsedCode.subjectCode || 'PE Subject');
+
+  return {
+    id: productId,
+    title,
+    subjectCode: parsedCode.subjectCode || 'PE',
+    subjectName,
+    author: 'XAVALO',
+    campus: 'XAVALO',
+    term: parsedCode.term || 'SP26',
+    termCode: parsedCode.term || 'SP26',
+    examType: parsedCode.examType || 'PE',
+    examCategory: 'PE',
+    pdfUrl,
+    zipUrl,
+    examSessionTime: 'N/A',
+    examSessionDate: '29/04/2026',
+    parsedTitle: title,
+    totalQuestions: 0,
+    questions: []
   };
 }
 
@@ -384,8 +502,10 @@ export function extractExamFromScripts(targetProductId?: string): ExamDataset | 
       }
     }
   }
-  return null;
-}
+
+  // 3. Fallback: DOM Extraction for PE Exams
+  return extractPeFromDOM(fullHtml);
+};
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 

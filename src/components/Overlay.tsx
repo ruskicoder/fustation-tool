@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ExamDataset, ExportFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS } from '../types';
+import { ExamDataset, ExportFormat, FEFormat, PEFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS } from '../types';
 import { extractExamFromScripts, getExamIdFromUrl } from '../utils/parser';
-import { exportExam } from '../utils/exporter';
+import { exportExam, exportSinglePe, exportBulkAsZip } from '../utils/exporter';
 import {
   saveExamToStorage,
   getSavedExamsFromStorage,
   deleteExamFromStorage,
+  deleteExamsFromStorage,
   clearAllExamsFromStorage,
   getActiveFormatFromStorage,
   setActiveFormatInStorage,
@@ -31,6 +32,20 @@ import { ToastHost } from './ToastHost';
 import { ViewerPanel } from './ViewerPanel';
 import { BoltIcon, MinimizeIcon, PaletteIcon } from './Icons';
 
+export function isValidExtractedDataset(ds: ExamDataset | null): boolean {
+  if (!ds) return false;
+  if (ds.questions && ds.questions.length > 0) return true;
+  if (ds.examCategory === 'PE' || ds.pdfUrl !== null || ds.zipUrl !== null || ds.totalQuestions === 0) return true;
+  return false;
+}
+
+function getExtractSuccessMessage(ds: ExamDataset): string {
+  if (ds.examCategory === 'PE' || ds.totalQuestions === 0) {
+    return 'Extracted Practical Exam (PE) assets';
+  }
+  return `Extracted ${ds.questions?.length || 0} questions`;
+}
+
 function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
   if (/\/marketplace\/exam\//.test(pathname)) return 'exam';
   if (/\/home(\/|$)/.test(pathname) || /\/subject\//.test(pathname)) return 'catalog';
@@ -40,7 +55,8 @@ function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
 export const Overlay: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'extract' | 'saved'>('extract');
-  const [activeFormat, setActiveFormat] = useState<ExportFormat>('MD');
+  const [feFormat, setFeFormat] = useState<FEFormat>('MD');
+  const [peFormat, setPeFormat] = useState<PEFormat>('PE_BOTH');
   const [theme, setTheme] = useState<ThemeName>('glass-dark');
   const [currentDataset, setCurrentDataset] = useState<ExamDataset | null>(null);
   const [savedExams, setSavedExams] = useState<SavedExamsMap>({});
@@ -85,10 +101,10 @@ export const Overlay: React.FC = () => {
     // Highest priority. Reads document.documentElement.innerHTML right now.
     // Works even before React hydration, on cached pages, or fast CDN hits.
     const instantData = extractExamFromScripts(targetId ?? undefined);
-    if (instantData && instantData.questions && instantData.questions.length > 0) {
-      setCurrentDataset(instantData);
+    if (isValidExtractedDataset(instantData)) {
+      setCurrentDataset(instantData!);
       setStatus('ready');
-      push(`Extracted ${instantData.questions.length} questions`, 'success');
+      push(getExtractSuccessMessage(instantData!), 'success');
       clearReloadAttemptedFromStorage();
       return;
     }
@@ -104,11 +120,11 @@ export const Overlay: React.FC = () => {
       setProgressLabel(`(${attempt}/${POLL_MAX_RETRIES})`);
 
       const polledData = extractExamFromScripts(targetId ?? undefined);
-      if (polledData && polledData.questions && polledData.questions.length > 0) {
-        setCurrentDataset(polledData);
+      if (isValidExtractedDataset(polledData)) {
+        setCurrentDataset(polledData!);
         setStatus('ready');
         setProgressLabel('');
-        push(`Extracted ${polledData.questions.length} questions`, 'success');
+        push(getExtractSuccessMessage(polledData!), 'success');
         clearReloadAttemptedFromStorage();
         return;
       }
@@ -159,7 +175,9 @@ export const Overlay: React.FC = () => {
 
     // Load initial storage settings & auto extract on initial mount
     getActiveFormatFromStorage((fmt) => {
-      setActiveFormat(fmt || 'MD');
+      if (fmt === 'MD' || fmt === 'PDF' || fmt === 'JSON') {
+        setFeFormat(fmt);
+      }
     });
 
     getSavedExamsFromStorage((exams) => {
@@ -265,11 +283,7 @@ export const Overlay: React.FC = () => {
     push(`Theme: ${THEME_LABELS[nextTheme]}`, 'info');
   };
 
-  const handleFormatChange = (fmt: ExportFormat) => {
-    setActiveFormat(fmt);
-    setActiveFormatInStorage(fmt);
-    push(`Format: ${fmt}`, 'info');
-  };
+
 
   const handleFetch = async () => {
     setCurrentDataset(null); // Clear active dataset
@@ -277,14 +291,12 @@ export const Overlay: React.FC = () => {
   };
 
   const ensureDatasetLoaded = async (): Promise<ExamDataset | null> => {
-    if (currentDataset && currentDataset.questions && currentDataset.questions.length > 0) {
+    if (isValidExtractedDataset(currentDataset)) {
       return currentDataset;
     }
-    // Instant parse one more time — covers edge cases where runFetch
-    // hasn't fired yet but the RSC payload is already in the DOM.
     const targetId = getExamIdFromUrl();
     const fastData = extractExamFromScripts(targetId ?? undefined);
-    if (fastData && fastData.questions && fastData.questions.length > 0) {
+    if (isValidExtractedDataset(fastData)) {
       setCurrentDataset(fastData);
       setStatus('ready');
       return fastData;
@@ -293,8 +305,8 @@ export const Overlay: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const dataToSave = await ensureDatasetLoaded();
-    if (!dataToSave || !dataToSave.questions || dataToSave.questions.length === 0) {
+    const dataToSave = (await ensureDatasetLoaded()) || currentDataset;
+    if (!dataToSave) {
       setStatus('error');
       push('No question data to save', 'error');
       return;
@@ -309,22 +321,26 @@ export const Overlay: React.FC = () => {
   };
 
   const handleDownload = async () => {
-    const dataToExport = await ensureDatasetLoaded();
-    if (!dataToExport || !dataToExport.questions || dataToExport.questions.length === 0) {
+    const dataToExport = (await ensureDatasetLoaded()) || currentDataset;
+    if (!dataToExport) {
       setStatus('error');
-      push('No question data to export', 'error');
+      push('No dataset to export', 'error');
       return;
     }
 
     setStatus('processing');
-    setTimeout(() => {
+    setTimeout(async () => {
       saveExamToStorage(dataToExport, (updatedList) => {
         setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
       });
 
       setStatus('downloading');
-      exportExam(dataToExport, activeFormat);
-      push(`Exported ${dataToExport.subjectCode} in ${activeFormat}`, 'info');
+      if (dataToExport.examCategory === 'PE' || dataToExport.totalQuestions === 0) {
+        await exportSinglePe(dataToExport, peFormat);
+      } else {
+        await exportExam(dataToExport, feFormat);
+      }
+      push(`Exported ${dataToExport.subjectCode}`, 'info');
 
       setTimeout(() => {
         setStatus('extracted');
@@ -339,7 +355,7 @@ export const Overlay: React.FC = () => {
     setViewerDataset(dataset);
     setViewerOpen(true);
     setViewerOpenInStorage(true);
-    push(`Viewing ${dataset.subjectCode} · ${dataset.questions.length}Q`, 'info');
+    push(`Viewing ${dataset.subjectCode}${dataset.examCategory === 'PE' ? ' (PE)' : ` · ${dataset.questions.length}Q`}`, 'info');
   };
 
   const handleViewerClose = () => {
@@ -348,9 +364,9 @@ export const Overlay: React.FC = () => {
   };
 
   const handleViewCurrentExam = async () => {
-    const data = await ensureDatasetLoaded();
-    if (!data || !data.questions || data.questions.length === 0) {
-      push('No questions to view. Fetch first.', 'warn');
+    const data = (await ensureDatasetLoaded()) || currentDataset;
+    if (!data) {
+      push('No exam loaded to view. Fetch first.', 'warn');
       return;
     }
     handleViewExam(data);
@@ -407,68 +423,88 @@ export const Overlay: React.FC = () => {
   const handleBatchDelete = () => {
     if (selectedIds.size === 0) return;
     const idsToDelete = Array.from(selectedIds);
-    let remainingMap = { ...savedExams };
-
-    idsToDelete.forEach((id) => {
-      deleteExamFromStorage(id, (updatedMap) => {
-        remainingMap = updatedMap || {};
-      });
+    deleteExamsFromStorage(idsToDelete, (updatedMap) => {
+      setSavedExams(updatedMap || {});
+      setSelectedIds(new Set());
+      push(`Deleted ${idsToDelete.length} saved exams`, 'warn');
     });
-
-    setSavedExams(remainingMap);
-    setSelectedIds(new Set());
-    push(`Deleted ${idsToDelete.length} saved exams`, 'warn');
   };
 
-  const handleBatchDownload = () => {
-    if (selectedIds.size === 0) return;
-    const idsToExport = Array.from(selectedIds);
-    push(`Exporting ${idsToExport.length} exams in ${activeFormat}...`, 'info');
-    idsToExport.forEach((id, index) => {
-      const item = savedExams[id];
-      if (item && item.dataset) {
-        setTimeout(() => {
-          exportExam(item.dataset, activeFormat);
-        }, index * 200);
+  const handleBatchDownload = async () => {
+    const selectedItems = Array.from(selectedIds).map((id) => savedExams[id]).filter(Boolean);
+    if (selectedItems.length === 0) return;
+
+    setStatus('downloading');
+    push(`Exporting ${selectedItems.length} exams...`, 'info');
+    try {
+      if (selectedItems.length === 1) {
+        const item = selectedItems[0];
+        const ds = item.dataset || (item as any);
+        if (ds.examCategory === 'PE' || ds.totalQuestions === 0) {
+          await exportSinglePe(ds as ExamDataset, peFormat);
+        } else {
+          await exportExam(ds as ExamDataset, feFormat);
+        }
+      } else {
+        await exportBulkAsZip(selectedItems, feFormat, peFormat);
       }
-    });
+    } catch (e: any) {
+      push(`Export failed: ${e.message}`, 'error');
+    } finally {
+      setStatus('ready');
+    }
   };
 
   const handleDeleteFolder = (folderExamIds: string[]) => {
-    let remainingMap = { ...savedExams };
-    folderExamIds.forEach((id) => {
-      deleteExamFromStorage(id, (updatedMap) => {
-        remainingMap = updatedMap || {};
+    if (!folderExamIds || folderExamIds.length === 0) return;
+    deleteExamsFromStorage(folderExamIds, (updatedMap) => {
+      setSavedExams(updatedMap || {});
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        folderExamIds.forEach((id) => next.delete(id));
+        return next;
       });
-    });
-    setSavedExams(remainingMap);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      folderExamIds.forEach((id) => next.delete(id));
-      return next;
-    });
-    push(`Deleted folder (${folderExamIds.length} items)`, 'warn');
-  };
-
-  const handleExportFolder = (folderExamIds: string[]) => {
-    push(`Exporting folder (${folderExamIds.length} items)...`, 'info');
-    folderExamIds.forEach((id, index) => {
-      const item = savedExams[id];
-      if (item && item.dataset) {
-        setTimeout(() => {
-          exportExam(item.dataset, activeFormat);
-        }, index * 200);
-      }
+      push(`Deleted subject folder (${folderExamIds.length} exams)`, 'warn');
     });
   };
 
-  const handleExportSavedItem = (examId: string) => {
+  const handleExportItem = async (examId: string) => {
     const item = savedExams[examId];
     if (item && item.dataset) {
-      exportExam(item.dataset, activeFormat);
-      push(`Exported ${item.title} in ${activeFormat}`, 'info');
+      try {
+        let success = true;
+        if (item.dataset.examCategory === 'PE' || item.dataset.totalQuestions === 0) {
+          success = await exportSinglePe(item.dataset, peFormat);
+        } else {
+          await exportExam(item.dataset, feFormat);
+        }
+
+        if (success !== false) {
+          push(`Exported ${item.dataset.subjectCode || 'exam'}`, 'info');
+        } else {
+          push(`Export failed: ${item.dataset.subjectCode || 'exam'} asset unavailable`, 'error');
+        }
+      } catch (err: any) {
+        push(`Export error: ${err?.message || 'Download failed'}`, 'error');
+      }
     }
   };
+
+  const handleExportFolder = async (folderExamIds: string[]) => {
+    const folderItems = folderExamIds.map((id) => savedExams[id]).filter(Boolean);
+    if (folderItems.length === 0) return;
+    setStatus('downloading');
+    push(`Exporting folder (${folderItems.length} items)...`, 'info');
+    try {
+      await exportBulkAsZip(folderItems, feFormat, peFormat);
+    } catch (e: any) {
+      push(`Folder export failed: ${e.message}`, 'error');
+    } finally {
+      setStatus('ready');
+    }
+  };
+
+
 
   const handleDeleteItem = (examId: string) => {
     deleteExamFromStorage(examId, (updatedList: SavedExamsMap) => {
@@ -595,9 +631,51 @@ export const Overlay: React.FC = () => {
               </button>
             </div>
 
-            <div style={{ flexShrink: 0, width: '130px' }}>
-              <FormatSwitcher currentFormat={activeFormat} onChange={handleFormatChange} className="fus-header-switcher" />
-            </div>
+            {(() => {
+              const selectedSavedItems = Object.values(savedExams).filter((rec) => {
+                const id = rec.id || rec.dataset?.id;
+                return selectedIds.has(id);
+              });
+              let peSelectedCount = 0;
+              let feSelectedCount = 0;
+              selectedSavedItems.forEach((rec) => {
+                const typeStr = (rec.dataset?.examType || rec.examType || '').toUpperCase();
+                const titleStr = (rec.dataset?.title || rec.title || '').toUpperCase();
+                const isPeFallback = typeStr.includes('PE') || ['PE', 'PE1', 'PE2', 'B5PE'].includes(typeStr) || titleStr.includes('_PE_') || titleStr.includes('_PE') || titleStr.includes('PRACTICAL');
+                const cat = rec.dataset?.examCategory || rec.examCategory || (isPeFallback ? 'PE' : 'FE');
+                if (cat === 'PE') {
+                  peSelectedCount++;
+                } else {
+                  feSelectedCount++;
+                }
+              });
+
+              const isExtractPeMode = activeTab === 'extract' && (currentDataset?.examCategory === 'PE' || currentDataset?.examType?.toUpperCase().includes('PE'));
+              const isSavedPeMode = activeTab === 'saved' && peSelectedCount > 0 && feSelectedCount === 0;
+              const isSavedMixedMode = activeTab === 'saved' && peSelectedCount > 0 && feSelectedCount > 0;
+
+              const isPEFormatHeader = isExtractPeMode || isSavedPeMode;
+              const isZipAvailableHeader = activeTab === 'extract'
+                ? !!currentDataset?.zipUrl
+                : selectedSavedItems.length > 0
+                  ? selectedSavedItems.some(it => !!(it.dataset?.zipUrl || it.zipUrl))
+                  : true;
+
+              return (
+                <div style={{ flexShrink: 0, minWidth: isSavedMixedMode ? '140px' : '118px' }}>
+                  <FormatSwitcher
+                    feFormat={feFormat}
+                    peFormat={peFormat}
+                    onFeChange={setFeFormat}
+                    onPeChange={setPeFormat}
+                    isPEFormat={isPEFormatHeader}
+                    isZipAvailable={isZipAvailableHeader}
+                    isMixedMode={isSavedMixedMode}
+                    className="fus-header-switcher"
+                  />
+                </div>
+              );
+            })()}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {renderStatusPill()}
@@ -650,7 +728,7 @@ export const Overlay: React.FC = () => {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 onDeleteItem={handleDeleteItem}
-                onExportItem={handleExportSavedItem}
+                onExportItem={handleExportItem}
                 onExportFolder={handleExportFolder}
                 onDeleteFolder={handleDeleteFolder}
                 onViewItem={handleViewSavedItem}
