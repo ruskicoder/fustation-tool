@@ -95,7 +95,7 @@ export async function fetchExamDatasetDirect(task: BatchItemTask, maxRetries = 2
         const text = await res.text();
         const parsed = unescapeNextFChunk(text, task.id);
         if (parsed && parsed.initialData) {
-          return formatExamDataset(parsed.initialData);
+          return formatExamDataset(parsed.initialData, text);
         }
       }
     } catch (e) {

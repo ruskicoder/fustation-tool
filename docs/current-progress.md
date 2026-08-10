@@ -1,36 +1,35 @@
 # Current Progress — fustation-tool
 
 **Last Updated**: 2026-08-07
-**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (ISSUES 68 THROUGH 75 COMPLETE & VERIFIED)**
+**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (ISSUE-80 FE PDF EXPORT ROUTING & NUMERIC ID GUARD COMPLETE & VERIFIED)**
 
 ---
 
-## Key Milestone Completed: Issues 68 - 75 UI, Storage Concurrency Mutex & Export Consistency
+## Key Milestone Completed: ISSUE-80 FE PDF Export Routing & Alphanumeric `pdfUrl` Prevention
 
 ### What Was Fixed
-1. **Duplicate "PE" Badges Resolved (`src/components/SavedTab.tsx` — ISSUE-68)**:
-   - Suppressed generic `typeStr` badge when `typeStr === 'PE'`, rendering exactly 1 pink `PE` category badge for PE items. Specific PE type codes (`PE1`, `B5PE`) display cleanly alongside the pink category badge.
+1. **Strict Numeric Product ID Guard (`src/utils/parser.ts` & `src/utils/exporter.ts` — ISSUE-80)**:
+   - Restricted `/api/exams/pdf?productId=${numId}` URL resolution in `parser.ts` to valid 5–8 digit numeric IDs (`/^\d{5,8}$/`).
+   - Prevented alphanumeric CUIDs (`cmo728mwf000004kypj5r0dug`) from being populated into `pdfUrl` on FE exams.
 
-2. **Search-Filtered Folder Deletion Scope (`src/components/SavedTab.tsx` — ISSUE-69)**:
-   - Updated folder deletion trigger and confirmation popup copy when a search query is active, explicitly stating: *"Delete N search-matching exam(s) in folder 'XXX'? (M hidden exams will be kept)"*.
+2. **Refined Exporter Classifier (`src/utils/exporter.ts` — ISSUE-80)**:
+   - Added centralized `isPeDataset(dataset)` helper that returns `true` ONLY for genuine PE datasets (category `PE`, 0 questions, examType containing `PE`, or valid PE zip/pdf asset links).
+   - Ensured FE exams (`examCategory === 'FE'` with 30 questions) strictly route to self-contained HTML print PDF generation.
 
-3. **Presigned S3 URL Extraction & Query String Regex (`src/utils/parser.ts` — ISSUE-70)**:
-   - Enhanced `extractPeZipUrl` to pre-sanitize raw HTML string escapes (`\\/` -> `/`, `\u0026` -> `&`) and updated Stage 3 & 4 regex patterns to match presigned S3 URLs containing query parameters (`?X-Amz-Algorithm=...`) or case-insensitive `.ZIP` extensions.
+3. **Popup Blocker Fallback (`src/utils/exporter.ts` — ISSUE-80)**:
+   - Added fallback downloading of the self-contained `.html` print document (`downloadBlob`) if `window.open` returns `null` due to browser popup restrictions during `exportExam(dataset, 'PDF')`.
 
-4. **Numeric Product ID Extractor & PDF Viewer Fallback (`src/components/ViewerPanel.tsx` — ISSUE-71)**:
-   - Implemented `extractNumericProductId` to resolve 6-digit numeric product IDs from dataset attributes (`id`, `pdfUrl`, `zipUrl`, `title`) before constructing `/api/exams/pdf?productId=${numericId}` iframe URLs, preventing 404 errors on fallback-generated dataset IDs.
+---
 
-5. **Storage Transaction Mutex Queue (`src/utils/storage.ts` — ISSUE-72)**:
-   - Added Promise-chained `storageWriteQueue` mutex (`enqueueStorageTask`) serializing all `saveExamToStorage`, `deleteExamsFromStorage`, and `clearAllExamsFromStorage` calls, eliminating Read-Modify-Write storage race conditions during high-frequency batch fetches.
+## Previous Milestone Completed: Issues 77, 78, & 79 Math Parsing & Entity Highlighting
 
-6. **Session Metadata in PDF Print Cover Header (`src/utils/exporter.ts` — ISSUE-73)**:
-   - Added `examSessionTime` and `examSessionDate` metadata fields to `generatePrintHtml` PDF cover page headers matching Markdown exports.
+### What Was Fixed
+1. **Escaped Currency Pre-Conversion (`src/utils/math.ts` — ISSUE-77 & ISSUE-79)**:
+   - Added `\uE000` sentinel token masking for escaped currency dollar signs (`\$1`, `\$2`, `\$3`) in `sanitizeMathLatex` BEFORE running math delimiter splitting.
+   - Restored `\uE000` to literal `$` for UI display and `\$` for Markdown exports.
 
-7. **Fallback PDF Resolution in Bulk ZIP Exports (`src/utils/exporter.ts` — ISSUE-74)**:
-   - Updated `exportBulkAsZip` to resolve fallback PDF API endpoints (`/api/exams/pdf?productId=${numericId}`) when `dataset.pdfUrl` is null, ensuring PE PDF papers are always included in bulk ZIP exports.
-
-8. **Format Switcher Layout Optimization (`src/components/FormatSwitcher.tsx` & `src/styles/overlay.css` — ISSUE-75)**:
-   - Added compact CSS styling (`.fus-header-switcher.mixed-mode`) with micro typography (9px) and tight padding, preventing format label wrapping or vertical overflow on 380px panel header toolbars.
+2. **Entity-Aware Search Query Highlighting (`src/utils/highlight.ts` — ISSUE-78)**:
+   - Updated `highlightText` to split text on HTML entity boundaries, preventing search query matching from breaking HTML entities like `&#36;`.
 
 ---
 

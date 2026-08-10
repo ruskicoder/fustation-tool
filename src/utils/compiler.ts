@@ -29,7 +29,7 @@ export async function compileMarkdown(dataset: ExamDataset, embedImages: boolean
   for (let idx = 0; idx < questions.length; idx++) {
     const q = questions[idx];
     const qNum = idx + 1;
-    const cleanText = sanitizeMathLatex(q.text || '').trim();
+    const cleanText = sanitizeMathLatex(q.text || '').replace(/[\uE000]|&#36;/g, '\\$').trim();
     const qTitle = cleanText || '[ Question Illustration ]';
 
     lines.push(`### Question ${qNum}: ${qTitle}`);
@@ -51,7 +51,7 @@ export async function compileMarkdown(dataset: ExamDataset, embedImages: boolean
     }
 
     (q.options || []).forEach((opt) => {
-      const optText = sanitizeMathLatex(opt.text || '');
+      const optText = sanitizeMathLatex(opt.text || '').replace(/[\uE000]|&#36;/g, '\\$');
       lines.push(`${opt.id}. ${optText}`);
     });
 

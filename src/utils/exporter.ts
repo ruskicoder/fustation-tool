@@ -57,50 +57,53 @@ export function generatePrintHtml(dataset: ExamDataset): string {
     let optionsHtml = '';
     (q.options || []).forEach((opt) => {
       const isCorrect = (q.correctAnswers || []).includes(opt.id);
+      const renderedOptText = renderMathInText(opt.text || '');
       optionsHtml += `
-        <div class="option-item ${isCorrect ? 'correct' : ''}">
-          <span class="option-label">${opt.id}.</span>
-          <span class="option-text">${renderMathInText(opt.text)}</span>
-        </div>
-      `;
+        <div class="option ${isCorrect ? 'correct' : ''}">
+          <span class="badge">${opt.id}</span>
+          <span class="opt-text">${renderedOptText}</span>
+        </div>`;
     });
 
-    let imgHtml = '';
-    if (q.imageBase64 || q.imageUrl) {
-      const imgSrc = q.imageBase64 || normalizeImageUrl(q.imageUrl);
-      if (imgSrc) {
-        imgHtml = `<div class="question-image"><img src="${imgSrc}" alt="Question Image" /></div>`;
-      }
-    }
+    const imgSrc = q.imageBase64 || normalizeImageUrl(q.imageUrl);
+    const imgHtml = imgSrc ? `<img src="${imgSrc}" class="q-img" alt="Question illustration" />` : '';
 
     questionsHtml += `
-      <div class="question-block">
-        <div class="question-header">
-          <span class="question-num">Question ${qNum}:</span>
-          <span class="question-text">${renderedQText}</span>
-        </div>
+      <div class="q-card">
+        <h3 class="q-title">Câu hỏi ${qNum}: ${renderedQText}</h3>
         ${imgHtml}
-        <div class="options-grid">
+        <div class="options-list">
           ${optionsHtml}
         </div>
-        <div class="answer-key font-bold text-slate-700 mt-2">Correct Answer: <span class="badge">${answers}</span></div>
-      </div>
-    `;
+        <div class="answer-key">Đáp án đúng: <strong>${answers}</strong></div>
+      </div>`;
   });
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>${dataset.title || 'Exam Print'}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 30px; color: #1e293b; background: #fff; line-height: 1.5; }
+    .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px; }
+    .header h1 { font-size: 24px; margin: 0 0 8px 0; color: #0f172a; }
+    .meta { font-size: 14px; color: #64748b; margin: 4px 0; }
+    .q-card { page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .q-title { font-size: 16px; margin: 0 0 12px 0; color: #0f172a; font-weight: 600; line-height: 1.4; }
+    .q-img { max-width: 100%; height: auto; margin-bottom: 12px; border-radius: 6px; display: block; }
+    .options-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .option { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 6px; border: 1px solid #f1f5f9; background: #f8fafc; font-size: 14px; color: #334155; }
+    .option.correct { border-color: #10b981; background: #ecfdf5; color: #065f46; font-weight: 600; }
+    .badge { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 50%; background: #e2e8f0; color: #334155; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .option.correct .badge { background: #10b981; color: #fff; }
     .answer-key { font-size: 13px; color: #047857; margin-top: 8px; border-top: 1px dashed #e2e8f0; padding-top: 8px; }
     .fus-math-block { display: block; margin: 8px 0; text-align: center; }
     .fus-math-inline { display: inline-block; vertical-align: middle; }
     @media print {
-      body { margin: 0; }
-      .q-card { page-break-inside: avoid; }
+      body { margin: 0; padding: 15px; }
+      .q-card { page-break-inside: avoid; box-shadow: none; border-color: #cbd5e1; }
     }
   </style>
 </head>
@@ -154,10 +157,41 @@ export async function downloadAssetUrl(rawUrl: string, filename: string): Promis
   }
 }
 
+export function extractNumericProductId(ds: ExamDataset): string | null {
+  if (!ds) return null;
+  if (ds.id && /^\d{5,8}$/.test(ds.id)) return ds.id;
+  if (ds.pdfUrl) {
+    const m = ds.pdfUrl.match(/productId=(\d{5,8})/i);
+    if (m && m[1]) return m[1];
+  }
+  const titleMatch = (ds.title || ds.parsedTitle || '').match(/\d{5,8}$/);
+  if (titleMatch && titleMatch[0]) return titleMatch[0];
+  return null;
+}
+
+export function isPeDataset(ds: ExamDataset): boolean {
+  if (!ds) return false;
+  if (ds.examCategory === 'PE') return true;
+  const typeStr = (ds.examType || '').toUpperCase();
+  if (['PE', 'PE1', 'PE2', 'B5PE'].includes(typeStr) || typeStr.includes('PE')) return true;
+  if ((ds.questions?.length ?? ds.totalQuestions ?? 0) === 0) {
+    if (ds.zipUrl) return true;
+    if (ds.pdfUrl) {
+      const numId = extractNumericProductId(ds);
+      if (numId || ds.pdfUrl.toLowerCase().endsWith('.pdf') || ds.pdfUrl.includes('s3.amazonaws.com')) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export async function downloadPdfAsset(dataset: ExamDataset): Promise<boolean> {
   if (!dataset) return false;
-  const targetId = dataset.id || 'pe_exam';
-  const pdfUrl = dataset.pdfUrl || (targetId && targetId !== 'unknown' ? `/api/exams/pdf?productId=${targetId}` : null);
+  const numId = extractNumericProductId(dataset);
+  const pdfUrl = (dataset.pdfUrl && !dataset.pdfUrl.includes('productId=cmo') && !dataset.pdfUrl.includes('productId=exam_'))
+    ? dataset.pdfUrl
+    : (numId ? `/api/exams/pdf?productId=${numId}` : null);
   if (!pdfUrl) return false;
   const cleanTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${cleanTitle}_Paper.pdf`;
@@ -173,8 +207,10 @@ export async function downloadZipAsset(dataset: ExamDataset): Promise<boolean> {
 
 export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 'PE_BOTH'): Promise<boolean> {
   const title = (dataset.title || 'PE_Exam').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const targetId = dataset.id || 'pe_exam';
-  const pdfUrl = dataset.pdfUrl || (targetId && targetId !== 'unknown' ? `/api/exams/pdf?productId=${targetId}` : null);
+  const numId = extractNumericProductId(dataset);
+  const pdfUrl = (dataset.pdfUrl && !dataset.pdfUrl.includes('productId=cmo') && !dataset.pdfUrl.includes('productId=exam_'))
+    ? dataset.pdfUrl
+    : (numId ? `/api/exams/pdf?productId=${numId}` : null);
 
   if (peFormat === 'PE_PDF') {
     return await downloadPdfAsset(dataset);
@@ -240,15 +276,14 @@ export async function exportBulkAsZip(
     const folder = zip.folder(subjCode);
     const title = (ds.title || item.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
 
-    const isItemPe = ds.examCategory === 'PE' ||
-                     ds.totalQuestions === 0 ||
-                     (ds.examType || '').toUpperCase().includes('PE') ||
-                     !!(ds.pdfUrl || ds.zipUrl);
+    const isItemPe = isPeDataset(ds as ExamDataset);
 
     if (isItemPe) {
       // PE asset export inside subject folder
-      const targetId = ds.id || item.id || 'pe_exam';
-      const pdfUrl = ds.pdfUrl || (targetId && targetId !== 'unknown' ? `/api/exams/pdf?productId=${targetId}` : null);
+      const numId = extractNumericProductId(ds as ExamDataset);
+      const pdfUrl = (ds.pdfUrl && !ds.pdfUrl.includes('productId=cmo') && !ds.pdfUrl.includes('productId=exam_'))
+        ? ds.pdfUrl
+        : (numId ? `/api/exams/pdf?productId=${numId}` : null);
 
       if ((peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') && pdfUrl) {
         const pdfBuf = await fetchArrayBuffer(pdfUrl);
@@ -290,10 +325,7 @@ export async function exportBulkAsZip(
 export async function exportExam(dataset: ExamDataset, format: ExportFormat = 'MD'): Promise<void> {
   if (!dataset) return;
 
-  const isPe = dataset.examCategory === 'PE' ||
-               dataset.totalQuestions === 0 ||
-               (dataset.examType || '').toUpperCase().includes('PE') ||
-               !!(dataset.pdfUrl || dataset.zipUrl);
+  const isPe = isPeDataset(dataset);
 
   if (isPe) {
     let peFormat: PEFormat = 'PE_BOTH';
@@ -328,6 +360,9 @@ export async function exportExam(dataset: ExamDataset, format: ExportFormat = 'M
       setTimeout(() => {
         printWin.print();
       }, 300);
+    } else {
+      // Fallback if window.open is blocked by browser popup blocker
+      downloadBlob(htmlStr, `${filename}.html`, 'text/html;charset=utf-8');
     }
   } else {
     // Default MD

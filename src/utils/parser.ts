@@ -306,18 +306,20 @@ export function sanitizeAssetUrl(url: string | null): string | null {
     .trim();
 }
 
-export function extractPeZipUrl(fullHtml: string): string | null {
+export function extractPeZipUrl(fullHtml: string, isLiveDom: boolean = false): string | null {
   if (!fullHtml) return null;
 
-  // Pre-sanitize raw HTML string escapes
+  // Pre-sanitize raw HTML and RSC string escapes
   const cleanHtml = fullHtml
     .replace(/\\\\u0026/gi, '&')
     .replace(/\\u0026/gi, '&')
     .replace(/&amp;/gi, '&')
+    .replace(/\\\\"/g, '"')
+    .replace(/\\"/g, '"')
     .replace(/\\\\/g, '/');
 
-  // Stage 1: Live DOM query if executing in browser context
-  if (typeof document !== 'undefined') {
+  // Stage 1: Live DOM query ONLY if explicitly in active tab live DOM context
+  if (isLiveDom && typeof document !== 'undefined') {
     try {
       const zipAnchor = (document.querySelector('a[href*=".zip" i]') ||
                          document.querySelector('a[href*="material" i]') ||
@@ -354,7 +356,7 @@ export function extractPeZipUrl(fullHtml: string): string | null {
   return null;
 }
 
-export function formatExamDataset(initialData: any): ExamDataset {
+export function formatExamDataset(initialData: any, rawPayloadText?: string): ExamDataset {
   const prod = initialData.product || {};
   const subj = prod.subject || {};
   const title = prod.title || 'Exam Set';
@@ -367,7 +369,9 @@ export function formatExamDataset(initialData: any): ExamDataset {
   const isProdPe = rawProdType === 'PE' || rawProdType === 'PRACTICAL_EXAM' || rawProdType.includes('PE');
   const examType = isProdPe ? 'PE' : (parsedCode.examType !== 'FE' ? parsedCode.examType : (prod.examType || 'FE'));
 
-  const fullHtml = typeof document !== 'undefined' ? document.documentElement.innerHTML : '';
+  const fullHtml = rawPayloadText || (typeof document !== 'undefined' ? document.documentElement.innerHTML : '');
+  const isLiveDom = !rawPayloadText && typeof document !== 'undefined';
+
   const examSessionTime = extractSessionTimeFromText(fullHtml, prod);
   const examSessionDate = sanitizeRscDate(prod.createdAt || prod.examSessionDate || '$D2026-04-29T00:00:00.000Z');
 
@@ -378,13 +382,17 @@ export function formatExamDataset(initialData: any): ExamDataset {
 
   // PE Asset links (PDF & ZIP) extraction
   let pdfUrl: string | null = initialData.examUrl || prod.pdfUrl || prod.pdf || initialData.pdfUrl || null;
-  if (!pdfUrl && deterministicId && deterministicId !== 'unknown') {
-    pdfUrl = `/api/exams/pdf?productId=${deterministicId}`;
+  if (!pdfUrl) {
+    const rawIdCandidate = prod.id || initialData.productId || parsedCode.examCode || '';
+    const numMatch = String(rawIdCandidate).match(/^\d{5,8}$/) || String(rawIdCandidate).match(/(\d{5,8})$/);
+    if (numMatch && numMatch[1]) {
+      pdfUrl = `/api/exams/pdf?productId=${numMatch[1]}`;
+    }
   }
 
   let zipUrl: string | null = prod.materialUrl || prod.fileUrl || prod.zipUrl || prod.zip || prod.answerKeyUrl || prod.answerKey || prod.assetUrl || prod.downloadUrl || initialData.zipUrl || initialData.materialUrl || null;
   if (!zipUrl && fullHtml) {
-    zipUrl = extractPeZipUrl(fullHtml);
+    zipUrl = extractPeZipUrl(fullHtml, isLiveDom);
   }
 
   // Category classification (FE vs PE)
@@ -424,24 +432,26 @@ export function formatExamDataset(initialData: any): ExamDataset {
       }
 
       return {
-        index: qIndex,
         id: q.id || `q_${qIndex}`,
-        text: decodeHtmlEntities(q.text || ''),
-        imageUrl: q.imageUrl || null,
+        index: qIndex,
+        text: decodeHtmlEntities(q.text || q.questionText || ''),
+        options: opts,
         correctAnswers: correctAns,
-        options: opts
+        explanation: q.explanation ? decodeHtmlEntities(q.explanation) : undefined,
+        imageUrl: q.imageUrl || q.image || undefined,
+        imageBase64: q.imageBase64 || undefined
       };
     })
   };
 }
 
-export function extractPeFromDOM(html?: string): ExamDataset | null {
-  const fullHtml = html || (typeof document !== 'undefined' ? document.documentElement.innerHTML : '');
-  if (!fullHtml) return null;
+export function extractPeFromDOM(fullHtml?: string): ExamDataset | null {
+  const html = fullHtml || (typeof document !== 'undefined' ? document.documentElement.innerHTML : '');
+  if (!html) return null;
 
-  const pdfMatch = fullHtml.match(/\/api\/exams\/pdf\?productId=([a-zA-Z0-9]+)/i);
-  const h1Match = fullHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-  const isPePage = /PE|Thi\s*PE|Tả\i\s*Đề\s*thi/i.test(fullHtml) || !!pdfMatch;
+  const pdfMatch = html.match(/\/api\/exams\/pdf\?productId=([a-zA-Z0-9]+)/i);
+  const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  const isPePage = /PE|Thi\s*PE|Tả\i\s*Đề\s*thi/i.test(html) || !!pdfMatch;
 
   if (!isPePage && !pdfMatch && !h1Match) return null;
 
@@ -451,9 +461,10 @@ export function extractPeFromDOM(html?: string): ExamDataset | null {
   const productId = pdfMatch ? pdfMatch[1] : (parsedCode.subjectCode && parsedCode.examCode ? `${parsedCode.subjectCode}_${parsedCode.examCode}` : getExamIdFromUrl()) || `pe_${Date.now()}`;
   const pdfUrl = pdfMatch ? `/api/exams/pdf?productId=${productId}` : null;
 
-  const zipUrl = extractPeZipUrl(fullHtml);
+  const isLiveDom = !fullHtml && typeof document !== 'undefined';
+  const zipUrl = extractPeZipUrl(html, isLiveDom);
 
-  const subjBadgeMatch = fullHtml.match(/<span[^>]*data-slot="badge"[^>]*>([^<]+)<\/span>/i);
+  const subjBadgeMatch = html.match(/<span[^>]*data-slot="badge"[^>]*>([^<]+)<\/span>/i);
   const subjectName = subjBadgeMatch ? subjBadgeMatch[1].trim() : (parsedCode.subjectCode || 'PE Subject');
 
   return {
@@ -487,7 +498,7 @@ export function extractExamFromScripts(targetProductId?: string): ExamDataset | 
   if (fullHtml.includes('initialData') || fullHtml.includes('questions')) {
     const parsed = unescapeNextFChunk(fullHtml, activeTargetId);
     if (parsed && parsed.initialData) {
-      return formatExamDataset(parsed.initialData);
+      return formatExamDataset(parsed.initialData, fullHtml);
     }
   }
 
@@ -498,7 +509,7 @@ export function extractExamFromScripts(targetProductId?: string): ExamDataset | 
     if (content.includes('initialData') || content.includes('questions')) {
       const parsed = unescapeNextFChunk(content, activeTargetId);
       if (parsed && parsed.initialData) {
-        return formatExamDataset(parsed.initialData);
+        return formatExamDataset(parsed.initialData, fullHtml);
       }
     }
   }

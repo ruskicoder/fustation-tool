@@ -72,67 +72,37 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-64**: Lack of Metadata Details Inspector Modal/Tooltip in SavedTab -> Fixed via Info button `[i]` and inspector modal in `src/components/SavedTab.tsx`.
 - [x] **ISSUE-64 / Hotfix**: Metadata Inspector Modal Transparency & PE Asset Link Resolution -> Fixed in `src/styles/overlay.css`, `src/components/SavedTab.tsx`.
 - [x] **ISSUE-66**: PE ZIP Material Extraction Failure & S3 Presigned URL `\u0026` Unescaping -> Fixed in `src/utils/parser.ts`, `src/utils/exporter.ts`, `src/utils/storage.ts`.
-- [x] **ISSUE-67**: Folder & Batch Deletion UI Lag, Partial Delete & Extension Freeze/Crash -> Fixed via atomic `deleteExamsFromStorage()` in `src/utils/storage.ts` and `src/components/Overlay.tsx`.
+- [x] **ISSUE-68**: Duplicate "PE" Badges in `SavedTab.tsx` Child Record Rows -> Fixed in `src/components/SavedTab.tsx`.
+- [x] **ISSUE-69**: Search Query Filtered Folder Action Scope Discrepancy -> Fixed in `src/components/SavedTab.tsx`.
+- [x] **ISSUE-70**: `extractPeZipUrl` Fails on Presigned S3 URLs without `.zip` Path -> Fixed in `src/utils/parser.ts`.
+- [x] **ISSUE-71**: `ViewerPanel` PDF Iframe 404 Error on Non-Numeric `dataset.id` -> Fixed in `src/components/ViewerPanel.tsx`.
+- [x] **ISSUE-72**: `chrome.storage.local` Concurrency Write Overwriting in Batch Fetcher -> Fixed in `src/utils/storage.ts`.
+- [x] **ISSUE-73**: Incomplete Session Metadata in `generatePrintHtml` Cover Header -> Fixed in `src/utils/exporter.ts`.
+- [x] **ISSUE-74**: `exportBulkAsZip` Skipping PDF Assets when `pdfUrl` is Null -> Fixed in `src/utils/exporter.ts`.
+- [x] **ISSUE-75**: `FormatSwitcher` Mixed-Mode Label Overflow on 380px Panel Width -> Fixed in `src/components/FormatSwitcher.tsx`, `src/styles/overlay.css`.
+- [x] **ISSUE-77**: Escaped Currency Dollar Signs (`\$`) Treated as Math Delimiters (`$`) -> Fixed in `src/utils/math.ts` via `\uE000` sentinel token masking.
+- [x] **ISSUE-78**: Math Search Query Highlighting HTML Entity Protection -> Fixed in `src/utils/highlight.ts` via entity-aware segment splitting.
+- [x] **ISSUE-79**: `sanitizeMathLatex` Pre-Conversion to `&#36;` Double-Escaped into `&amp;#36;` -> Fixed in `src/utils/math.ts` via `\uE000` sentinel token masking & literal `$` restoration.
+- [x] **ISSUE-80**: Invalid Alphanumeric `pdfUrl` Construction & False `isPe` Export Routing -> Fixed in `src/utils/parser.ts` & `src/utils/exporter.ts`.
 
 ---
 
 ## II. Open & Verified Issues Register
 
-### [ISSUE-68] Duplicate "PE" Badges in `SavedTab.tsx` Child Record Rows
-- **Status**: 🔴 **OPEN (UX Bug)**
-- **Symptom**: In `SavedTab.tsx` child exam rows, PE exam items display two identical side-by-side badges reading `"PE"` (e.g. `[SP26] [PE] [PE] PRF192_FA25_PE_B3W_983472`).
-- **Root Cause**: Line 289 renders `<span className="fus-badge fus-badge-campus">{typeStr}</span>` which evaluates to `"PE"`. Line 290 ALSO conditionally renders `{item.examCategory === 'PE' && <span className="fus-badge fus-badge-subject"...>PE</span>}`.
-- **Target File**: [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx#L288-L290)
-- **Remediation**: Render the pink PE category badge ONLY when `typeStr` does NOT already equal `'PE'`, or unify the type and category badge rendering logic into a single badge.
-
-### [ISSUE-69] Search Query Filtered Folder Action Scope Discrepancy (Accidental Deletion Risk)
-- **Status**: 🔴 **OPEN (UX Hazard / Unintended Data Loss Risk)**
-- **Symptom**: When a user filters the saved exam list with a search query and clicks "Delete Folder" or "Export Folder" on a subject folder row, the operation deletes/exports ALL items belonging to that subject code in storage—including hidden items that do not match the search query.
-- **Root Cause**: `groupedFolders` computes `folderIds` from all items under that subject code in `filteredList`. However, when a search query is active, users expect folder actions to target only the filtered subset, or present an explicit prompt.
-- **Target File**: [src/components/SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx#L248-L260), [src/components/Overlay.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/Overlay.tsx#L458-L469)
-- **Remediation**: Scope folder delete and export actions strictly to `group.items` (the filtered items under that folder) when a search query is active.
-
-### [ISSUE-70] `extractPeZipUrl` Fails on Presigned S3 URLs without Explicit `.zip` Extension Path
-- **Status**: 🟡 **OPEN (Parser Boundary)**
-- **Symptom**: Presigned S3 ZIP URLs that use query parameters for authentication (e.g. `https://s3.amazonaws.com/bucket/key_material?X-Amz-Algorithm=...`) or uppercase `.ZIP` extensions are missed by Stage 4 of `extractPeZipUrl`.
-- **Root Cause**: Regex pattern in `extractPeZipUrl` requires literal `.zip` in the path string before query parameters.
-- **Target File**: [src/utils/parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts#L340-L345)
-- **Remediation**: Update regex patterns to match case-insensitive `.zip` and presigned query strings containing `material` or `answer-key`.
-
-### [ISSUE-71] `ViewerPanel` PDF Iframe 404 Fallback Error on Non-Numeric `dataset.id`
-- **Status**: 🔴 **OPEN (Network / PDF Render Defect)**
-- **Symptom**: When viewing a PE exam whose `dataset.id` was fallback-generated (e.g. `exam_PRF192_1720000000000`), the embedded PDF viewer attempts to load `/api/exams/pdf?productId=exam_PRF192_1720000000000`, resulting in a 404 error from FUSTATION backend.
-- **Root Cause**: `ViewerPanel.tsx` constructs `/api/exams/pdf?productId=${dataset.id}` without verifying if `dataset.id` is a numeric product ID.
-- **Target File**: [src/components/ViewerPanel.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/ViewerPanel.tsx#L162-L172)
-- **Remediation**: Extract numeric product ID from `dataset.id`, `dataset.pdfUrl`, or `dataset.title` before attempting to construct the API URL.
-
-### [ISSUE-72] Concurrent `chrome.storage.local` Read-Modify-Write Race Condition in Batch Fetcher
-- **Status**: 🔴 **OPEN (Storage Concurrency Hazard)**
-- **Symptom**: Rapid sequential `saveExamToStorage` calls during automated batch fetches can overwrite concurrent storage writes (e.g. simultaneous user deletion or setting updates) due to un-queued async `chrome.storage.local.get` / `set` operations.
-- **Root Cause**: `saveExamToStorage` reads the current storage map, appends the new exam item, and writes back without serializing write transactions.
-- **Target File**: [src/utils/storage.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/storage.ts#L86-L130), [src/utils/batchFetcher.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/batchFetcher.ts#L257)
-- **Remediation**: Implement a lightweight in-memory storage write queue or atomic mutex lock for `saveExamToStorage`.
-
-### [ISSUE-73] Incomplete Session Metadata in `generatePrintHtml` PDF Cover Header
-- **Status**: 🟡 **OPEN (Export Format Inconsistency)**
-- **Symptom**: PDF exports generated via `generatePrintHtml` lack `examSessionTime` ("Session Time") and `examSessionDate` ("Session Date") in the cover page header table, whereas Markdown exports include them.
-- **Root Cause**: `generatePrintHtml` in `exporter.ts` renders Subject, Term, Type, Campus, and Total Questions, but omits session time/date fields.
-- **Target File**: [src/utils/exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L107-L111)
-- **Remediation**: Add Session Time and Session Date metadata rows to `generatePrintHtml()`.
-
-### [ISSUE-74] `exportBulkAsZip` Skipping PDF Assets when `dataset.pdfUrl` is Null
-- **Status**: 🔴 **OPEN (Bulk Export Defect)**
-- **Symptom**: When performing bulk ZIP export of saved PE items, PDF papers are omitted from the output zip file if `ds.pdfUrl` is `null`, even though the PDF is available via `/api/exams/pdf?productId=${ds.id}`.
-- **Root Cause**: Lines 249-254 of `exporter.ts` check `if (ds.pdfUrl)` directly without resolving the fallback PDF endpoint.
-- **Target File**: [src/utils/exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L249-L254)
-- **Remediation**: Resolve PDF URL via `ds.pdfUrl || (ds.id && ds.id !== 'unknown' ? `/api/exams/pdf?productId=${ds.id}` : null)` before fetching PDF buffers in `exportBulkAsZip`.
-
-### [ISSUE-75] `FormatSwitcher` Mixed-Mode Label Layout Overflow on Minimum Panel Width (380px)
-- **Status**: 🟡 **OPEN (Layout Cutoff)**
-- **Symptom**: When both FE and PE items are selected in `SavedTab`, `FormatSwitcher` renders a 3x2 matrix of buttons. On 380px minimum panel width, label text wraps awkwardly and causes visual vertical overflow in the top drag header.
-- **Root Cause**: Fixed grid spacing and button padding in `FormatSwitcher.tsx` when rendering mixed mode controls inside a constrained header toolbar.
-- **Target File**: [src/components/FormatSwitcher.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/FormatSwitcher.tsx#L40-L75), [src/styles/overlay.css](file:///mnt/DATA/DATA/Github/fustation-tool/src/styles/overlay.css)
-- **Remediation**: Adjust CSS padding and font size for header format switcher in mixed mode or wrap in compact dropdown format.
+### [ISSUE-81] Stripped CSS Styles & Missing KaTeX Stylesheet in `generatePrintHtml` Renders Ugly Plain Unstyled HTML PDF Layout
+- **Status**: 🔴 **OPEN (Exporter / CSS Layout Defect)**
+- **Symptom**: Exporting or printing an FE exam via `generatePrintHtml` produces an ugly, unstyled HTML page lacking card borders, badges, option list styling, typography hierarchy, and KaTeX math stylesheet rules.
+- **Root Cause**:
+  1. **Exact Deviating Commit Identified**: Commit `ebeb99e44a7999d1d70733a7feb734aade5fd54e` (`Fri Aug 7 14:45:58 2026 +0700` by Do Dang Khoa, message `temp commit`).
+  2. In commit `ebeb99e`, lines 60–105 of `generatePrintHtml` in `src/utils/exporter.ts` stripped `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">` from `<head>`.
+  3. The `<style>` block was stripped of 13 essential CSS rules (`body`, `.header`, `.header h1`, `.meta`, `.q-card`, `.q-title`, `.q-img`, `.options-list`, `.option`, `.option.correct`, `.badge`, `.option.correct .badge`).
+  4. HTML element class names inside `questionsHtml` were renamed to `.question-block` / `.option-item` without writing corresponding CSS rules.
+- **Target Files**:
+  - [src/utils/exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L44-L116)
+- **Remediation**:
+  1. Restore the proven, beautiful HTML/CSS template from commit `6c6647831b80396270e86bd82de362f4175c892c` / `e8b7854` into `generatePrintHtml` in `src/utils/exporter.ts`.
+  2. Re-include the KaTeX stylesheet link `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">` in `<head>`.
+  3. Ensure all question cards (`.q-card`), titles (`.q-title`), option lists (`.options-list`), option items (`.option`), badges (`.badge`), correct answer highlights (`.option.correct`), and print media queries (`@media print`) match the CSS template rules.
 
 ---
 
@@ -140,14 +110,7 @@ This document maintains open, deferred, and roadmap issues identified during tes
 
 | Issue ID | Category | Description | Severity | Target File |
 | :--- | :--- | :--- | :--- | :--- |
-| **ISSUE-68** | UI / Badges | Duplicate "PE" Badges in `SavedTab.tsx` Child Record Rows | 🔴 High UX | [SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx#L288-L290) |
-| **ISSUE-69** | Business Logic | Search Query Filtered Folder Action Scope Discrepancy | 🔴 High Safety | [SavedTab.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/SavedTab.tsx#L248-L260) |
-| **ISSUE-70** | Parser | `extractPeZipUrl` Fails on Presigned S3 URLs without `.zip` Path | 🟡 Medium | [parser.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/parser.ts#L340-L345) |
-| **ISSUE-71** | Network / PDF | `ViewerPanel` PDF Iframe 404 Error on Non-Numeric `dataset.id` | 🔴 High | [ViewerPanel.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/ViewerPanel.tsx#L162-L172) |
-| **ISSUE-72** | Storage Race | `chrome.storage.local` Concurrency Write Overwriting in Batch Fetcher | 🔴 High Concurrency | [storage.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/storage.ts#L86-L130) |
-| **ISSUE-73** | Exporter | Incomplete Session Metadata in `generatePrintHtml` Cover Header | 🟡 Low | [exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L107-L111) |
-| **ISSUE-74** | Exporter | `exportBulkAsZip` Skipping PDF Assets when `pdfUrl` is Null | 🔴 High | [exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L249-L254) |
-| **ISSUE-75** | Layout | `FormatSwitcher` Mixed-Mode Label Overflow on 380px Panel Width | 🟡 Medium | [FormatSwitcher.tsx](file:///mnt/DATA/DATA/Github/fustation-tool/src/components/FormatSwitcher.tsx#L40-L75) |
+| **ISSUE-81** | Exporter / Layout | Stripped CSS Styles & Missing KaTeX Stylesheet in `generatePrintHtml` | 🔴 High | [exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L44-L116) |
 
 ---
 

@@ -8,7 +8,10 @@ import { highlightText } from './highlight';
  */
 export function sanitizeMathLatex(text: string): string {
   if (!text) return '';
-  return text
+  // Mask escaped currency \$ (written as \\$ or \$) with private Unicode marker \uE000 BEFORE math splitting
+  let processed = text.replace(/\\+\$/g, '\uE000');
+
+  return processed
     .replace(/\\u0026/g, '&')
     .replace(/&amp;/g, '&')
     .replace(/\\\\\\\\/g, '\\')
@@ -20,7 +23,8 @@ export function sanitizeMathLatex(text: string): string {
  */
 export function hasMathLatex(text: string): boolean {
   if (!text) return false;
-  return /\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\\\(|\\\[|\\frac|\\sqrt|\\begin\{/i.test(text);
+  const clean = sanitizeMathLatex(text);
+  return /\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\\\(|\\\[|\\frac|\\sqrt|\\begin\{/i.test(clean);
 }
 
 /**
@@ -43,30 +47,30 @@ export function renderMathInText(text: string, searchQuery?: string): string {
 
       // Display math: $$...$$
       if (part.startsWith('$$') && part.endsWith('$$') && part.length > 4) {
-        const formula = part.slice(2, -2).trim();
+        const formula = part.slice(2, -2).replace(/\uE000/g, '\\$').trim();
         try {
           return `<span class="fus-math-block">${katex.renderToString(formula, { displayMode: true, throwOnError: false, strict: "ignore" })}</span>`;
         } catch {
-          return `<code class="fus-math-raw">${escapeHtml(part)}</code>`;
+          return `<code class="fus-math-raw">${escapeHtml(part).replace(/\uE000/g, '$')}</code>`;
         }
       }
 
       // Inline math: $...$
       if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
-        const formula = part.slice(1, -1).trim();
+        const formula = part.slice(1, -1).replace(/\uE000/g, '\\$').trim();
         try {
           return `<span class="fus-math-inline">${katex.renderToString(formula, { displayMode: false, throwOnError: false, strict: "ignore" })}</span>`;
         } catch {
-          return `<code class="fus-math-raw">${escapeHtml(part)}</code>`;
+          return `<code class="fus-math-raw">${escapeHtml(part).replace(/\uE000/g, '$')}</code>`;
         }
       }
 
-      // Plain text segment: apply query highlight if needed
+      // Plain text segment: apply query highlight if needed and restore \uE000 as literal $
       if (searchQuery && searchQuery.trim()) {
-        return highlightText(part, searchQuery);
+        return highlightText(part, searchQuery).replace(/\uE000/g, '$');
       }
 
-      return escapeHtml(part).replace(/\n/g, '<br/>');
+      return escapeHtml(part).replace(/\n/g, '<br/>').replace(/\uE000/g, '$');
     })
     .join('');
 }

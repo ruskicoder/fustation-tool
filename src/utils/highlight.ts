@@ -30,8 +30,14 @@ export function highlightText(text: string, query: string): string {
   const trimmed = query.trim();
   if (!trimmed) return safe;
 
+  const entityRegex = /(&#[0-9]+;|&[a-zA-Z0-9]+;)/g;
+  const segments = safe.split(entityRegex);
   const pattern = new RegExp(`(${escapeRegex(trimmed)})`, 'gi');
-  return safe.replace(pattern, '<mark class="fus-highlight">$1</mark>');
+
+  return segments.map((seg) => {
+    if (seg.match(entityRegex)) return seg;
+    return seg.replace(pattern, '<mark class="fus-highlight">$1</mark>');
+  }).join('');
 }
 
 /**
