@@ -1,7 +1,23 @@
 # Current Progress — fustation-tool
 
-**Last Updated**: 2026-08-07
-**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (ISSUE-80 FE PDF EXPORT ROUTING & NUMERIC ID GUARD COMPLETE & VERIFIED)**
+**Last Updated**: 2026-08-12
+**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (ISSUES 93–95 ZERO-TRUST LOG ANALYSIS: S3 PROXY REWRITING, PRODUCT ID CLEANUP & LIVE ZIP RE-EXTRACTION VERIFIED)**
+
+---
+
+## Key Milestone Completed: Issues 93–95 Zero-Trust Log Analysis & Root Cause Resolutions
+
+### What Was Fixed
+1. **Direct AWS S3 Presigned URL Proxy Rewriting (`src/utils/images.ts` — ISSUE-93)**:
+   - Updated `normalizeImageUrl` to detect direct S3 presigned URLs (`https://fustation.s3.ap-southeast-1.amazonaws.com/...`) and rewrite them to the authenticated proxy endpoint `${FUSTATION_ORIGIN}/api/exams/question-image?key=${cleanKey}`.
+   - Eliminates the 694 instances of **HTTP 403 Forbidden** recorded in `failedlogs.txt`.
+
+2. **Removal of Title Suffix Product ID Fallback (`src/utils/exporter.ts` — ISSUE-94)**:
+   - Removed 6-digit title suffix matching (`HCM202_SU26_RE_808009` -> `808009`) in `extractNumericProductId` and `resolveValidPdfUrl`.
+   - Eliminates the 144 instances of **HTTP 404 Not Found** caused by querying non-existent `productId=808009` endpoints.
+
+3. **Live PE ZIP Presigned Link Re-extraction (`src/utils/exporter.ts` — ISSUE-95)**:
+   - Updated `downloadZipAsset` and `exportSinglePe` to re-query live page DOM anchors (`extractPeZipUrl(document.documentElement.innerHTML, true)`) to obtain fresh presigned URLs before attempting download.
 
 ---
 

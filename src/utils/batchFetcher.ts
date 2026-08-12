@@ -56,13 +56,18 @@ export function extractProductTasksFromHtml(html: string): BatchItemTask[] {
     }
   }
 
-  // Pass 2: Fallback regex search for marketplace links if initialProducts was missing
-  if (tasks.length === 0) {
-    const linkRegex = /\/marketplace\/exam\/([a-zA-Z0-9_-]+)/g;
+  // Pass 2: Unconditional Multi-Pattern Regex Discovery (DOM Hrefs + RSC Payload Streams)
+  const linkPatterns = [
+    /\/marketplace\/exam\/([a-zA-Z0-9_-]+)/g,
+    /\/marketplace\/exams\/([a-zA-Z0-9_-]+)/g,
+    /\/marketplace\/(cm[a-z0-9]{22,28})/g
+  ];
+
+  for (const pattern of linkPatterns) {
     let linkMatch: RegExpExecArray | null;
-    while ((linkMatch = linkRegex.exec(html)) !== null) {
+    while ((linkMatch = pattern.exec(html)) !== null) {
       const id = linkMatch[1];
-      if (id && !seenIds.has(id)) {
+      if (id && id !== 'exam' && id !== 'exams' && !seenIds.has(id)) {
         seenIds.add(id);
         tasks.push({
           id,

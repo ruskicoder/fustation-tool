@@ -382,6 +382,12 @@ export function formatExamDataset(initialData: any, rawPayloadText?: string): Ex
 
   // PE Asset links (PDF & ZIP) extraction
   let pdfUrl: string | null = initialData.examUrl || prod.pdfUrl || prod.pdf || initialData.pdfUrl || null;
+  if (pdfUrl && pdfUrl.includes('productId=')) {
+    const pMatch = pdfUrl.match(/productId=([^&]+)/i);
+    if (pMatch && pMatch[1] && !/^\d{5,8}$/.test(pMatch[1])) {
+      pdfUrl = null;
+    }
+  }
   if (!pdfUrl) {
     const rawIdCandidate = prod.id || initialData.productId || parsedCode.examCode || '';
     const numMatch = String(rawIdCandidate).match(/^\d{5,8}$/) || String(rawIdCandidate).match(/(\d{5,8})$/);
@@ -449,7 +455,7 @@ export function extractPeFromDOM(fullHtml?: string): ExamDataset | null {
   const html = fullHtml || (typeof document !== 'undefined' ? document.documentElement.innerHTML : '');
   if (!html) return null;
 
-  const pdfMatch = html.match(/\/api\/exams\/pdf\?productId=([a-zA-Z0-9]+)/i);
+  const pdfMatch = html.match(/\/api\/exams\/pdf\?productId=(\d{5,8})/i);
   const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
   const isPePage = /PE|Thi\s*PE|Tả\i\s*Đề\s*thi/i.test(html) || !!pdfMatch;
 

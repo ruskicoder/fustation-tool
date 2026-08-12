@@ -150,3 +150,29 @@ export const ChevronLeftIcon: React.FC<IconProps> = ({ size = 12, className }) =
     <polyline points="15 18 9 12 15 6" />
   </svg>
 );
+
+export const ChevronUpIcon: React.FC<IconProps> = ({ size = 12, className }) => (
+  <svg {...base(size)} className={className}>
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+
+export const PauseIcon: React.FC<IconProps> = ({ size = 12, className }) => (
+  <svg {...base(size)} className={className}>
+    <rect x="6" y="4" width="4" height="16" />
+    <rect x="14" y="4" width="4" height="16" />
+  </svg>
+);
+
+export const PlayIcon: React.FC<IconProps> = ({ size = 12, className }) => (
+  <svg {...base(size)} className={className}>
+    <polygon points="5 3 19 12 5 21 5 3" />
+  </svg>
+);
+
+export const XMarkIcon: React.FC<IconProps> = ({ size = 12, className }) => (
+  <svg {...base(size)} className={className}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);

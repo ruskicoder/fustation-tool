@@ -137,3 +137,30 @@ export interface SavedExamItem {
 }
 
 export type SavedExamsMap = Record<string, SavedExamItem>;
+
+export type BatchStatus = 'standby' | 'compiling' | 'downloading' | 'done' | 'failed' | 'retrying';
+
+export interface BatchProgressState {
+  totalItems: number;
+  completedItems: number;
+  currentBatchIndex: number;
+  totalBatches: number;
+  batchStatus: BatchStatus;
+  currentExamCode: string;
+  currentLogNote: string;
+  isPaused: boolean;
+  isCanceled: boolean;
+  isDrawerExpanded: boolean;
+  logs: string[];
+}
+
+export type ExportProgressCallback = (progress: BatchProgressState) => void;
+
+export interface AssetFetchResult {
+  buffer: ArrayBuffer | null;
+  status: 'available' | 'missing';
+  attempts: number;
+  url: string;
+  targetFilename?: string;
+}
+

@@ -9,6 +9,7 @@ import { downloadPdfAsset, downloadZipAsset } from '../utils/exporter';
 interface ExtractTabProps {
   dataset: ExamDataset | null;
   status?: StatusState;
+  isExporting?: boolean;
   onFetch: () => void;
   onSave: () => void;
   onDownload: () => void;
@@ -20,6 +21,7 @@ interface ExtractTabProps {
 export const ExtractTab: React.FC<ExtractTabProps> = ({
   dataset,
   status,
+  isExporting,
   onFetch,
   onSave,
   onDownload,
@@ -60,6 +62,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
   const termExamType = `${termStr} - ${typeStr}`;
   const sessionStr = `${data.examSessionTime || 'N/A'} | ${data.examSessionDate || '29/04/2026'}`;
   const isLoading = status === 'fetching' || status === 'processing';
+  const isExportActive = status === 'processing' || status === 'downloading' || !!isExporting;
   const isPe = data.examCategory === 'PE';
   const hasQuestions = !!(dataset && dataset.questions && dataset.questions.length > 0);
 
@@ -155,9 +158,15 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
                     </button>
                   </div>
 
-                  <button type="button" className="fus-btn-primary" onClick={onDownload}>
+                  <button
+                    type="button"
+                    className="fus-btn-primary"
+                    disabled={isExportActive}
+                    style={isExportActive ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
+                    onClick={onDownload}
+                  >
                     <DownloadIcon size={14} />
-                    Download
+                    {isExportActive ? 'Exporting...' : 'Download'}
                   </button>
                 </>
               ) : (
@@ -185,9 +194,15 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
                     </button>
                   </div>
 
-                  <button type="button" className="fus-btn-primary" onClick={onDownload}>
+                  <button
+                    type="button"
+                    className="fus-btn-primary"
+                    disabled={isExportActive}
+                    style={isExportActive ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
+                    onClick={onDownload}
+                  >
                     <DownloadIcon size={14} />
-                    Download
+                    {isExportActive ? 'Exporting...' : 'Download'}
                   </button>
                 </>
               )}

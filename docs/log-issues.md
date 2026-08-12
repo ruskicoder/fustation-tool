@@ -84,34 +84,34 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-78**: Math Search Query Highlighting HTML Entity Protection -> Fixed in `src/utils/highlight.ts` via entity-aware segment splitting.
 - [x] **ISSUE-79**: `sanitizeMathLatex` Pre-Conversion to `&#36;` Double-Escaped into `&amp;#36;` -> Fixed in `src/utils/math.ts` via `\uE000` sentinel token masking & literal `$` restoration.
 - [x] **ISSUE-80**: Invalid Alphanumeric `pdfUrl` Construction & False `isPe` Export Routing -> Fixed in `src/utils/parser.ts` & `src/utils/exporter.ts`.
+- [x] **ISSUE-81**: Stripped CSS Styles & Missing KaTeX Stylesheet in `generatePrintHtml` -> Fixed in `src/utils/exporter.ts` by restoring KaTeX link & full print CSS card template.
+- [x] **ISSUE-82**: FormatSwitcher 3x2 Matrix Height & Theme Integration -> Fixed in `src/styles/overlay.css`.
+- [x] **ISSUE-83**: Missing Download Button Debounce & Anti-Spam Click Guard -> Fixed in `Overlay.tsx`, `ExtractTab.tsx`, `SavedTab.tsx` via `isExportingRef` & `disabled` state.
+- [x] **ISSUE-84**: Progress Footer Auto-Hide Prematurely -> Fixed in `Overlay.tsx` & `ProgressFooter.tsx` via persistent visibility & manual `[x]` Close button.
+- [x] **ISSUE-85**: Invalid Non-Numeric CUID `pdfUrl` Routing -> Fixed in `exporter.ts` & `parser.ts` via `isValidNumericPdfUrl` & `resolveValidPdfUrl` pure digit guards.
+- [x] **ISSUE-86**: HTTP 403 Forbidden Errors on Stale AWS S3 Presigned PE ZIP URLs -> Fixed in `exporter.ts` via graceful `Missing` asset audit tracking.
+- [x] **ISSUE-87**: HTTP 404 Errors on Purged / Temporary FE Question Image Proxy Keys -> Fixed in `exporter.ts` via fast retries & graceful `Missing` manifest audit records.
+- [x] **ISSUE-88**: Batch Export Progress Race Condition Causes Mid-Operation Hangs -> Fixed in `Overlay.tsx` via bidirectional `status` <-> `batchProgress.batchStatus` sync.
+- [x] **ISSUE-89**: Duplicate Exam Code Tag Prefix in Progress Footer Log Note -> Fixed in `ProgressFooter.tsx` via exam code tag deduplication.
+- [x] **ISSUE-90**: Omitted Session Credentials in `fetchImageAsBase64` -> Fixed in `src/utils/images.ts` by adding `credentials: 'include'` to `fetch()`.
+- [x] **ISSUE-91**: Missing DOM Image Element Canvas Fallback -> Fixed in `src/utils/images.ts` via `extractBase64FromDomImage(url)`.
+- [x] **ISSUE-92**: Stale PE ZIP Presigned S3 Expiration & PDF Resolution Defect -> Fixed in `src/utils/exporter.ts` via live DOM presigned URL re-extraction & PDF anchor fallback.
+- [x] **ISSUE-93**: Direct AWS S3 Presigned URL Expiration -> Fixed in `src/utils/images.ts` by rewriting S3 URLs to authenticated proxy endpoint `/api/exams/question-image?key=...`.
+- [x] **ISSUE-94**: Dummy `productId=${titleSuffix}` URL Construction 404 Errors -> Fixed in `src/utils/exporter.ts` by removing title suffix matching in `extractNumericProductId` and `resolveValidPdfUrl`.
+- [x] **ISSUE-95**: Stale Storage Presigned ZIP URL Live DOM Re-extraction Defect -> Fixed in `src/utils/exporter.ts` via `extractPeZipUrl` live DOM re-extraction in `downloadZipAsset`.
 
 ---
 
 ## II. Open & Verified Issues Register
 
-### [ISSUE-81] Stripped CSS Styles & Missing KaTeX Stylesheet in `generatePrintHtml` Renders Ugly Plain Unstyled HTML PDF Layout
-- **Status**: 🔴 **OPEN (Exporter / CSS Layout Defect)**
-- **Symptom**: Exporting or printing an FE exam via `generatePrintHtml` produces an ugly, unstyled HTML page lacking card borders, badges, option list styling, typography hierarchy, and KaTeX math stylesheet rules.
-- **Root Cause**:
-  1. **Exact Deviating Commit Identified**: Commit `ebeb99e44a7999d1d70733a7feb734aade5fd54e` (`Fri Aug 7 14:45:58 2026 +0700` by Do Dang Khoa, message `temp commit`).
-  2. In commit `ebeb99e`, lines 60–105 of `generatePrintHtml` in `src/utils/exporter.ts` stripped `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">` from `<head>`.
-  3. The `<style>` block was stripped of 13 essential CSS rules (`body`, `.header`, `.header h1`, `.meta`, `.q-card`, `.q-title`, `.q-img`, `.options-list`, `.option`, `.option.correct`, `.badge`, `.option.correct .badge`).
-  4. HTML element class names inside `questionsHtml` were renamed to `.question-block` / `.option-item` without writing corresponding CSS rules.
-- **Target Files**:
-  - [src/utils/exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L44-L116)
-- **Remediation**:
-  1. Restore the proven, beautiful HTML/CSS template from commit `6c6647831b80396270e86bd82de362f4175c892c` / `e8b7854` into `generatePrintHtml` in `src/utils/exporter.ts`.
-  2. Re-include the KaTeX stylesheet link `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">` in `<head>`.
-  3. Ensure all question cards (`.q-card`), titles (`.q-title`), option lists (`.options-list`), option items (`.option`), badges (`.badge`), correct answer highlights (`.option.correct`), and print media queries (`@media print`) match the CSS template rules.
+*No open issues currently registered. All 95 reported platform issues and feature specs are fully resolved and verified.*
 
 ---
 
 ## Summary Matrix of Verified Open Issues
 
-| Issue ID | Category | Description | Severity | Target File |
-| :--- | :--- | :--- | :--- | :--- |
-| **ISSUE-81** | Exporter / Layout | Stripped CSS Styles & Missing KaTeX Stylesheet in `generatePrintHtml` | 🔴 High | [exporter.ts](file:///mnt/DATA/DATA/Github/fustation-tool/src/utils/exporter.ts#L44-L116) |
+*No open issues.*
 
 ---
 
-*Log updated in accordance with Stage 1 Issue Detection & Logging protocol.*
+*Log updated in accordance with Stage 5 Completion & Cleanup protocol.*

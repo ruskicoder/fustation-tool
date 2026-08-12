@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ExamDataset, ExportFormat, FEFormat, PEFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS } from '../types';
+import { ExamDataset, ExportFormat, FEFormat, PEFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS, BatchProgressState } from '../types';
 import { extractExamFromScripts, getExamIdFromUrl } from '../utils/parser';
 import { exportExam, exportSinglePe, exportBulkAsZip } from '../utils/exporter';
 import {
@@ -27,6 +27,7 @@ import { useToasts } from '../hooks/useToasts';
 import { ExtractTab } from './ExtractTab';
 import { SavedTab } from './SavedTab';
 import { FormatSwitcher } from './FormatSwitcher';
+import { ProgressFooter } from './ProgressFooter';
 import { ResizeHandles } from './ResizeHandles';
 import { ToastHost } from './ToastHost';
 import { ViewerPanel } from './ViewerPanel';
@@ -47,7 +48,7 @@ function getExtractSuccessMessage(ds: ExamDataset): string {
 }
 
 function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
-  if (/\/marketplace\/exam\//.test(pathname)) return 'exam';
+  if (/\/marketplace\/(?:exam\/|exams\/)?[a-zA-Z0-9_-]+/.test(pathname) && !/\/marketplace\/?$/.test(pathname)) return 'exam';
   if (/\/home(\/|$)/.test(pathname) || /\/subject\//.test(pathname)) return 'catalog';
   return 'other';
 }
@@ -65,6 +66,26 @@ export const Overlay: React.FC = () => {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Progress Footer State
+  const [batchProgress, setBatchProgress] = useState<BatchProgressState>({
+    totalItems: 0,
+    completedItems: 0,
+    currentBatchIndex: 0,
+    totalBatches: 1,
+    batchStatus: 'standby',
+    currentExamCode: '',
+    currentLogNote: '',
+    isPaused: false,
+    isCanceled: false,
+    isDrawerExpanded: false,
+    logs: []
+  });
+  const [isFooterVisible, setIsFooterVisible] = useState<boolean>(false);
+  const isPausedRef = useRef<boolean>(false);
+  const isCanceledRef = useRef<boolean>(false);
+  const isExportingRef = useRef<boolean>(false);
+  const isExporting = status === 'processing' || status === 'downloading';
 
   // Viewer panel state
   const [viewerOpen, setViewerOpen] = useState<boolean>(false);
@@ -320,7 +341,15 @@ export const Overlay: React.FC = () => {
     });
   };
 
+  const handleCloseFooter = () => {
+    setIsFooterVisible(false);
+    if (status === 'processing' || status === 'downloading') {
+      setStatus('ready');
+    }
+  };
+
   const handleDownload = async () => {
+    if (isExportingRef.current) return;
     const dataToExport = (await ensureDatasetLoaded()) || currentDataset;
     if (!dataToExport) {
       setStatus('error');
@@ -328,8 +357,11 @@ export const Overlay: React.FC = () => {
       return;
     }
 
+    isExportingRef.current = true;
+    setIsFooterVisible(true);
     setStatus('processing');
-    setTimeout(async () => {
+
+    try {
       saveExamToStorage(dataToExport, (updatedList) => {
         setSavedExams((prev) => ({ ...(updatedList || prev || {}) }));
       });
@@ -341,11 +373,13 @@ export const Overlay: React.FC = () => {
         await exportExam(dataToExport, feFormat);
       }
       push(`Exported ${dataToExport.subjectCode}`, 'info');
-
-      setTimeout(() => {
-        setStatus('extracted');
-      }, 600);
-    }, 300);
+      setStatus('extracted');
+    } catch (err: any) {
+      setStatus('error');
+      push(`Export failed: ${err?.message || 'Download error'}`, 'error');
+    } finally {
+      isExportingRef.current = false;
+    }
   };
 
   // ----------------------------------------------------------------
@@ -430,12 +464,44 @@ export const Overlay: React.FC = () => {
     });
   };
 
+  const handleToggleFooterPause = () => {
+    isPausedRef.current = !isPausedRef.current;
+    setBatchProgress((prev) => ({
+      ...prev,
+      isPaused: isPausedRef.current
+    }));
+  };
+
+  const handleCancelFooterExport = () => {
+    isCanceledRef.current = true;
+    isExportingRef.current = false;
+    setBatchProgress((prev) => ({
+      ...prev,
+      isCanceled: true
+    }));
+    setIsFooterVisible(false);
+    setStatus('ready');
+  };
+
+  const handleToggleFooterDrawer = () => {
+    setBatchProgress((prev) => ({
+      ...prev,
+      isDrawerExpanded: !prev.isDrawerExpanded
+    }));
+  };
+
   const handleBatchDownload = async () => {
+    if (isExportingRef.current) return;
     const selectedItems = Array.from(selectedIds).map((id) => savedExams[id]).filter(Boolean);
     if (selectedItems.length === 0) return;
 
-    setStatus('downloading');
+    isExportingRef.current = true;
+    isPausedRef.current = false;
+    isCanceledRef.current = false;
+    setIsFooterVisible(true);
+    setStatus('processing');
     push(`Exporting ${selectedItems.length} exams...`, 'info');
+
     try {
       if (selectedItems.length === 1) {
         const item = selectedItems[0];
@@ -445,13 +511,42 @@ export const Overlay: React.FC = () => {
         } else {
           await exportExam(ds as ExamDataset, feFormat);
         }
+        setStatus('extracted');
       } else {
-        await exportBulkAsZip(selectedItems, feFormat, peFormat);
+        await exportBulkAsZip(selectedItems, {
+          feFormat,
+          peFormat,
+          onProgress: (pState: BatchProgressState) => {
+            setBatchProgress((prev) => ({
+              ...pState,
+              isDrawerExpanded: prev.isDrawerExpanded
+            }));
+            if (pState.batchStatus === 'compiling' || pState.batchStatus === 'retrying') {
+              setStatus('processing');
+            } else if (pState.batchStatus === 'downloading') {
+              setStatus('downloading');
+            } else if (pState.batchStatus === 'done') {
+              setStatus('extracted');
+            } else if (pState.batchStatus === 'failed') {
+              setStatus('error');
+            }
+          },
+          getControlState: () => ({
+            isPaused: isPausedRef.current,
+            isCanceled: isCanceledRef.current
+          })
+        });
       }
     } catch (e: any) {
       push(`Export failed: ${e.message}`, 'error');
+      setStatus('error');
+      setBatchProgress((prev) => ({
+        ...prev,
+        batchStatus: 'failed',
+        currentLogNote: `Export failed: ${e.message}`
+      }));
     } finally {
-      setStatus('ready');
+      isExportingRef.current = false;
     }
   };
 
@@ -469,8 +564,12 @@ export const Overlay: React.FC = () => {
   };
 
   const handleExportItem = async (examId: string) => {
+    if (isExportingRef.current) return;
     const item = savedExams[examId];
     if (item && item.dataset) {
+      isExportingRef.current = true;
+      setIsFooterVisible(true);
+      setStatus('processing');
       try {
         let success = true;
         if (item.dataset.examCategory === 'PE' || item.dataset.totalQuestions === 0) {
@@ -481,26 +580,59 @@ export const Overlay: React.FC = () => {
 
         if (success !== false) {
           push(`Exported ${item.dataset.subjectCode || 'exam'}`, 'info');
+          setStatus('extracted');
         } else {
           push(`Export failed: ${item.dataset.subjectCode || 'exam'} asset unavailable`, 'error');
+          setStatus('error');
         }
       } catch (err: any) {
         push(`Export error: ${err?.message || 'Download failed'}`, 'error');
+        setStatus('error');
+      } finally {
+        isExportingRef.current = false;
       }
     }
   };
 
   const handleExportFolder = async (folderExamIds: string[]) => {
+    if (isExportingRef.current) return;
     const folderItems = folderExamIds.map((id) => savedExams[id]).filter(Boolean);
     if (folderItems.length === 0) return;
-    setStatus('downloading');
+
+    isExportingRef.current = true;
+    isPausedRef.current = false;
+    isCanceledRef.current = false;
+    setIsFooterVisible(true);
+    setStatus('processing');
     push(`Exporting folder (${folderItems.length} items)...`, 'info');
+
     try {
-      await exportBulkAsZip(folderItems, feFormat, peFormat);
+      await exportBulkAsZip(folderItems, {
+        feFormat,
+        peFormat,
+        onProgress: (pState: BatchProgressState) => {
+          setBatchProgress((prev) => ({
+            ...pState,
+            isDrawerExpanded: prev.isDrawerExpanded
+          }));
+          if (pState.batchStatus === 'compiling' || pState.batchStatus === 'retrying') {
+            setStatus('processing');
+          } else if (pState.batchStatus === 'downloading') {
+            setStatus('downloading');
+          } else if (pState.batchStatus === 'done') {
+            setStatus('extracted');
+          }
+        },
+        getControlState: () => ({
+          isPaused: isPausedRef.current,
+          isCanceled: isCanceledRef.current
+        })
+      });
     } catch (e: any) {
       push(`Folder export failed: ${e.message}`, 'error');
+      setStatus('error');
     } finally {
-      setStatus('ready');
+      isExportingRef.current = false;
     }
   };
 
@@ -662,7 +794,12 @@ export const Overlay: React.FC = () => {
                   : true;
 
               return (
-                <div style={{ flexShrink: 0, minWidth: isSavedMixedMode ? '140px' : '118px' }}>
+                <div
+                  className={`fus-header-format ${
+                    isSavedMixedMode ? 'fus-header-format-mixed' : ''
+                  }`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
                   <FormatSwitcher
                     feFormat={feFormat}
                     peFormat={peFormat}
@@ -708,6 +845,7 @@ export const Overlay: React.FC = () => {
               <ExtractTab
                 dataset={currentDataset}
                 status={status}
+                isExporting={isExporting}
                 onFetch={handleFetch}
                 onSave={handleSave}
                 onDownload={handleDownload}
@@ -720,6 +858,7 @@ export const Overlay: React.FC = () => {
                 savedExams={savedExams}
                 selectedIds={selectedIds}
                 isLoading={!hydrated}
+                isExporting={isExporting}
                 onToggleSelect={handleToggleSelect}
                 onToggleFolder={handleToggleFolder}
                 onSelectAll={handleSelectAll}
@@ -735,6 +874,16 @@ export const Overlay: React.FC = () => {
               />
             )}
           </div>
+
+          {/* Slide-Up Progress Footer UI & Log Drawer */}
+          <ProgressFooter
+            progress={batchProgress}
+            onTogglePause={handleToggleFooterPause}
+            onCancel={handleCancelFooterExport}
+            onToggleDrawer={handleToggleFooterDrawer}
+            onCloseFooter={handleCloseFooter}
+            isVisible={isFooterVisible}
+          />
         </div>
       )}
 
