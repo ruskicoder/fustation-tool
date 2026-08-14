@@ -11,6 +11,14 @@ export function normalizeImageUrl(url: string | null | undefined): string | null
   const trimmed = url.trim();
   if (!trimmed) return null;
 
+  // Rewrite direct AWS S3 URLs to authenticated proxy endpoint to prevent 403 presigned expiration errors
+  if (trimmed.includes('fustation.s3') || trimmed.includes('amazonaws.com')) {
+    const keyMatch = trimmed.match(/(?:exams\/[^\?#]+)/i);
+    if (keyMatch && keyMatch[0]) {
+      return `${FUSTATION_ORIGIN}/api/exams/question-image?key=${encodeURIComponent(keyMatch[0])}`;
+    }
+  }
+
   if (
     trimmed.startsWith('http://') ||
     trimmed.startsWith('https://') ||
@@ -33,16 +41,51 @@ export function normalizeImageUrl(url: string | null | undefined): string | null
 }
 
 /**
+ * Attempts to extract Base64 data from an already-rendered DOM <img> element matching the URL.
+ * Prevents unnecessary network failures when images are already visible in the document.
+ */
+export function extractBase64FromDomImage(url: string | null | undefined): string | null {
+  if (!url || typeof document === 'undefined') return null;
+  const fullUrl = normalizeImageUrl(url);
+  const imgs = Array.from(document.querySelectorAll('img'));
+  const matchingImg = imgs.find(
+    (img) =>
+      img.src === fullUrl ||
+      img.src === url ||
+      img.getAttribute('src') === url ||
+      img.getAttribute('src') === fullUrl
+  );
+
+  if (matchingImg && matchingImg.complete && matchingImg.naturalWidth > 0) {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = matchingImg.naturalWidth;
+      canvas.height = matchingImg.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(matchingImg, 0, 0);
+        return canvas.toDataURL('image/png');
+      }
+    } catch (e) {
+      console.warn('[fustation-tool] DOM canvas image extraction failed:', e);
+    }
+  }
+  return null;
+}
+
+/**
  * Asynchronously fetches an image and converts it into a Base64 Data URI (`data:image/png;base64,...`).
- * Returns null if the fetch fails or encounters CORS/network issues.
+ * Includes browser session credentials and falls back to DOM canvas extraction if network fetch fails.
  */
 export async function fetchImageAsBase64(url: string | null | undefined): Promise<string | null> {
   const fullUrl = normalizeImageUrl(url);
   if (!fullUrl) return null;
 
   try {
-    const response = await fetch(fullUrl, { mode: 'cors' });
-    if (!response.ok) return null;
+    const response = await fetch(fullUrl, { mode: 'cors', credentials: 'include' });
+    if (!response.ok) {
+      return extractBase64FromDomImage(url);
+    }
 
     const blob = await response.blob();
     return new Promise((resolve) => {
@@ -51,15 +94,15 @@ export async function fetchImageAsBase64(url: string | null | undefined): Promis
         if (typeof reader.result === 'string') {
           resolve(reader.result);
         } else {
-          resolve(null);
+          resolve(extractBase64FromDomImage(url));
         }
       };
-      reader.onerror = () => resolve(null);
+      reader.onerror = () => resolve(extractBase64FromDomImage(url));
       reader.readAsDataURL(blob);
     });
   } catch (err) {
-    console.warn(`[fustation-tool] Failed to convert image to Base64 for ${fullUrl}:`, err);
-    return null;
+    console.warn(`[fustation-tool] Network fetch for image Base64 failed (${fullUrl}), trying DOM canvas fallback:`, err);
+    return extractBase64FromDomImage(url);
   }
 }
 

@@ -689,7 +689,24 @@
   flex-direction: column;
   gap: 2px;
   flex-shrink: 0;
-  max-width: 140px;
+  max-width: 155px;
+}
+
+.fus-matrix-grid-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fus-matrix-row-label {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fus-text-dim);
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+  line-height: 1;
 }
 
 .fus-matrix-row {
@@ -2438,5 +2455,204 @@ mark.fus-highlight {
 @keyframes fusZoomIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* ----------------------------------------------------------------
+   Progress Footer UI & Expandable Log Drawer
+   ---------------------------------------------------------------- */
+
+.fus-progress-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 38px;
+  background: var(--fus-bg-panel, #0f172a);
+  border-top: 1px solid var(--fus-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 8px;
+  z-index: 100;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.fus-footer-hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fus-footer-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fus-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fus-footer-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fus-accent, #38bdf8);
+}
+
+.fus-footer-batch-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fus-text-mid, #94a3b8);
+}
+
+.fus-footer-pill {
+  width: auto !important;
+  min-width: unset !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+}
+
+.fus-footer-middle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fus-footer-expand-btn {
+  background: transparent;
+  border: none;
+  color: var(--fus-text-dim, #64748b);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.fus-footer-expand-btn:hover {
+  color: var(--fus-text, #f8fafc);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fus-footer-expand-btn.expanded {
+  transform: rotate(180deg);
+}
+
+.fus-footer-note {
+  font-size: 11px;
+  color: var(--fus-text-mid, #cbd5e1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fus-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.fus-footer-btn {
+  padding: 2px 8px !important;
+  font-size: 10px !important;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+}
+
+.fus-footer-btn-cancel {
+  color: var(--fus-rose, #f43f5e) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+.fus-footer-btn-cancel:hover {
+  background: rgba(244, 63, 94, 0.15) !important;
+}
+
+/* Expandable Log Drawer */
+.fus-footer-log-drawer {
+  position: absolute;
+  bottom: 38px;
+  left: 0;
+  right: 0;
+  max-height: 180px;
+  background: var(--fus-bg-panel, #0f172a);
+  border-top: 1px solid var(--fus-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  flex-direction: column;
+  z-index: 99;
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
+  animation: fusSlideUpDrawer 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fus-log-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--fus-border-dim, rgba(255, 255, 255, 0.06));
+}
+
+.fus-log-drawer-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fus-text, #f8fafc);
+}
+
+.fus-log-drawer-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--fus-text-dim, #64748b);
+}
+
+.fus-log-drawer-body {
+  padding: 8px 12px;
+  overflow-y: auto;
+  max-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+
+.fus-log-drawer-empty {
+  color: var(--fus-text-dim, #64748b);
+  font-style: italic;
+}
+
+.fus-log-drawer-item {
+  color: var(--fus-text-mid, #cbd5e1);
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+@keyframes fusSlideUpDrawer {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 

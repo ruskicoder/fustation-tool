@@ -1,39 +1,47 @@
 # Current Progress — fustation-tool
 
-**Last Updated**: 2026-08-07
-**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (ISSUE-80 FE PDF EXPORT ROUTING & NUMERIC ID GUARD COMPLETE & VERIFIED)**
+**Last Updated**: 2026-08-14
+**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (BULK BATCH DOWNLOAD RECOVERY & UI/UX RESTORATION COMPLETE & VERIFIED)**
 
 ---
 
-## Key Milestone Completed: ISSUE-80 FE PDF Export Routing & Alphanumeric `pdfUrl` Prevention
+## Key Milestone Completed: Bulk Batch Download Recovery & UI/UX Restoration
 
-### What Was Fixed
-1. **Strict Numeric Product ID Guard (`src/utils/parser.ts` & `src/utils/exporter.ts` — ISSUE-80)**:
-   - Restricted `/api/exams/pdf?productId=${numId}` URL resolution in `parser.ts` to valid 5–8 digit numeric IDs (`/^\d{5,8}$/`).
-   - Prevented alphanumeric CUIDs (`cmo728mwf000004kypj5r0dug`) from being populated into `pdfUrl` on FE exams.
+### What Was Implemented & Verified
 
-2. **Refined Exporter Classifier (`src/utils/exporter.ts` — ISSUE-80)**:
-   - Added centralized `isPeDataset(dataset)` helper that returns `true` ONLY for genuine PE datasets (category `PE`, 0 questions, examType containing `PE`, or valid PE zip/pdf asset links).
-   - Ensured FE exams (`examCategory === 'FE'` with 30 questions) strictly route to self-contained HTML print PDF generation.
+1. **Dynamic S3 Presigned URL Refresh Engine (`src/utils/exporter.ts`)**:
+   - Implemented `fetchFreshPeZipUrl(cuid)` querying `/marketplace/exam/${cuid}?_rsc=1` with session credentials to retrieve fresh, active S3 presigned ZIP URLs when stored cache links expire (resolving HTTP 403 Forbidden).
+   - Added `fetchArrayBufferWithFastRetry` featuring exponential backoff, jitter, and automatic live S3 URL refreshing on HTTP 403 responses.
 
-3. **Popup Blocker Fallback (`src/utils/exporter.ts` — ISSUE-80)**:
-   - Added fallback downloading of the self-contained `.html` print document (`downloadBlob`) if `window.open` returns `null` due to browser popup restrictions during `exportExam(dataset, 'PDF')`.
+2. **Strict Product ID & CUID Validation (`src/utils/exporter.ts`)**:
+   - `extractNumericProductId` strictly validates numeric database IDs or extracts valid cuid prefixes (`cm...`), rejecting 6-digit title number suffixes to prevent invalid `/api/exams/pdf?productId=...` HTTP 404 queries.
 
----
+3. **10-Item Partitioned Bulk Export & Markdown Audit (`src/utils/exporter.ts`)**:
+   - Partitioned bulk downloads into structured 10-item batch volumes (`fustation_export_ddmmyyyy_partX.zip`).
+   - Integrated `manifest.md` audit report generation tracking status, format, and asset integrity for all exported items.
+   - Added recovery script generation for offline retrieval of un-downloadable assets.
 
-## Previous Milestone Completed: Issues 77, 78, & 79 Math Parsing & Entity Highlighting
+4. **S3 Question Image Proxy Routing & Canvas DOM Fallback (`src/utils/images.ts`)**:
+   - Direct S3 image URLs (`fustation.s3.ap-southeast-1.amazonaws.com`) are automatically rewritten to the server proxy `${FUSTATION_ORIGIN}/api/exams/question-image?key=${cleanKey}` with session credentials (`include`).
+   - Added `extractBase64FromDomImage` as an immediate canvas DOM fallback when network requests fail.
 
-### What Was Fixed
-1. **Escaped Currency Pre-Conversion (`src/utils/math.ts` — ISSUE-77 & ISSUE-79)**:
-   - Added `\uE000` sentinel token masking for escaped currency dollar signs (`\$1`, `\$2`, `\$3`) in `sanitizeMathLatex` BEFORE running math delimiter splitting.
-   - Restored `\uE000` to literal `$` for UI display and `\$` for Markdown exports.
+5. **KaTeX Currency & Missing Metric Error Suppression (`src/utils/math.ts`)**:
+   - Added `renderKatexSafe` filter suppressing console warnings for missing character metrics (`€`, `½`, `¼`, `¾`).
 
-2. **Entity-Aware Search Query Highlighting (`src/utils/highlight.ts` — ISSUE-78)**:
-   - Updated `highlightText` to split text on HTML entity boundaries, preventing search query matching from breaking HTML entities like `&#36;`.
+6. **Slide-Up ProgressFooter & Expandable Log Drawer UI (`src/components/ProgressFooter.tsx` & `src/styles/overlay.css`)**:
+   - Implemented slide-up footer with `[completed / total]` counter, `Batch X/Y` indicator, status pill, chevron log drawer expander, pause/resume, and cancel controls.
+   - Built expandable log drawer displaying real-time execution logs above the footer.
+
+7. **Compact 2-Row Format Switcher Matrix (`src/components/FormatSwitcher.tsx` & `src/styles/overlay.css`)**:
+   - Restored compact 2-row radio grid matrix for FE (MD/PDF/JSON) and PE (PDF/ZIP/ALL) with disabled state support during active exports.
+
+8. **Export State Machine Synchronization (`src/components/Overlay.tsx`, `ExtractTab.tsx`, `SavedTab.tsx`)**:
+   - Bound control refs (`isExportingRef`, `isPausedRef`, `isCanceledRef`) and progress callbacks into `exportBulkAsZip` and single download handlers.
+   - Disabled export action buttons during active exports to prevent race conditions.
 
 ---
 
 ## Verification & Build Results
-- Clean TypeScript compilation via `tsc`.
-- Production Vite build bundled into `/dist`.
-- All 8 integration test suites passed 100% cleanly.
+- Clean TypeScript typecheck (`tsc --noEmit`).
+- Production Vite extension bundle built into `/dist`.
+- All 9 integration test suites passed 100% cleanly (including homepage 330-task discovery test).

@@ -9,6 +9,7 @@ interface FormatSwitcherProps {
   isPEFormat?: boolean;
   isZipAvailable?: boolean;
   isMixedMode?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({
   isPEFormat = false,
   isZipAvailable = true,
   isMixedMode = false,
+  disabled = false,
   className
 }) => {
   const feFormats: { id: FEFormat; label: string }[] = [
@@ -31,54 +33,55 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({
   const peFormats: { id: PEFormat; label: string; requiresZip?: boolean }[] = [
     { id: 'PE_PDF', label: 'PDF' },
     { id: 'PE_ZIP', label: 'ZIP', requiresZip: true },
-    { id: 'PE_BOTH', label: 'Both (ZIP)', requiresZip: true }
+    { id: 'PE_BOTH', label: 'ALL', requiresZip: true }
   ];
 
   if (isMixedMode) {
     return (
-      <div className={`fus-format-matrix ${className || ''}`}>
+      <div className={`fus-format-matrix ${className || ''}`} role="region" aria-label="Format Matrix">
         {/* Row 1: FE Formats */}
-        <div className="fus-matrix-row">
-          <span className="fus-matrix-tag fus-badge-type">FE</span>
-          <div className="fus-segmented-control fus-matrix-control">
-            {feFormats.map((fmt) => {
-              const isActive = feFormat === fmt.id;
-              return (
-                <button
-                  key={fmt.id}
-                  type="button"
-                  className={`fus-radio-item ${isActive ? 'active' : ''}`}
-                  onClick={() => onFeChange && onFeChange(fmt.id)}
-                  title={`Export FE items as ${fmt.label}`}
-                >
-                  {fmt.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="fus-matrix-grid-row" role="radiogroup" aria-label="FE format">
+          <span className="fus-matrix-row-label">FE</span>
+          {feFormats.map((fmt) => {
+            const isActive = feFormat === fmt.id;
+            return (
+              <button
+                key={fmt.id}
+                type="button"
+                className={`fus-radio-item ${isActive ? 'active' : ''}`}
+                role="radio"
+                aria-checked={isActive}
+                disabled={disabled}
+                onClick={() => !disabled && onFeChange && onFeChange(fmt.id)}
+                title={`Export FE items as ${fmt.label}`}
+              >
+                {fmt.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Row 2: PE Formats */}
-        <div className="fus-matrix-row">
-          <span className="fus-matrix-tag fus-badge-subject" style={{ background: 'rgba(236,72,153,0.15)', color: '#ec4899', borderColor: 'rgba(236,72,153,0.3)' }}>PE</span>
-          <div className="fus-segmented-control fus-matrix-control">
-            {peFormats.map((fmt) => {
-              const isActive = peFormat === fmt.id;
-              const isDisabled = fmt.requiresZip && !isZipAvailable;
-              return (
-                <button
-                  key={fmt.id}
-                  type="button"
-                  className={`fus-radio-item ${isActive ? 'active' : ''}`}
-                  disabled={isDisabled}
-                  onClick={() => !isDisabled && onPeChange && onPeChange(fmt.id)}
-                  title={isDisabled ? 'No ZIP solution available for this PE examset' : `Export PE items as ${fmt.label}`}
-                >
-                  {fmt.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="fus-matrix-grid-row" role="radiogroup" aria-label="PE format">
+          <span className="fus-matrix-row-label">PE</span>
+          {peFormats.map((fmt) => {
+            const isActive = peFormat === fmt.id;
+            const isOptDisabled = disabled || (fmt.requiresZip && !isZipAvailable);
+            return (
+              <button
+                key={fmt.id}
+                type="button"
+                className={`fus-radio-item ${isActive ? 'active' : ''}`}
+                role="radio"
+                aria-checked={isActive}
+                disabled={isOptDisabled}
+                onClick={() => !isOptDisabled && onPeChange && onPeChange(fmt.id)}
+                title={isOptDisabled && !disabled ? 'No ZIP solution available for this PE examset' : `Export PE items as ${fmt.label}`}
+              >
+                {fmt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -89,7 +92,7 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({
       <div className={`fus-segmented-control fus-header-switcher ${className || ''}`} role="radiogroup" aria-label="PE Format Switcher">
         {peFormats.map((fmt) => {
           const isActive = peFormat === fmt.id;
-          const isDisabled = fmt.requiresZip && !isZipAvailable;
+          const isOptDisabled = disabled || (fmt.requiresZip && !isZipAvailable);
           return (
             <button
               key={fmt.id}
@@ -97,10 +100,10 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({
               className={`fus-radio-item ${isActive ? 'active' : ''}`}
               role="radio"
               aria-checked={isActive}
-              disabled={isDisabled}
+              disabled={isOptDisabled}
               data-value={fmt.id}
-              title={isDisabled ? 'No ZIP solution available for this PE examset' : `Export as ${fmt.label}`}
-              onClick={() => !isDisabled && onPeChange && onPeChange(fmt.id)}
+              title={isOptDisabled && !disabled ? 'No ZIP solution available for this PE examset' : `Export as ${fmt.label}`}
+              onClick={() => !isOptDisabled && onPeChange && onPeChange(fmt.id)}
             >
               {fmt.label}
             </button>
@@ -122,9 +125,10 @@ export const FormatSwitcher: React.FC<FormatSwitcherProps> = ({
             className={`fus-radio-item ${isActive ? 'active' : ''}`}
             role="radio"
             aria-checked={isActive}
+            disabled={disabled}
             data-value={fmt.id}
             title={`Export as ${fmt.label}`}
-            onClick={() => onFeChange && onFeChange(fmt.id)}
+            onClick={() => !disabled && onFeChange && onFeChange(fmt.id)}
           >
             {fmt.label}
           </button>

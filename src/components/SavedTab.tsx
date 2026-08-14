@@ -12,6 +12,7 @@ interface SavedTabProps {
   savedExams: SavedExamsMap;
   selectedIds: Set<string>;
   isLoading?: boolean;
+  isExporting?: boolean;
   onToggleSelect: (examId: string) => void;
   onToggleFolder: (subjectCode: string, folderExamIds: string[]) => void;
   onSelectAll: (allFilteredIds: string[]) => void;
@@ -76,6 +77,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
   savedExams,
   selectedIds,
   isLoading,
+  isExporting,
   onToggleSelect,
   onToggleFolder,
   onSelectAll,
@@ -185,7 +187,9 @@ export const SavedTab: React.FC<SavedTabProps> = ({
           <button
             type="button"
             className="fus-ctrl-btn"
-            title={`Download ${selectedCount} selected items`}
+            disabled={isExporting}
+            style={isExporting ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+            title={isExporting ? 'Export in progress...' : `Download ${selectedCount} selected items`}
             onClick={onBatchDownload}
           >
             <DownloadIcon size={13} />
@@ -259,7 +263,9 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                     <button
                       type="button"
                       className="fus-ctrl-btn"
-                      title={`Download all in ${group.subjectCode}`}
+                      disabled={isExporting}
+                      style={isExporting ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                      title={isExporting ? 'Export in progress...' : `Download all in ${group.subjectCode}`}
                       onClick={() => onExportFolder(folderIds)}
                     >
                       <DownloadIcon size={12} />
@@ -331,7 +337,9 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                             <button
                               type="button"
                               className="fus-ctrl-btn"
-                              title="Export item"
+                              disabled={isExporting}
+                              style={isExporting ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                              title={isExporting ? 'Export in progress...' : 'Export item'}
                               onClick={() => onExportItem(item.id)}
                             >
                               <DownloadIcon size={12} />

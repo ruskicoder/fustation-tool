@@ -1,8 +1,27 @@
 import JSZip from 'jszip';
-import { ExamDataset, ExportFormat, FEFormat, PEFormat, SavedExamItem } from '../types';
+import {
+  AssetFetchResult,
+  BatchProgressState,
+  BatchStatus,
+  ExamDataset,
+  ExportFormat,
+  ExportProgressCallback,
+  FEFormat,
+  ManifestItemAudit,
+  PEFormat,
+  SavedExamItem
+} from '../types';
 import { compileMarkdown } from './compiler';
 import { renderMathInText } from './math';
 import { embedBase64ImagesInDataset, normalizeImageUrl } from './images';
+import { extractPeZipUrl } from './parser';
+
+export interface BulkExportOptions {
+  feFormat?: FEFormat;
+  peFormat?: PEFormat;
+  onProgress?: ExportProgressCallback;
+  getControlState?: () => { isPaused: boolean; isCanceled: boolean };
+}
 
 export function downloadBlob(content: string, filename: string, mimeType: string): void {
   if (typeof document === 'undefined') return;
@@ -39,6 +58,80 @@ export async function fetchArrayBuffer(rawUrl: string): Promise<ArrayBuffer | nu
   } catch {
     return null;
   }
+}
+
+/**
+ * Queries the live Next.js marketplace page for a given cuid to obtain a fresh presigned S3 ZIP URL.
+ */
+export async function fetchFreshPeZipUrl(cuid: string): Promise<string | null> {
+  if (!cuid) return null;
+  try {
+    const res = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}?_rsc=1`, {
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const fallbackRes = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}`, {
+        credentials: 'include'
+      });
+      if (!fallbackRes.ok) return null;
+      const html = await fallbackRes.text();
+      return extractPeZipUrl(html, false);
+    }
+    const text = await res.text();
+    return extractPeZipUrl(text, false);
+  } catch (e) {
+    console.warn(`[fustation-tool] Failed to fetch fresh PE ZIP URL for ${cuid}:`, e);
+    return null;
+  }
+}
+
+/**
+ * Fetches an ArrayBuffer with fast exponential retry and session credentials.
+ */
+export async function fetchArrayBufferWithFastRetry(
+  rawUrl: string,
+  maxRetries = 3,
+  baseDelayMs = 80,
+  onRetry?: (status: 'fetching' | 'retrying', attempt: number) => void,
+  cuid?: string
+): Promise<AssetFetchResult> {
+  let cleanUrl = rawUrl
+    .replace(/\\\\u0026/gi, '&')
+    .replace(/\\u0026/gi, '&')
+    .replace(/&amp;/gi, '&')
+    .replace(/\\/g, '')
+    .trim();
+
+  let fullUrl = cleanUrl.startsWith('http')
+    ? cleanUrl
+    : `https://www.fustation.net${cleanUrl.startsWith('/') ? '' : '/'}${cleanUrl}`;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    onRetry?.(attempt === 1 ? 'fetching' : 'retrying', attempt);
+    try {
+      const res = await fetch(fullUrl, { credentials: 'include' });
+      if (res.ok) {
+        const buffer = await res.arrayBuffer();
+        return { buffer, status: 'available', attempts: attempt, url: fullUrl };
+      }
+
+      // If HTTP 403 (expired S3 presigned URL) and cuid is known, attempt dynamic live refresh
+      if (res.status === 403 && cuid && attempt < maxRetries) {
+        const freshUrl = await fetchFreshPeZipUrl(cuid);
+        if (freshUrl && freshUrl !== fullUrl) {
+          fullUrl = freshUrl;
+        }
+      }
+    } catch (e) {
+      // Network failure, continue retry
+    }
+
+    if (attempt < maxRetries) {
+      await new Promise((r) => setTimeout(r, baseDelayMs * Math.pow(2, attempt - 1)));
+    }
+  }
+
+  return { buffer: null, status: 'missing', attempts: maxRetries, url: fullUrl };
 }
 
 export function generatePrintHtml(dataset: ExamDataset): string {
@@ -157,15 +250,28 @@ export async function downloadAssetUrl(rawUrl: string, filename: string): Promis
   }
 }
 
+/**
+ * Extracts a valid cuid or numeric productId. Does NOT match 6-digit title number suffixes.
+ */
 export function extractNumericProductId(ds: ExamDataset): string | null {
   if (!ds) return null;
-  if (ds.id && /^\d{5,8}$/.test(ds.id)) return ds.id;
+  if (ds.id && (/^cm[a-z0-9]{20,30}$/i.test(ds.id) || /^\d{5,8}$/.test(ds.id))) return ds.id;
   if (ds.pdfUrl) {
-    const m = ds.pdfUrl.match(/productId=(\d{5,8})/i);
-    if (m && m[1]) return m[1];
+    const m = ds.pdfUrl.match(/productId=([a-zA-Z0-9_-]+)/i);
+    if (m && m[1] && m[1] !== 'undefined' && m[1] !== 'null') return m[1];
   }
-  const titleMatch = (ds.title || ds.parsedTitle || '').match(/\d{5,8}$/);
-  if (titleMatch && titleMatch[0]) return titleMatch[0];
+  return null;
+}
+
+export function resolveValidPdfUrl(ds: ExamDataset): string | null {
+  if (!ds) return null;
+  if (ds.pdfUrl && !ds.pdfUrl.includes('productId=cmo') && !ds.pdfUrl.includes('productId=exam_')) {
+    return ds.pdfUrl;
+  }
+  const pid = extractNumericProductId(ds);
+  if (pid) {
+    return `/api/exams/pdf?productId=${pid}`;
+  }
   return null;
 }
 
@@ -188,10 +294,7 @@ export function isPeDataset(ds: ExamDataset): boolean {
 
 export async function downloadPdfAsset(dataset: ExamDataset): Promise<boolean> {
   if (!dataset) return false;
-  const numId = extractNumericProductId(dataset);
-  const pdfUrl = (dataset.pdfUrl && !dataset.pdfUrl.includes('productId=cmo') && !dataset.pdfUrl.includes('productId=exam_'))
-    ? dataset.pdfUrl
-    : (numId ? `/api/exams/pdf?productId=${numId}` : null);
+  const pdfUrl = resolveValidPdfUrl(dataset);
   if (!pdfUrl) return false;
   const cleanTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${cleanTitle}_Paper.pdf`;
@@ -199,18 +302,20 @@ export async function downloadPdfAsset(dataset: ExamDataset): Promise<boolean> {
 }
 
 export async function downloadZipAsset(dataset: ExamDataset): Promise<boolean> {
-  if (!dataset || !dataset.zipUrl) return false;
+  if (!dataset) return false;
+  let zipUrl = dataset.zipUrl;
+  if (!zipUrl && dataset.id) {
+    zipUrl = await fetchFreshPeZipUrl(dataset.id);
+  }
+  if (!zipUrl) return false;
   const cleanTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${cleanTitle}_AnswerKey.zip`;
-  return await downloadAssetUrl(dataset.zipUrl, filename);
+  return await downloadAssetUrl(zipUrl, filename);
 }
 
 export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 'PE_BOTH'): Promise<boolean> {
   const title = (dataset.title || 'PE_Exam').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const numId = extractNumericProductId(dataset);
-  const pdfUrl = (dataset.pdfUrl && !dataset.pdfUrl.includes('productId=cmo') && !dataset.pdfUrl.includes('productId=exam_'))
-    ? dataset.pdfUrl
-    : (numId ? `/api/exams/pdf?productId=${numId}` : null);
+  const pdfUrl = resolveValidPdfUrl(dataset);
 
   if (peFormat === 'PE_PDF') {
     return await downloadPdfAsset(dataset);
@@ -229,8 +334,19 @@ export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 
       }
     }
 
-    if (dataset.zipUrl) {
-      const zipBuf = await fetchArrayBuffer(dataset.zipUrl);
+    let zipUrl = dataset.zipUrl;
+    if (!zipUrl && dataset.id) {
+      zipUrl = await fetchFreshPeZipUrl(dataset.id);
+    }
+
+    if (zipUrl) {
+      let zipBuf = await fetchArrayBuffer(zipUrl);
+      if (!zipBuf && dataset.id) {
+        const freshUrl = await fetchFreshPeZipUrl(dataset.id);
+        if (freshUrl) {
+          zipBuf = await fetchArrayBuffer(freshUrl);
+        }
+      }
       if (zipBuf) {
         zip.file(`${title}_AnswerKey.zip`, zipBuf);
         addedCount++;
@@ -245,7 +361,7 @@ export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 
     } else {
       const pdfOk = await downloadPdfAsset(dataset);
       let zipOk = false;
-      if (dataset.zipUrl) zipOk = await downloadZipAsset(dataset);
+      if (dataset.zipUrl || dataset.id) zipOk = await downloadZipAsset(dataset);
       return pdfOk || zipOk;
     }
   }
@@ -261,65 +377,323 @@ function downloadBlobFromObjectUrl(url: string, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function getMimeFromUrl(url: string): string {
+  if (url.includes('.png')) return 'image/png';
+  if (url.includes('.jpg') || url.includes('.jpeg')) return 'image/jpeg';
+  if (url.includes('.webp')) return 'image/webp';
+  if (url.includes('.svg')) return 'image/svg+xml';
+  return 'image/png';
+}
+
+function generateManifestMd(batchIdx: number, totalBatches: number, items: ManifestItemAudit[]): string {
+  const lines: string[] = [
+    `# FUSTATION Batch Export Manifest (Part ${batchIdx + 1} of ${totalBatches})`,
+    `Generated at: ${new Date().toISOString()}`,
+    '',
+    '| Subject | Title | Category | Asset Status | Details |',
+    '| :--- | :--- | :--- | :--- | :--- |'
+  ];
+
+  items.forEach((it) => {
+    const assetSummary = it.assets.map((a) => `${a.type}${a.index ? ' Q' + a.index : ''}: ${a.status}`).join(', ') || 'OK';
+    const missingDetails = it.assets.filter((a) => a.status === 'Missing').map((a) => `${a.type} -> ${a.targetFilename || a.url || 'N/A'}`).join('; ');
+    lines.push(`| ${it.subjectCode} | ${it.title} | ${it.category} | ${assetSummary} | ${missingDetails || 'Complete'} |`);
+  });
+
+  return lines.join('\n');
+}
+
+function generateRecoverImagesPy(): string {
+  return `#!/usr/bin/env python3
+"""
+FUSTATION Asset Recovery Script
+Places recovered image files from 'reimport-images-here' into markdown dataset exports.
+"""
+import os, sys, glob, re
+
+def main():
+    print("=== FUSTATION Local Image Recovery Tool ===")
+    reimport_dir = "reimport-images-here"
+    if not os.path.exists(reimport_dir):
+        print(f"Directory {reimport_dir} not found. Exiting.")
+        return
+
+    images = glob.glob(os.path.join(reimport_dir, "*.*"))
+    print(f"Found {len(images)} replacement image(s).")
+    if len(images) == 0:
+        print("Drop missing images into 'reimport-images-here' and run this script again.")
+        return
+
+    print("Images indexed. You can re-run export to re-embed.")
+
+if __name__ == "__main__":
+    main()
+`;
+}
+
+/**
+ * Bulk exports saved exam datasets chunked into 10-item partition ZIP volumes with live RSC refresh & audit manifests.
+ */
 export async function exportBulkAsZip(
   savedItems: SavedExamItem[],
-  feFormat: FEFormat = 'MD',
-  peFormat: PEFormat = 'PE_BOTH'
+  optionsOrFeFormat?: BulkExportOptions | FEFormat,
+  maybePeFormat?: PEFormat
 ): Promise<void> {
   if (!savedItems || savedItems.length === 0) return;
 
-  const zip = new JSZip();
+  let feFormat: FEFormat = 'MD';
+  let peFormat: PEFormat = 'PE_BOTH';
+  let onProgress: ExportProgressCallback | undefined;
+  let getControlState: (() => { isPaused: boolean; isCanceled: boolean }) | undefined;
 
-  for (const item of savedItems) {
-    const ds = item.dataset || (item as any);
-    const subjCode = (ds.subjectCode || item.subjectCode || 'UNASSIGNED').toUpperCase();
-    const folder = zip.folder(subjCode);
-    const title = (ds.title || item.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
-
-    const isItemPe = isPeDataset(ds as ExamDataset);
-
-    if (isItemPe) {
-      // PE asset export inside subject folder
-      const numId = extractNumericProductId(ds as ExamDataset);
-      const pdfUrl = (ds.pdfUrl && !ds.pdfUrl.includes('productId=cmo') && !ds.pdfUrl.includes('productId=exam_'))
-        ? ds.pdfUrl
-        : (numId ? `/api/exams/pdf?productId=${numId}` : null);
-
-      if ((peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') && pdfUrl) {
-        const pdfBuf = await fetchArrayBuffer(pdfUrl);
-        if (pdfBuf) {
-          folder?.file(`${title}_Paper.pdf`, pdfBuf);
-        }
-      }
-      if ((peFormat === 'PE_ZIP' || peFormat === 'PE_BOTH') && ds.zipUrl) {
-        const zipBuf = await fetchArrayBuffer(ds.zipUrl);
-        if (zipBuf) {
-          folder?.file(`${title}_AnswerKey.zip`, zipBuf);
-        }
-      }
-    } else {
-      // FE exam export inside subject folder
-      const embeddedDataset = await embedBase64ImagesInDataset(ds as ExamDataset);
-      if (feFormat === 'JSON') {
-        const jsonStr = JSON.stringify(embeddedDataset, null, 2);
-        folder?.file(`${title}.json`, jsonStr);
-      } else if (feFormat === 'PDF') {
-        const htmlStr = generatePrintHtml(embeddedDataset);
-        folder?.file(`${title}.html`, htmlStr);
-      } else {
-        // Default MD
-        const mdStr = await compileMarkdown(embeddedDataset, true);
-        folder?.file(`${title}.md`, mdStr);
-      }
-    }
+  if (typeof optionsOrFeFormat === 'object' && optionsOrFeFormat !== null) {
+    feFormat = optionsOrFeFormat.feFormat || 'MD';
+    peFormat = optionsOrFeFormat.peFormat || 'PE_BOTH';
+    onProgress = optionsOrFeFormat.onProgress;
+    getControlState = optionsOrFeFormat.getControlState;
+  } else if (typeof optionsOrFeFormat === 'string') {
+    feFormat = optionsOrFeFormat;
+    if (maybePeFormat) peFormat = maybePeFormat;
   }
 
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
-  const dateStr = getFormattedDateString();
-  const filename = `fustation_export_${dateStr}.zip`;
-  
-  const url = URL.createObjectURL(zipBlob);
-  downloadBlobFromObjectUrl(url, filename);
+  const BATCH_SIZE = 10;
+  const totalItems = savedItems.length;
+  const totalBatches = Math.ceil(totalItems / BATCH_SIZE);
+  let completedItems = 0;
+  const logEntries: string[] = [];
+
+  const addLog = (msg: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    logEntries.push(`[${timestamp}] ${msg}`);
+  };
+
+  const reportProgress = (
+    batchIdx: number,
+    status: BatchStatus,
+    examCode: string,
+    note: string
+  ) => {
+    if (onProgress) {
+      const ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
+      onProgress({
+        totalItems,
+        completedItems,
+        currentBatchIndex: batchIdx,
+        totalBatches,
+        batchStatus: status,
+        currentExamCode: examCode,
+        currentLogNote: note,
+        isPaused: ctrl.isPaused,
+        isCanceled: ctrl.isCanceled,
+        isDrawerExpanded: false,
+        logs: [...logEntries]
+      });
+    }
+  };
+
+  for (let batchIdx = 0; batchIdx < totalBatches; batchIdx++) {
+    let ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
+    if (ctrl.isCanceled) {
+      reportProgress(batchIdx, 'done', '', 'Export cancelled by user');
+      return;
+    }
+
+    const batchStart = batchIdx * BATCH_SIZE;
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, totalItems);
+    const batchItems = savedItems.slice(batchStart, batchEnd);
+
+    const zip = new JSZip();
+    const itemsAudit: ManifestItemAudit[] = [];
+    let batchHasMissingFeImages = false;
+
+    // 1. Process items in current partition batch
+    for (const item of batchItems) {
+      ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
+      if (ctrl.isCanceled) {
+        reportProgress(batchIdx, 'done', '', 'Export cancelled by user');
+        return;
+      }
+      while (ctrl.isPaused && !ctrl.isCanceled) {
+        reportProgress(batchIdx, 'standby', '', 'Export paused');
+        await new Promise((r) => setTimeout(r, 200));
+        ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
+      }
+
+      const ds = item.dataset || (item as any);
+      const subjCode = (ds.subjectCode || item.subjectCode || 'UNASSIGNED').toUpperCase();
+      const folder = zip.folder(subjCode);
+      const title = (ds.title || item.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const isItemPe = isPeDataset(ds as ExamDataset);
+
+      const itemAudit: ManifestItemAudit = {
+        title,
+        subjectCode: subjCode,
+        category: isItemPe ? 'PE' : 'FE',
+        assets: []
+      };
+
+      reportProgress(
+        batchIdx,
+        'compiling',
+        subjCode,
+        `[${subjCode}] Compiling ${title}...`
+      );
+
+      if (isItemPe) {
+        // PE asset export
+        const pdfUrl = resolveValidPdfUrl(ds as ExamDataset);
+
+        if ((peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') && pdfUrl) {
+          const fetchRes = await fetchArrayBufferWithFastRetry(pdfUrl, 3, 80, (st, attempt) => {
+            if (st === 'retrying') {
+              reportProgress(batchIdx, 'retrying', subjCode, `[${subjCode}] Retrying PE PDF (attempt ${attempt}/3)...`);
+            }
+          });
+
+          if (fetchRes.status === 'available' && fetchRes.buffer) {
+            folder?.file(`${title}_Paper.pdf`, fetchRes.buffer);
+            itemAudit.assets.push({ type: 'PDF', status: 'Available' });
+          } else {
+            addLog(`[${subjCode}] PE PDF asset unavailable — marked missing in audit manifest`);
+            itemAudit.assets.push({ type: 'PDF', status: 'Missing', url: fetchRes.url });
+          }
+        }
+
+        let zipUrl = ds.zipUrl;
+        if ((peFormat === 'PE_ZIP' || peFormat === 'PE_BOTH')) {
+          if (!zipUrl && ds.id) {
+            zipUrl = await fetchFreshPeZipUrl(ds.id);
+          }
+
+          if (zipUrl) {
+            const fetchRes = await fetchArrayBufferWithFastRetry(
+              zipUrl,
+              3,
+              80,
+              (st, attempt) => {
+                if (st === 'retrying') {
+                  reportProgress(batchIdx, 'retrying', subjCode, `[${subjCode}] Retrying PE ZIP (attempt ${attempt}/3)...`);
+                }
+              },
+              ds.id
+            );
+
+            if (fetchRes.status === 'available' && fetchRes.buffer) {
+              folder?.file(`${title}_AnswerKey.zip`, fetchRes.buffer);
+              itemAudit.assets.push({ type: 'ZIP', status: 'Available' });
+            } else {
+              addLog(`[${subjCode}] PE ZIP asset unavailable — marked missing in audit manifest`);
+              itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url });
+            }
+          }
+        }
+      } else {
+        // FE exam export with fast image asset fetching & Base64 embedding
+        const datasetCopy: ExamDataset = JSON.parse(JSON.stringify(ds));
+        const questions = datasetCopy.questions || [];
+
+        for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+          const q = questions[qIdx];
+          if (q.imageUrl) {
+            if (q.imageBase64 && q.imageBase64.startsWith('data:image/')) {
+              itemAudit.assets.push({ type: 'Image', index: q.index, status: 'Available' });
+            } else {
+              const imgUrl = normalizeImageUrl(q.imageUrl);
+              if (imgUrl) {
+                const fetchRes = await fetchArrayBufferWithFastRetry(imgUrl, 3, 80, (st, attempt) => {
+                  if (st === 'retrying') {
+                    reportProgress(batchIdx, 'retrying', subjCode, `[${subjCode}] Retrying Q${q.index || qIdx + 1} image (attempt ${attempt}/3)...`);
+                  }
+                });
+
+                if (fetchRes.status === 'available' && fetchRes.buffer) {
+                  const b64 = arrayBufferToBase64(fetchRes.buffer);
+                  const mime = getMimeFromUrl(imgUrl);
+                  q.imageBase64 = `data:${mime};base64,${b64}`;
+                  itemAudit.assets.push({ type: 'Image', index: q.index, status: 'Available' });
+                } else {
+                  batchHasMissingFeImages = true;
+                  addLog(`[${subjCode}] Image Q${q.index || qIdx + 1} asset unavailable — marked missing in manifest`);
+                  const targetFilename = `batch${String(batchIdx + 1).padStart(2, '0')}-rec-img-${q.index || qIdx + 1}.png`;
+                  itemAudit.assets.push({
+                    type: 'Image',
+                    index: q.index,
+                    status: 'Missing',
+                    url: fetchRes.url,
+                    targetFilename
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        if (feFormat === 'JSON') {
+          const jsonStr = JSON.stringify(datasetCopy, null, 2);
+          folder?.file(`${title}.json`, jsonStr);
+        } else if (feFormat === 'PDF') {
+          const htmlStr = generatePrintHtml(datasetCopy);
+          folder?.file(`${title}.html`, htmlStr);
+        } else {
+          // Default MD
+          const mdStr = await compileMarkdown(datasetCopy, true);
+          folder?.file(`${title}.md`, mdStr);
+        }
+      }
+
+      itemsAudit.push(itemAudit);
+      completedItems++;
+      // Yield to browser event loop between items
+      await new Promise((r) => setTimeout(r, 10));
+    }
+
+    // 2. Generate Universal manifest.md at ZIP root
+    const manifestText = generateManifestMd(batchIdx, totalBatches, itemsAudit);
+    zip.file('manifest.md', manifestText);
+
+    // 3. Include Python recovery script if missing FE images exist
+    if (batchHasMissingFeImages) {
+      zip.folder('reimport-images-here');
+      zip.file('recover_images.py', generateRecoverImagesPy());
+    }
+
+    // 4. Trigger Batch ZIP Download
+    reportProgress(
+      batchIdx,
+      'downloading',
+      '',
+      `Compressing & downloading Batch ${batchIdx + 1} of ${totalBatches}...`
+    );
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const dateStr = getFormattedDateString();
+    const filename = totalBatches > 1
+      ? `fustation_export_${dateStr}_part${batchIdx + 1}.zip`
+      : `fustation_export_${dateStr}.zip`;
+
+    const objectUrl = URL.createObjectURL(zipBlob);
+    downloadBlobFromObjectUrl(objectUrl, filename);
+
+    // Micro-pause before next batch
+    await new Promise((r) => setTimeout(r, 50));
+  }
+
+  reportProgress(
+    totalBatches - 1,
+    'done',
+    '',
+    `Successfully exported all ${totalItems} examsets across ${totalBatches} batch parts.`
+  );
 }
 
 export async function exportExam(dataset: ExamDataset, format: ExportFormat = 'MD'): Promise<void> {
@@ -370,3 +744,4 @@ export async function exportExam(dataset: ExamDataset, format: ExportFormat = 'M
     downloadBlob(mdStr, `${filename}.md`, 'text/markdown;charset=utf-8');
   }
 }
+

@@ -56,21 +56,19 @@ export function extractProductTasksFromHtml(html: string): BatchItemTask[] {
     }
   }
 
-  // Pass 2: Fallback regex search for marketplace links if initialProducts was missing
-  if (tasks.length === 0) {
-    const linkRegex = /\/marketplace\/exam\/([a-zA-Z0-9_-]+)/g;
-    let linkMatch: RegExpExecArray | null;
-    while ((linkMatch = linkRegex.exec(html)) !== null) {
-      const id = linkMatch[1];
-      if (id && !seenIds.has(id)) {
-        seenIds.add(id);
-        tasks.push({
-          id,
-          title: `Exam ${id}`,
-          examUrl: `https://www.fustation.net/marketplace/exam/${id}`,
-          rscUrl: `https://www.fustation.net/marketplace/exam/${id}?_rsc=1`
-        });
-      }
+  // Pass 2: Search for all marketplace links in HTML to discover additional exam items
+  const linkRegex = /\/marketplace\/exam\/([a-zA-Z0-9_-]+)/g;
+  let linkMatch: RegExpExecArray | null;
+  while ((linkMatch = linkRegex.exec(html)) !== null) {
+    const id = linkMatch[1];
+    if (id && !seenIds.has(id)) {
+      seenIds.add(id);
+      tasks.push({
+        id,
+        title: `Exam ${id}`,
+        examUrl: `https://www.fustation.net/marketplace/exam/${id}`,
+        rscUrl: `https://www.fustation.net/marketplace/exam/${id}?_rsc=1`
+      });
     }
   }
 

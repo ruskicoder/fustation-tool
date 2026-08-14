@@ -9,6 +9,7 @@ import { downloadPdfAsset, downloadZipAsset } from '../utils/exporter';
 interface ExtractTabProps {
   dataset: ExamDataset | null;
   status?: StatusState;
+  isExporting?: boolean;
   onFetch: () => void;
   onSave: () => void;
   onDownload: () => void;
@@ -20,6 +21,7 @@ interface ExtractTabProps {
 export const ExtractTab: React.FC<ExtractTabProps> = ({
   dataset,
   status,
+  isExporting,
   onFetch,
   onSave,
   onDownload,
@@ -155,7 +157,14 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
                     </button>
                   </div>
 
-                  <button type="button" className="fus-btn-primary" onClick={onDownload}>
+                  <button
+                    type="button"
+                    className="fus-btn-primary"
+                    disabled={isExporting}
+                    style={isExporting ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                    title={isExporting ? 'Export in progress...' : 'Download PE exam assets'}
+                    onClick={onDownload}
+                  >
                     <DownloadIcon size={14} />
                     Download
                   </button>
@@ -185,7 +194,14 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
                     </button>
                   </div>
 
-                  <button type="button" className="fus-btn-primary" onClick={onDownload}>
+                  <button
+                    type="button"
+                    className="fus-btn-primary"
+                    disabled={isExporting}
+                    style={isExporting ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                    title={isExporting ? 'Export in progress...' : 'Download FE exam'}
+                    onClick={onDownload}
+                  >
                     <DownloadIcon size={14} />
                     Download
                   </button>

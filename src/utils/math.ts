@@ -15,7 +15,32 @@ export function sanitizeMathLatex(text: string): string {
     .replace(/\\u0026/g, '&')
     .replace(/&amp;/g, '&')
     .replace(/\\\\\\\\/g, '\\')
-    .replace(/\\\\/g, '\\');
+    .replace(/\\\\/g, '\\')
+    .replace(/½/g, '\\frac{1}{2}')
+    .replace(/¼/g, '\\frac{1}{4}')
+    .replace(/¾/g, '\\frac{3}{4}')
+    .replace(/€/g, '\\text{EUR}')
+    .replace(/₫/g, '\\text{VND}');
+}
+
+/**
+ * Renders LaTeX formula string via KaTeX while suppressing internal missing character metric warnings.
+ */
+function renderKatexSafe(formula: string, displayMode: boolean): string {
+  const origWarn = console.warn;
+  try {
+    console.warn = (...args: any[]) => {
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('No character metrics')) {
+        return;
+      }
+      origWarn(...args);
+    };
+    return katex.renderToString(formula, { displayMode, throwOnError: false, strict: 'ignore' });
+  } catch {
+    return '';
+  } finally {
+    console.warn = origWarn;
+  }
 }
 
 /**
@@ -48,21 +73,21 @@ export function renderMathInText(text: string, searchQuery?: string): string {
       // Display math: $$...$$
       if (part.startsWith('$$') && part.endsWith('$$') && part.length > 4) {
         const formula = part.slice(2, -2).replace(/\uE000/g, '\\$').trim();
-        try {
-          return `<span class="fus-math-block">${katex.renderToString(formula, { displayMode: true, throwOnError: false, strict: "ignore" })}</span>`;
-        } catch {
-          return `<code class="fus-math-raw">${escapeHtml(part).replace(/\uE000/g, '$')}</code>`;
+        const rendered = renderKatexSafe(formula, true);
+        if (rendered) {
+          return `<span class="fus-math-block">${rendered}</span>`;
         }
+        return `<code class="fus-math-raw">${escapeHtml(part).replace(/\uE000/g, '$')}</code>`;
       }
 
       // Inline math: $...$
       if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
         const formula = part.slice(1, -1).replace(/\uE000/g, '\\$').trim();
-        try {
-          return `<span class="fus-math-inline">${katex.renderToString(formula, { displayMode: false, throwOnError: false, strict: "ignore" })}</span>`;
-        } catch {
-          return `<code class="fus-math-raw">${escapeHtml(part).replace(/\uE000/g, '$')}</code>`;
+        const rendered = renderKatexSafe(formula, false);
+        if (rendered) {
+          return `<span class="fus-math-inline">${rendered}</span>`;
         }
+        return `<code class="fus-math-raw">${escapeHtml(part).replace(/\uE000/g, '$')}</code>`;
       }
 
       // Plain text segment: apply query highlight if needed and restore \uE000 as literal $
