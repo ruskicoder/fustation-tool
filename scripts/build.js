@@ -29,7 +29,7 @@ for (const file of requiredFiles) {
 // 2. Run Integration Verification Test
 console.log('\n2. Running Integration Verification Test (TypeScript)...');
 try {
-  execSync('npx --yes tsx scratch/test-flow.ts', { cwd: rootDir, stdio: 'inherit' });
+  execSync('npx --yes tsx tests/test-flow.ts', { cwd: rootDir, stdio: 'inherit' });
   console.log('   ✔ Integration test passed cleanly');
 } catch (e) {
   console.error('❌ Integration test failed');

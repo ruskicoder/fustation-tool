@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && node scripts/build.js",
-    "test": "npx tsx scratch/test-flow.ts"
+    "test": "npx tsx tests/test-flow.ts"
   },
   "dependencies": {
     "@types/jszip": "^3.4.0",

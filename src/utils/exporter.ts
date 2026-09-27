@@ -12,7 +12,7 @@ import {
   SavedExamItem
 } from '../types';
 import { compileMarkdown } from './compiler';
-import { renderMathInText } from './math';
+import { escapeHtml, renderMathInText } from './math';
 import { embedBase64ImagesInDataset, normalizeImageUrl } from './images';
 import { extractPeZipUrl } from './parser';
 
@@ -66,15 +66,30 @@ export async function fetchArrayBuffer(rawUrl: string): Promise<ArrayBuffer | nu
 export async function fetchFreshPeZipUrl(cuid: string): Promise<string | null> {
   if (!cuid) return null;
   try {
-    const res = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}?_rsc=1`, {
+    // 1. Try /marketplace/exam/${cuid}?_rsc=1
+    let res = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}?_rsc=1`, {
       credentials: 'include'
     });
+    // 2. Fallback to /marketplace/${cuid}?_rsc=1
+    if (!res.ok) {
+      res = await fetch(`https://www.fustation.net/marketplace/${cuid}?_rsc=1`, {
+        credentials: 'include'
+      });
+    }
+    // 3. Fallback to standard HTML page
     if (!res.ok) {
       const fallbackRes = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}`, {
         credentials: 'include'
       });
-      if (!fallbackRes.ok) return null;
-      const html = await fallbackRes.text();
+      if (fallbackRes.ok) {
+        const html = await fallbackRes.text();
+        return extractPeZipUrl(html, false);
+      }
+      const directFallback = await fetch(`https://www.fustation.net/marketplace/${cuid}`, {
+        credentials: 'include'
+      });
+      if (!directFallback.ok) return null;
+      const html = await directFallback.text();
       return extractPeZipUrl(html, false);
     }
     const text = await res.text();
@@ -135,22 +150,24 @@ export async function fetchArrayBufferWithFastRetry(
 }
 
 export function generatePrintHtml(dataset: ExamDataset): string {
-  const subjectStr = `${dataset.subjectCode} - ${dataset.subjectName}`;
-  const termStr = dataset.term || dataset.termCode || 'SP26';
+  const subjectStr = escapeHtml(`${dataset.subjectCode} - ${dataset.subjectName}`);
+  const termStr = dataset.term || dataset.termCode || 'N/A';
   const typeStr = dataset.examType || 'FE';
-  const termTypeStr = `${termStr} - ${typeStr}`;
-  const sessionStr = `${dataset.examSessionTime || 'N/A'} | ${dataset.examSessionDate || '29/04/2026'}`;
+  const termTypeStr = escapeHtml(`${termStr} - ${typeStr}`);
+  const sessionStr = escapeHtml(`${dataset.examSessionTime || 'N/A'} | ${dataset.examSessionDate || 'N/A'}`);
+  const titleStr = escapeHtml(dataset.title || 'Exam Print');
+  const campusStr = escapeHtml(dataset.campus || dataset.author || 'N/A');
   let questionsHtml = '';
 
   (dataset.questions || []).forEach((q, idx) => {
     const qNum = idx + 1;
     const answers = (q.correctAnswers || []).join(', ') || 'N/A';
-    const renderedQText = renderMathInText(q.text || '') || '<em>[ Question Illustration ]</em>';
+    const renderedQText = renderMathInText(q.text || '', undefined, 'mathml') || '<em>[ Question Illustration ]</em>';
 
     let optionsHtml = '';
     (q.options || []).forEach((opt) => {
       const isCorrect = (q.correctAnswers || []).includes(opt.id);
-      const renderedOptText = renderMathInText(opt.text || '');
+      const renderedOptText = renderMathInText(opt.text || '', undefined, 'mathml');
       optionsHtml += `
         <div class="option ${isCorrect ? 'correct' : ''}">
           <span class="badge">${opt.id}</span>
@@ -176,15 +193,15 @@ export function generatePrintHtml(dataset: ExamDataset): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${dataset.title || 'Exam Print'}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <title>${titleStr}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 30px; color: #1e293b; background: #fff; line-height: 1.5; }
     .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px; }
     .header h1 { font-size: 24px; margin: 0 0 8px 0; color: #0f172a; }
     .meta { font-size: 14px; color: #64748b; margin: 4px 0; }
     .q-card { page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .q-title { font-size: 16px; margin: 0 0 12px 0; color: #0f172a; font-weight: 600; line-height: 1.4; }
+    .q-title { font-size: 16px; margin: 0 0 12px 0; color: #0f172a; font-weight: 600; line-height: 1.4; white-space: pre-wrap; }
+    .opt-text { white-space: pre-wrap; }
     .q-img { max-width: 100%; height: auto; margin-bottom: 12px; border-radius: 6px; display: block; }
     .options-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
     .option { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 6px; border: 1px solid #f1f5f9; background: #f8fafc; font-size: 14px; color: #334155; }
@@ -202,9 +219,9 @@ export function generatePrintHtml(dataset: ExamDataset): string {
 </head>
 <body>
   <div class="header">
-    <h1>${dataset.title}</h1>
+    <h1>${titleStr}</h1>
     <div class="meta"><strong>Môn học:</strong> ${subjectStr} | <strong>Học kỳ & Loại thi:</strong> ${termTypeStr}</div>
-    <div class="meta"><strong>Cơ sở / Nguồn:</strong> ${dataset.campus || dataset.author || 'XAVALO'} | <strong>Ca thi / Ngày:</strong> ${sessionStr} | <strong>Số câu hỏi:</strong> ${dataset.totalQuestions}</div>
+    <div class="meta"><strong>Cơ sở / Nguồn:</strong> ${campusStr} | <strong>Ca thi / Ngày:</strong> ${sessionStr} | <strong>Số câu hỏi:</strong> ${dataset.totalQuestions}</div>
   </div>
   ${questionsHtml}
 </body>
@@ -229,24 +246,16 @@ export async function downloadAssetUrl(rawUrl: string, filename: string): Promis
     downloadBlobFromObjectUrl(objectUrl, filename);
     return true;
   } catch (err) {
-    console.warn(`[fustation-tool] Direct blob fetch failed for ${fullUrl}, falling back:`, err);
-    if (typeof chrome !== 'undefined' && chrome.downloads && chrome.downloads.download) {
-      chrome.downloads.download({
-        url: fullUrl,
-        filename: filename,
-        saveAs: true
-      });
-      return true;
-    } else {
-      const a = document.createElement('a');
-      a.href = fullUrl;
-      a.download = filename;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      return true;
-    }
+    // chrome.downloads is not exposed to content scripts; let the browser navigate to the asset instead.
+    console.warn(`[fustation-tool] Direct blob fetch failed for ${fullUrl}, falling back to anchor download:`, err);
+    const a = document.createElement('a');
+    a.href = fullUrl;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return true;
   }
 }
 
@@ -514,6 +523,14 @@ export async function exportBulkAsZip(
 
     const zip = new JSZip();
     const itemsAudit: ManifestItemAudit[] = [];
+    // Same-titled exams (e.g. one code uploaded by two campuses) must not overwrite each other.
+    const usedPaths = new Set<string>();
+    const uniqueName = (folderName: string, base: string, ext: string): string => {
+      let name = `${base}${ext}`;
+      for (let n = 2; usedPaths.has(`${folderName}/${name}`); n++) name = `${base}_${n}${ext}`;
+      usedPaths.add(`${folderName}/${name}`);
+      return name;
+    };
     let batchHasMissingFeImages = false;
 
     // 1. Process items in current partition batch
@@ -561,12 +578,15 @@ export async function exportBulkAsZip(
           });
 
           if (fetchRes.status === 'available' && fetchRes.buffer) {
-            folder?.file(`${title}_Paper.pdf`, fetchRes.buffer);
+            folder?.file(uniqueName(subjCode, `${title}_Paper`, '.pdf'), fetchRes.buffer);
             itemAudit.assets.push({ type: 'PDF', status: 'Available' });
           } else {
             addLog(`[${subjCode}] PE PDF asset unavailable — marked missing in audit manifest`);
             itemAudit.assets.push({ type: 'PDF', status: 'Missing', url: fetchRes.url });
           }
+        } else if (peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') {
+          addLog(`[${subjCode}] PE PDF URL could not be resolved, marked missing in audit manifest`);
+          itemAudit.assets.push({ type: 'PDF', status: 'Missing' });
         }
 
         let zipUrl = ds.zipUrl;
@@ -589,12 +609,15 @@ export async function exportBulkAsZip(
             );
 
             if (fetchRes.status === 'available' && fetchRes.buffer) {
-              folder?.file(`${title}_AnswerKey.zip`, fetchRes.buffer);
+              folder?.file(uniqueName(subjCode, `${title}_AnswerKey`, '.zip'), fetchRes.buffer);
               itemAudit.assets.push({ type: 'ZIP', status: 'Available' });
             } else {
               addLog(`[${subjCode}] PE ZIP asset unavailable — marked missing in audit manifest`);
               itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url });
             }
+          } else {
+            addLog(`[${subjCode}] PE answer-key ZIP URL could not be resolved, marked missing in audit manifest`);
+            itemAudit.assets.push({ type: 'ZIP', status: 'Missing' });
           }
         }
       } else {
@@ -640,14 +663,14 @@ export async function exportBulkAsZip(
 
         if (feFormat === 'JSON') {
           const jsonStr = JSON.stringify(datasetCopy, null, 2);
-          folder?.file(`${title}.json`, jsonStr);
+          folder?.file(uniqueName(subjCode, title, '.json'), jsonStr);
         } else if (feFormat === 'PDF') {
           const htmlStr = generatePrintHtml(datasetCopy);
-          folder?.file(`${title}.html`, htmlStr);
+          folder?.file(uniqueName(subjCode, title, '.html'), htmlStr);
         } else {
           // Default MD
           const mdStr = await compileMarkdown(datasetCopy, true);
-          folder?.file(`${title}.md`, mdStr);
+          folder?.file(uniqueName(subjCode, title, '.md'), mdStr);
         }
       }
 

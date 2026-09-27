@@ -1,5 +1,6 @@
 import { ExamDataset, BatchState, BatchFetchStatus, BatchItemTask } from '../types';
 import { unescapeNextFChunk, formatExamDataset } from './parser';
+import { extractExamIdsFromHtml } from './examId';
 import { saveExamToStorage, getBatchStateFromStorage, setBatchStateInStorage } from './storage';
 
 function unescapeChunk(rawChunk: string): string {
@@ -57,11 +58,8 @@ export function extractProductTasksFromHtml(html: string): BatchItemTask[] {
   }
 
   // Pass 2: Search for all marketplace links in HTML to discover additional exam items
-  const linkRegex = /\/marketplace\/exam\/([a-zA-Z0-9_-]+)/g;
-  let linkMatch: RegExpExecArray | null;
-  while ((linkMatch = linkRegex.exec(html)) !== null) {
-    const id = linkMatch[1];
-    if (id && !seenIds.has(id)) {
+  for (const id of extractExamIdsFromHtml(html)) {
+    if (!seenIds.has(id)) {
       seenIds.add(id);
       tasks.push({
         id,

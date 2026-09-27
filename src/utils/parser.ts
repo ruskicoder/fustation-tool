@@ -1,4 +1,5 @@
 import { ExamDataset, Question, Option } from '../types';
+import { extractExamIdFromPath } from './examId';
 
 export function decodeHtmlEntities(text: string): string {
   if (!text) return '';
@@ -163,8 +164,7 @@ export function tryParsePartialJson(str: string): any {
 
 export function getExamIdFromUrl(): string | null {
   if (typeof window === 'undefined') return null;
-  const m = window.location.pathname.match(/\/marketplace\/exam\/([^/?#]+)/);
-  return m ? m[1] : null;
+  return extractExamIdFromPath(window.location.pathname);
 }
 
 function resolveRscRefs(obj: any, refs: Record<string, string>) {

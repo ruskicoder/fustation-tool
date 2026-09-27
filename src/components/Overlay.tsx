@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BatchProgressState, ExamDataset, ExportFormat, FEFormat, PEFormat, SavedExamsMap, StatusState, ThemeName, THEME_ORDER, THEME_LABELS } from '../types';
 import { extractExamFromScripts, getExamIdFromUrl } from '../utils/parser';
+import { extractExamIdFromPath } from '../utils/examId';
 import { exportExam, exportSinglePe, exportBulkAsZip } from '../utils/exporter';
 import {
   saveExamToStorage,
@@ -48,7 +49,7 @@ function getExtractSuccessMessage(ds: ExamDataset): string {
 }
 
 function classifyRoute(pathname: string): 'exam' | 'catalog' | 'other' {
-  if (/\/marketplace\/exam\//.test(pathname)) return 'exam';
+  if (extractExamIdFromPath(pathname)) return 'exam';
   if (/\/home(\/|$)/.test(pathname) || /\/subject\//.test(pathname)) return 'catalog';
   return 'other';
 }
