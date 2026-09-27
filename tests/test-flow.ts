@@ -227,8 +227,45 @@ async function runTests() {
   console.log('Homepage Batch Task Extraction Test Passed cleanly.');
 
   await runFeFixtureTests();
+  await runLanguageExamTests();
 
   console.log('\n✅ ALL DOMAIN, SCHEMA, MATH, IMAGE, PE ASSET, BULK ZIP, ATOMIC DELETE & HOMEPAGE BATCH TESTS PASSED CLEANLY');
+}
+
+// TRS/ENW language exams: Reading carries a shared passage, Writing is a PDF-only PE set.
+async function runLanguageExamTests() {
+  console.log('\n=== TEST 11: Language Exams (Reading passage, Writing PDF, SPA fallback) ===');
+  const { extractPeFromDOM } = await import('../src/utils/parser');
+  const { isValidExtractedDataset } = await import('../src/components/Overlay');
+  const { isPeDataset } = await import('../src/utils/exporter');
+  const dir = 'docs/webfetches/examview/language/';
+
+  const readingHtml = fs.readFileSync(`${dir}TRS501_reading-rsc.html`, 'utf8');
+  const reading = formatExamDataset(unescapeNextFChunk(readingHtml).initialData, readingHtml);
+  const passage = reading.passages?.[0];
+  if (reading.examCategory !== 'FE' || reading.questions.length !== 10) fail('reading exam not parsed as 10 FE questions');
+  if (!passage || passage.fromQuestion !== 1 || passage.toQuestion !== 10) fail('reading passage range missing');
+  if (new TextEncoder().encode(passage.text).length !== 0x13a0) fail(`passage text is ${passage.text.length} chars, not the 0x13a0-byte RSC row`);
+  if (!passage.text.startsWith('1.\tAs the climate crisis') || !passage.text.endsWith('shared humanity.')) fail('passage text truncated or overrun');
+  if (reading.questions.some((q) => q.imageUrl)) fail('"$undefined" imageUrl leaked into questions');
+  const readingMd = await compileMarkdown(reading, false);
+  const passageAt = readingMd.indexOf('## Reading passage (Questions 1-10)');
+  if (passageAt === -1 || passageAt > readingMd.indexOf('### Question 1:')) fail('markdown passage missing or after question 1');
+  if (readingMd.includes('$undefined') || readingMd.includes('![Question')) fail('markdown references a phantom image');
+  const readingHtmlOut = generatePrintHtml(reading);
+  if (!readingHtmlOut.includes('class="passage"') || !readingHtmlOut.includes('Kiribati and Tuvalu')) fail('print html missing passage');
+  if (normalizeSavedDataset(reading).passages?.length !== 1) fail('storage normalization dropped passages');
+
+  const writingHtml = fs.readFileSync(`${dir}TRS501_writing-rsc.html`, 'utf8');
+  const writing = formatExamDataset(unescapeNextFChunk(writingHtml).initialData, writingHtml);
+  if (!isPeDataset(writing) || writing.pdfUrl !== '/api/exams/pdf?productId=cmtqzhl8j000004jp2xs2yfxb') fail('writing set not recognized as PDF exam');
+  if (!isValidExtractedDataset(writing)) fail('writing set rejected by extraction validation');
+
+  // SPA-captured Reading page: no inline exam payload, must not be mistaken for an empty PE set.
+  const spaHtml = fs.readFileSync('docs/webfetches/examview/examplehtml-examview-readwrite.html', 'utf8');
+  if (extractPeFromDOM(spaHtml) !== null) fail('SPA reading page misclassified as PE');
+  if (isValidExtractedDataset({ ...writing, pdfUrl: null, zipUrl: null })) fail('asset-less PE accepted as a valid extraction');
+  console.log(`Reading passage (${passage.text.length} chars, Q1-10) in MD/HTML/storage; Writing PDF recognized; SPA page left for reload.`);
 }
 
 function fail(msg: string): never {

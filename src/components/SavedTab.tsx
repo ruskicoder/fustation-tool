@@ -278,7 +278,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                   <div className="fus-folder-children" role="group">
                     {group.items.map((item) => {
                       const isSelected = selectedIds.has(item.id);
-                      const termStr = item.term || item.termCode || 'SP26';
+                      const termStr = item.term || item.termCode || 'N/A';
                       const typeStr = item.examType || 'FE';
 
                       return (
@@ -383,8 +383,8 @@ export const SavedTab: React.FC<SavedTabProps> = ({
                     <tr><td>Title:</td><td style={{ wordBreak: 'break-all', color: 'var(--fus-modal-text)' }}>{inspectItem.title || inspectItem.id}</td></tr>
                     <tr><td>Product ID:</td><td><code style={{ fontSize: '11px', background: 'var(--fus-modal-code-bg)', padding: '2px 6px', borderRadius: '4px', color: 'var(--fus-modal-text-muted)' }}>{inspectItem.id}</code></td></tr>
                     <tr><td>Category:</td><td><span className="fus-badge" style={{ background: isPe ? 'rgba(236,72,153,0.2)' : 'rgba(59,130,246,0.2)', color: isPe ? '#ec4899' : '#60a5fa', borderColor: isPe ? 'rgba(236,72,153,0.4)' : 'rgba(59,130,246,0.4)' }}>{isPe ? 'PE' : 'FE'}</span></td></tr>
-                    <tr><td>Term & Type:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.term || 'SP26'} · {inspectItem.examType || 'FE'}</td></tr>
-                    <tr><td>Campus:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.campus || inspectItem.campus || 'XAVALO'}</td></tr>
+                    <tr><td>Term & Type:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.term || 'N/A'} · {inspectItem.examType || 'FE'}</td></tr>
+                    <tr><td>Campus:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.campus || inspectItem.campus || 'N/A'}</td></tr>
                     <tr><td>Session Time:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.examSessionTime || inspectItem.examSessionTime || 'N/A'}</td></tr>
                     <tr><td>Session Date:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.dataset?.examSessionDate || inspectItem.examSessionDate || 'N/A'}</td></tr>
                     <tr><td>Saved Date:</td><td style={{ color: 'var(--fus-modal-text)' }}>{inspectItem.extractedAt ? new Date(inspectItem.extractedAt).toLocaleString() : 'N/A'}</td></tr>

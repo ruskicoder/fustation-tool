@@ -1,4 +1,4 @@
-import { ExamDataset, Question, Option } from '../types';
+import { ExamDataset, Question, Option, ReadingPassage } from '../types';
 import { extractExamIdFromPath } from './examId';
 
 export function decodeHtmlEntities(text: string): string {
@@ -51,7 +51,7 @@ export function parseExamCode(title: string): ParsedExamCode {
   
   // Default values
   let subjectCode = 'EXAM';
-  let term = 'SP26';
+  let term = 'N/A';
   let examType = 'FE';
   let examCode = '';
 
@@ -197,12 +197,14 @@ export function unescapeNextFChunk(text: string, targetId?: string): any {
     for (const match of matches) {
       try {
         const unescaped = JSON.parse(`"${match[1]}"`);
-        const refMatches = Array.from(unescaped.matchAll(/([a-zA-Z0-9]+):T(\d+),/g)) as RegExpMatchArray[];
+        // RSC text rows are `<id>:T<hex byte length>,<text>` with no terminator, e.g. `1b:T13a0,...`.
+        const refMatches = Array.from(unescaped.matchAll(/([a-zA-Z0-9]+):T([0-9a-fA-F]+),/g)) as RegExpMatchArray[];
         for (const rMatch of refMatches) {
           const id = rMatch[1];
-          const len = parseInt(rMatch[2], 10);
+          const byteLen = parseInt(rMatch[2], 16);
           const startIdx = (rMatch.index || 0) + rMatch[0].length;
-          rscRefs[`$${id}`] = unescaped.substring(startIdx, startIdx + len);
+          const tailBytes = new TextEncoder().encode(unescaped.substring(startIdx, startIdx + byteLen));
+          rscRefs[`$${id}`] = new TextDecoder().decode(tailBytes.slice(0, byteLen));
         }
       } catch (e) {}
     }
@@ -356,14 +358,39 @@ export function extractPeZipUrl(fullHtml: string, isLiveDom: boolean = false): s
   return null;
 }
 
+/** RSC serializes `undefined` as the string "$undefined"; treat it and other non-strings as absent. */
+function rscString(value: unknown): string | null {
+  return typeof value === 'string' && value !== '' && value !== '$undefined' ? value : null;
+}
+
+function formatReadingPassages(raw: unknown): ReadingPassage[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const passages = raw
+    .map((p: any, idx: number): ReadingPassage | null => {
+      const text = rscString(p?.text);
+      // An unresolved `$<ref>` means the text row was not found; drop it rather than print the pointer.
+      if (!text || /^\$[0-9a-zA-Z]+$/.test(text)) return null;
+      const from = Number(p.fromQuestion) || 1;
+      return {
+        id: rscString(p.id) || `passage_${idx + 1}`,
+        text: decodeHtmlEntities(text),
+        imageUrl: rscString(p.imageUrl),
+        fromQuestion: from,
+        toQuestion: Math.max(from, Number(p.toQuestion) || from)
+      };
+    })
+    .filter((p): p is ReadingPassage => p !== null);
+  return passages.length > 0 ? passages : undefined;
+}
+
 export function formatExamDataset(initialData: any, rawPayloadText?: string): ExamDataset {
   const prod = initialData.product || {};
   const subj = prod.subject || {};
   const title = prod.title || 'Exam Set';
   const parsedCode = parseExamCode(title);
 
-  const campus = prod.description || prod.campus || 'XAVALO';
-  const term = parsedCode.term || prod.term || 'SP26';
+  const campus = prod.description || prod.campus || 'N/A';
+  const term = parsedCode.term || prod.term || 'N/A';
 
   const rawProdType = (prod.examType || prod.category || '').toString().toUpperCase();
   const isProdPe = rawProdType === 'PE' || rawProdType === 'PRACTICAL_EXAM' || rawProdType.includes('PE');
@@ -373,7 +400,8 @@ export function formatExamDataset(initialData: any, rawPayloadText?: string): Ex
   const isLiveDom = !rawPayloadText && typeof document !== 'undefined';
 
   const examSessionTime = extractSessionTimeFromText(fullHtml, prod);
-  const examSessionDate = sanitizeRscDate(prod.createdAt || prod.examSessionDate || '$D2026-04-29T00:00:00.000Z');
+  const rawSessionDate = prod.createdAt || prod.examSessionDate;
+  const examSessionDate = rawSessionDate ? sanitizeRscDate(rawSessionDate) : 'N/A';
 
   const questionsList = initialData.questions || [];
 
@@ -417,6 +445,7 @@ export function formatExamDataset(initialData: any, rawPayloadText?: string): Ex
     parsedTitle: title,
     totalQuestions: initialData.totalQuestions || questionsList.length,
     isPartial: false,
+    passages: formatReadingPassages(initialData.readingPassages),
     questions: questionsList.map((q: any, idx: number) => {
       const qIndex = q.index !== undefined ? q.index : idx + 1;
       const opts: Option[] = (q.options || []).map((opt: any) => ({
@@ -438,7 +467,7 @@ export function formatExamDataset(initialData: any, rawPayloadText?: string): Ex
         options: opts,
         correctAnswers: correctAns,
         explanation: q.explanation ? decodeHtmlEntities(q.explanation) : undefined,
-        imageUrl: q.imageUrl || q.image || undefined,
+        imageUrl: rscString(q.imageUrl) || rscString(q.image) || undefined,
         imageBase64: q.imageBase64 || undefined
       };
     })
@@ -463,6 +492,9 @@ export function extractPeFromDOM(fullHtml?: string): ExamDataset | null {
 
   const isLiveDom = !fullHtml && typeof document !== 'undefined';
   const zipUrl = extractPeZipUrl(html, isLiveDom);
+  // Without a real paper or answer-key asset this is not a PE page (e.g. an SPA-navigated FE page
+  // whose exam payload is not inline); returning null lets the caller retry or reload.
+  if (!pdfUrl && !zipUrl) return null;
 
   const subjBadgeMatch = html.match(/<span[^>]*data-slot="badge"[^>]*>([^<]+)<\/span>/i);
   const subjectName = subjBadgeMatch ? subjBadgeMatch[1].trim() : (parsedCode.subjectCode || 'PE Subject');
@@ -472,16 +504,16 @@ export function extractPeFromDOM(fullHtml?: string): ExamDataset | null {
     title,
     subjectCode: parsedCode.subjectCode || 'PE',
     subjectName,
-    author: 'XAVALO',
-    campus: 'XAVALO',
-    term: parsedCode.term || 'SP26',
-    termCode: parsedCode.term || 'SP26',
+    author: 'N/A',
+    campus: 'N/A',
+    term: parsedCode.term || 'N/A',
+    termCode: parsedCode.term || 'N/A',
     examType: parsedCode.examType || 'PE',
     examCategory: 'PE',
     pdfUrl,
     zipUrl,
     examSessionTime: 'N/A',
-    examSessionDate: '29/04/2026',
+    examSessionDate: 'N/A',
     parsedTitle: title,
     totalQuestions: 0,
     questions: []
@@ -575,7 +607,7 @@ export async function crawlExamFromDOM(
   const subjectBadge = document.querySelector('span[data-slot="badge"]:nth-child(2)');
   const subjectName = subjectBadge ? subjectBadge.textContent?.trim() || subjectCode : subjectCode;
   const authorEl = document.querySelector('p.text-muted-foreground');
-  const author = authorEl ? authorEl.textContent?.trim() || 'XAVALO' : 'XAVALO';
+  const author = authorEl ? authorEl.textContent?.trim() || 'N/A' : 'N/A';
 
   // 1. Strict Total Question Detection
   let totalQuestions = 0;
@@ -747,7 +779,7 @@ export async function crawlExamFromDOM(
   const failedFetchCount = isPartial ? totalQuestions - questions.length : 0;
 
   const deterministicId = (parsedCode.subjectCode && parsedCode.examCode ? `${parsedCode.subjectCode}_${parsedCode.examCode}` : getExamIdFromUrl()) || `exam_${parsedCode.subjectCode}_${Date.now()}`;
-  const term = parsedCode.term || 'SP26';
+  const term = parsedCode.term || 'N/A';
   const examType = parsedCode.examType || 'FE';
 
   const bodyText = typeof document !== 'undefined' ? document.body?.textContent || '' : '';
@@ -764,7 +796,7 @@ export async function crawlExamFromDOM(
     termCode: term,
     examType,
     examSessionTime,
-    examSessionDate: '29/04/2026',
+    examSessionDate: 'N/A',
     parsedTitle: title,
     totalQuestions: isPartial ? totalQuestions : questions.length,
     isPartial,

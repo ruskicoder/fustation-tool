@@ -1,9 +1,17 @@
 # Current Progress — fustation-tool
 
 **Last Updated**: 2026-09-28
-**Status**: 🟢 **SSOT scaffold installed; ISSUE-84 to ISSUE-98 resolved and verified; no open issues**
+**Status**: 🟢 **Language exams supported (ISSUE-99 to 103, 106 resolved); ISSUE-104, 105 open (low / data)**
 
 ---
+
+## Session Ledger: 2026-09-28 Language Exams (Reading passages, Writing PDFs)
+
+- Branches: old local `dev` renamed and pushed as `dev-archive` (`180b108`); new `dev` created from `7c80901` and pushed. Work continues on `dev`.
+- Investigated the saved SPA capture and the live site (logged-in Chrome, read-only): TRS501 Reading, Writing, Reading+Writing, VG; TRS601 Reading; ENW493c Writing. No textarea questions exist; Reading uses shared passages, Writing is a PDF-only PE set.
+- Fixed ISSUE-99 to 103 and 106 (see `log-issues.md`). Added fixtures under `docs/webfetches/examview/language/` and TEST 11; the new test fails on the previous code.
+- Verification: `npm run build` green (tsc, vite, dist check, all suites).
+- Resume point: ISSUE-104 (Writing-set answer-key label), then a manual pass with a Reading and a Writing exam in the browser.
 
 ## Session Ledger: 2026-09-28 FE Export Fidelity & Bulk ZIP Integrity
 

@@ -7,7 +7,7 @@ const FUSTATION_ORIGIN = 'https://www.fustation.net';
  * into absolute `https://www.fustation.net/...` URLs.
  */
 export function normalizeImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
+  if (!url || url === '$undefined') return null;
   const trimmed = url.trim();
   if (!trimmed) return null;
 

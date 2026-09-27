@@ -138,3 +138,23 @@
     - _Requirements: 7.4_
   - [x] 16.2 Fixture tests: every FE fixture through MD and HTML, real `exportBulkAsZip` over FE and PE (tests/test-flow.ts TEST 7b, TEST 10)
     - _Requirements: 9.1_
+
+---
+
+## Phase 7: Language Exams (resolved 2026-09-28)
+
+- [x] 17. Reading and Writing recognition
+  - [x] 17.1 Resolve hex-length RSC text rows by UTF-8 bytes; treat `"$undefined"` as absent (ISSUE-100, 102)
+    - _Requirements: 1.8, 1.9_
+  - [x] 17.2 Parse `readingPassages` into `ExamDataset.passages`; keep them through storage normalization (ISSUE-99, 103)
+    - _Requirements: 4A.1, 4A.3_
+  - [x] 17.3 Render passages in Markdown, print HTML and the viewer before their first question (ISSUE-99)
+    - _Requirements: 4A.2_
+  - [x] 17.4 PE DOM fallback and extraction validation require a real asset, so SPA-navigated FE pages reload instead of saving an empty PE (ISSUE-101)
+    - _Requirements: 1.10, 3.5_
+  - [x] 17.5 Replace invented metadata defaults with `N/A` in parser, storage and UI (ISSUE-106)
+    - _Requirements: 2.4_
+  - [x] 17.6 Fixtures `docs/webfetches/examview/language/` and TEST 11 (Reading passage, Writing PDF, SPA fallback)
+    - _Requirements: 9.1_
+- [ ] 18. Writing-set answer-key audit label (ISSUE-104)
+  - _Requirements: 7.4_

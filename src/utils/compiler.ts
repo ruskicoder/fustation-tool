@@ -1,4 +1,4 @@
-import { ExamDataset } from '../types';
+import { ExamDataset, ReadingPassage } from '../types';
 import { sanitizeMathLatex, MATH_SEGMENT_RE } from './math';
 import { normalizeImageUrl, fetchImageAsBase64 } from './images';
 
@@ -30,6 +30,11 @@ function toMarkdownParagraphs(sanitized: string): string {
     .join('\n\n');
 }
 
+export function passageHeading(p: ReadingPassage): string {
+  const range = p.fromQuestion === p.toQuestion ? `Question ${p.fromQuestion}` : `Questions ${p.fromQuestion}-${p.toQuestion}`;
+  return `Reading passage (${range})`;
+}
+
 export async function compileMarkdown(dataset: ExamDataset, embedImages: boolean = true): Promise<string> {
   if (!dataset) return '';
 
@@ -57,6 +62,14 @@ export async function compileMarkdown(dataset: ExamDataset, embedImages: boolean
   for (let idx = 0; idx < questions.length; idx++) {
     const q = questions[idx];
     const qNum = idx + 1;
+
+    for (const passage of (dataset.passages || []).filter((p) => p.fromQuestion === qNum)) {
+      lines.push(`## ${passageHeading(passage)}`, ``, toMarkdownParagraphs(sanitizeMathLatex(passage.text)), ``);
+      const passageImg = normalizeImageUrl(passage.imageUrl);
+      if (passageImg) lines.push(`![${passageHeading(passage)}](${passageImg})`, ``);
+      lines.push(`---`, ``);
+    }
+
     const rawText = (q.text || '').trim();
     const firstBreak = rawText.indexOf('\n');
     const firstLine = firstBreak === -1 ? rawText : rawText.slice(0, firstBreak);

@@ -41,14 +41,14 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
     id: 'unknown',
     subjectCode: 'EXAM',
     subjectName: 'No active exam page detected',
-    author: 'XAVALO',
-    campus: 'XAVALO',
-    term: 'SP26',
-    termCode: 'SP26',
+    author: 'N/A',
+    campus: 'N/A',
+    term: 'N/A',
+    termCode: 'N/A',
     examType: 'FE',
     examCategory: 'FE',
     examSessionTime: 'N/A',
-    examSessionDate: '29/04/2026',
+    examSessionDate: 'N/A',
     title: 'Open an exam page on fustation.net',
     totalQuestions: 0,
     isPartial: false,
@@ -57,10 +57,10 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
     questions: []
   };
 
-  const termStr = data.term || data.termCode || 'SP26';
+  const termStr = data.term || data.termCode || 'N/A';
   const typeStr = data.examType || 'FE';
   const termExamType = `${termStr} - ${typeStr}`;
-  const sessionStr = `${data.examSessionTime || 'N/A'} | ${data.examSessionDate || '29/04/2026'}`;
+  const sessionStr = `${data.examSessionTime || 'N/A'} | ${data.examSessionDate || 'N/A'}`;
   const isLoading = status === 'fetching' || status === 'processing';
   const isPe = data.examCategory === 'PE';
   const hasQuestions = !!(dataset && dataset.questions && dataset.questions.length > 0);
@@ -79,7 +79,7 @@ export const ExtractTab: React.FC<ExtractTabProps> = ({
             <div className="fus-meta-row-1">
               <span className="fus-badge fus-badge-subject" title="Subject Code">{data.subjectCode}</span>
               <span className="fus-badge fus-badge-type" title="Term &amp; Exam Type">{termExamType}</span>
-              <span className="fus-badge fus-badge-campus" title="Campus">{data.campus || data.author || 'XAVALO'}</span>
+              <span className="fus-badge fus-badge-campus" title="Campus">{data.campus || data.author || 'N/A'}</span>
             </div>
 
             {/* Row 2: 70% / 30% grid */}

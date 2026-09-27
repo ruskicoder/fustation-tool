@@ -11,7 +11,7 @@ import {
   PEFormat,
   SavedExamItem
 } from '../types';
-import { compileMarkdown } from './compiler';
+import { compileMarkdown, passageHeading } from './compiler';
 import { escapeHtml, renderMathInText } from './math';
 import { embedBase64ImagesInDataset, normalizeImageUrl } from './images';
 import { extractPeZipUrl } from './parser';
@@ -161,6 +161,15 @@ export function generatePrintHtml(dataset: ExamDataset): string {
 
   (dataset.questions || []).forEach((q, idx) => {
     const qNum = idx + 1;
+    (dataset.passages || []).filter((p) => p.fromQuestion === qNum).forEach((p) => {
+      const passageImg = normalizeImageUrl(p.imageUrl);
+      questionsHtml += `
+      <div class="passage">
+        <div class="passage-label">${escapeHtml(passageHeading(p))}</div>
+        ${passageImg ? `<img src="${passageImg}" class="q-img" alt="Passage illustration" />` : ''}
+        <div class="passage-text">${renderMathInText(p.text, undefined, 'mathml')}</div>
+      </div>`;
+    });
     const answers = (q.correctAnswers || []).join(', ') || 'N/A';
     const renderedQText = renderMathInText(q.text || '', undefined, 'mathml') || '<em>[ Question Illustration ]</em>';
 
@@ -202,6 +211,9 @@ export function generatePrintHtml(dataset: ExamDataset): string {
     .q-card { page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .q-title { font-size: 16px; margin: 0 0 12px 0; color: #0f172a; font-weight: 600; line-height: 1.4; white-space: pre-wrap; }
     .opt-text { white-space: pre-wrap; }
+    .passage { border-left: 4px solid #6366f1; background: #f8fafc; padding: 14px 16px; margin-bottom: 20px; border-radius: 6px; }
+    .passage-label { font-size: 13px; font-weight: 700; color: #4338ca; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .passage-text { font-size: 14px; white-space: pre-wrap; tab-size: 4; }
     .q-img { max-width: 100%; height: auto; margin-bottom: 12px; border-radius: 6px; display: block; }
     .options-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
     .option { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 6px; border: 1px solid #f1f5f9; background: #f8fafc; font-size: 14px; color: #334155; }

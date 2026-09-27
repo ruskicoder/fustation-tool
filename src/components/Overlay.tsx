@@ -37,8 +37,8 @@ import { BoltIcon, MinimizeIcon, PaletteIcon } from './Icons';
 export function isValidExtractedDataset(ds: ExamDataset | null): boolean {
   if (!ds) return false;
   if (ds.questions && ds.questions.length > 0) return true;
-  if (ds.examCategory === 'PE' || ds.pdfUrl !== null || ds.zipUrl !== null || ds.totalQuestions === 0) return true;
-  return false;
+  // No questions: only a PE/PDF set that actually carries an asset counts as extracted.
+  return !!ds.pdfUrl || !!ds.zipUrl;
 }
 
 function getExtractSuccessMessage(ds: ExamDataset): string {

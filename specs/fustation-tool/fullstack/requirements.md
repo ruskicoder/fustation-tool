@@ -21,6 +21,9 @@ Last reconciled with code: 2026-09-28 (branch `features/Design_SSOT_Scaffold`).
 5. IF all retries fail THEN the system SHALL reload the page at most once per exam URL and, if that also fails, show an error status and toast.
 6. WHEN the SPA navigates between routes THEN the system SHALL re-run classification and extraction without a full reload.
 7. WHEN RSC string chunks contain escaped `\n` THEN the parser SHALL keep them escaped until `JSON.parse` succeeds.
+8. WHEN a value is an RSC text reference (`$<id>`) THEN the parser SHALL resolve it from the `<id>:T<hex byte length>,` row using UTF-8 byte lengths.
+9. WHEN a value is the RSC sentinel `"$undefined"` THEN the system SHALL treat it as absent.
+10. IF an exam page has no inline exam payload and no PE asset link THEN extraction SHALL fail so the guarded reload runs, rather than produce an empty PE dataset.
 
 ### Requirement 2: Exam Metadata Parsing
 **User Story:** As a student, I want exam files labelled with subject, term, type, and session, so that my offline library stays organized.
@@ -39,6 +42,7 @@ Last reconciled with code: 2026-09-28 (branch `features/Design_SSOT_Scaffold`).
 2. WHEN the PDF is requested THEN the system SHALL use `/api/exams/pdf?productId={id}` only with a valid numeric id or CUID, never a 6-digit title suffix.
 3. IF a presigned ZIP URL returns HTTP 403 THEN the system SHALL fetch a fresh URL from the RSC endpoint and retry with backoff.
 4. WHEN a PE set is previewed THEN the viewer SHALL show the PDF full-height with a debounced search input.
+5. WHEN a language Writing set (`_W`, `_RW`) exposes its paper as `initialData.examUrl` THEN the system SHALL treat it as a PDF-only PE set.
 
 ### Requirement 4: Math & Image Fidelity
 **User Story:** As a student, I want formulas and diagrams preserved, so that exported questions remain readable.
@@ -50,6 +54,14 @@ Last reconciled with code: 2026-09-28 (branch `features/Design_SSOT_Scaffold`).
 4. WHEN a network image fetch fails THEN the system SHALL fall back to extracting base64 from the rendered DOM image.
 5. IF a `$` cannot open or close a math span (Pandoc rule: opener followed by non-space, closer preceded by non-space and not followed by a digit) THEN the system SHALL keep it as literal text.
 6. WHEN a `$$` opener has no `$$` closer but a valid single `$` closer THEN the system SHALL render the span as inline math.
+
+### Requirement 4A: Reading Passages (Language Exams)
+**User Story:** As a student, I want the reading passage exported with its questions, so that reading-comprehension exams are usable offline.
+
+#### Acceptance Criteria
+1. WHEN `initialData.readingPassages` is present THEN the system SHALL store each passage with its text, optional image, and `fromQuestion`..`toQuestion` range.
+2. WHEN exporting MD or PDF, or viewing a saved exam, THEN each passage SHALL appear once, immediately before the first question of its range.
+3. WHEN a saved dataset is normalized THEN its passages SHALL be preserved.
 
 ### Requirement 5: Local Library (Saved Exams)
 **User Story:** As a student, I want fetched exams saved locally, so that I can view and export them later without revisiting the site.

@@ -357,6 +357,7 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
               {/* Right: Question List */}
               <QuestionList
                 questions={dataset.questions ?? []}
+                passages={dataset.passages}
                 searchQuery={searchQuery}
                 matchIndices={matchIndices}
                 scrollRef={scrollRef}

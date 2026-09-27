@@ -90,6 +90,15 @@ export interface Question {
   options: Option[];
 }
 
+/** Shared reading text for questions `fromQuestion`..`toQuestion` (1-based, inclusive) in language exams. */
+export interface ReadingPassage {
+  id: string;
+  text: string;
+  imageUrl: string | null;
+  fromQuestion: number;
+  toQuestion: number;
+}
+
 export interface ExamDataset {
   id: string;
   title: string;
@@ -111,6 +120,7 @@ export interface ExamDataset {
   successFetchCount?: number;
   failedFetchCount?: number;
   questions: Question[];
+  passages?: ReadingPassage[];
 }
 
 export interface SavedExamItem {

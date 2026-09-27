@@ -251,3 +251,18 @@ On `/marketplace/exam/[id]`, the server injects exam data via Next.js RSC stream
 - **Options**: Array of choice objects `[{ id: "A", text: "..." }, ...]`. Supports 3, 4, or 5 options per question.
 - **Correct Answers**: String array `correctAnswers: ["C"]` (single choice) or `["A", "B", "C"]` (multiple choice).
 
+
+
+## 6. Language Exams (TRS, ENW, ENM), verified live on 2026-09-28
+
+Title suffixes mark the skill: `_R` Reading, `_W` Writing, `_RW` Reading and Writing paper, `_VG` Vocabulary and Grammar.
+
+| Shape | Payload | Example |
+|---|---|---|
+| Reading | `questions` (4-option MC) plus `readingPassages: [{ id, text: "$1b", imageUrl, fromQuestion, toQuestion }]`, `isLanguageExam: true`; the passage body is a separate RSC text row `1b:T13a0,<5024 bytes>` | `TRS501_SU26_H2_RE_R_748358` (`cmtqzfgtf000204litvd5o0kt`) |
+| Writing | no `questions`; `product.examType: "PE"`; paper at `initialData.examUrl` (`/api/exams/pdf?productId=<cuid>`); no answer key | `TRS501_SU26_H2_RE_W_185912`, `ENW493c_SU26_RE_W_822365` |
+| Vocabulary and Grammar | plain MC with `__________` blanks | `TRS501_SU26_H2_RE_VG_932915` |
+
+RSC encoding rules seen here: missing values are the string `"$undefined"`; `$<id>` values point to `<id>:T<hex byte length>,` text rows that have no terminator. When the exam page is reached by in-app navigation, the saved HTML holds the previous route's payload (`initialProducts`) and no exam data; only a reload or a `?_rsc=1` fetch returns `initialData`.
+
+Fixtures: `docs/webfetches/examview/language/TRS501_reading-rsc.html` (reconstructed from the live payload, byte-identical question JSON and passage length), `TRS501_writing-rsc.html` (verbatim push), and the SPA capture `docs/webfetches/examview/examplehtml-examview-readwrite.html`.

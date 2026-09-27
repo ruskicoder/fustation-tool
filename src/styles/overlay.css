@@ -1966,6 +1966,29 @@
   justify-content: center;
 }
 
+.fus-passage {
+  background: var(--fus-layer);
+  border: 1px solid var(--fus-border-dim);
+  border-left: 3px solid var(--fus-accent);
+  border-radius: var(--fus-r-lg);
+  padding: 10px 12px;
+}
+
+.fus-passage-label {
+  margin: 0 0 6px;
+  font-size: var(--fus-fs-sm);
+  font-weight: 700;
+  color: var(--fus-text-dim);
+}
+
+.fus-passage-text {
+  display: block;
+  white-space: pre-wrap;
+  tab-size: 4;
+  line-height: 1.6;
+  color: var(--fus-text);
+}
+
 .fus-q-card {
   background: var(--fus-layer);
   border: 1px solid var(--fus-border-dim);

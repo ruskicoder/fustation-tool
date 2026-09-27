@@ -1,9 +1,11 @@
 import React from 'react';
-import { Question } from '../types';
+import { Question, ReadingPassage } from '../types';
+import { MathText } from './MathText';
 import { QuestionCard } from './QuestionCard';
 
 interface QuestionListProps {
   questions: Question[];
+  passages?: ReadingPassage[];
   searchQuery: string;
   matchIndices: Set<number>;
   scrollRef: React.RefObject<HTMLDivElement>;
@@ -17,6 +19,7 @@ interface QuestionListProps {
  */
 export const QuestionList: React.FC<QuestionListProps> = ({
   questions,
+  passages,
   searchQuery,
   matchIndices,
   scrollRef,
@@ -35,14 +38,23 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
   return (
     <div ref={scrollRef} className="fus-question-list" role="feed" aria-label="Exam questions">
-      {questions.map((q) => (
-        <QuestionCard
-          key={q.id || q.index}
-          question={q}
-          searchQuery={searchQuery}
-          isMatch={matchIndices.has(q.index)}
-          onImageClick={onImageClick}
-        />
+      {questions.map((q, i) => (
+        <React.Fragment key={q.id || q.index}>
+          {(passages || []).filter((p) => p.fromQuestion === i + 1).map((p) => (
+            <section key={p.id} className="fus-passage" aria-label={`Reading passage for questions ${p.fromQuestion} to ${p.toQuestion}`}>
+              <p className="fus-passage-label">
+                Reading · Questions {p.fromQuestion}{p.toQuestion !== p.fromQuestion ? `-${p.toQuestion}` : ''}
+              </p>
+              <MathText text={p.text} searchQuery={searchQuery} className="fus-passage-text" />
+            </section>
+          ))}
+          <QuestionCard
+            question={q}
+            searchQuery={searchQuery}
+            isMatch={matchIndices.has(q.index)}
+            onImageClick={onImageClick}
+          />
+        </React.Fragment>
       ))}
     </div>
   );
