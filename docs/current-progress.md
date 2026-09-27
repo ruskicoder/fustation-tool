@@ -1,7 +1,7 @@
 # Current Progress — fustation-tool
 
 **Last Updated**: 2026-09-28
-**Status**: 🟢 **PE ZIP downloads fixed (ISSUE-107); ISSUE-104, 105 open (low / data)**
+**Status**: 🟢 **ISSUE-104 and 107 fixed; ISSUE-108 awaits a live rerun; ISSUE-105 is platform data**
 
 ---
 
@@ -12,7 +12,8 @@
 - Verification: `npm run build` green (tsc, vite, dist check, all suites including new TEST 12, which fails on the previous exporter). `dist/` rebuilt and now includes ISSUE-106 and 107.
 - Not verified live: the service-worker S3 fetch needs a logged-in browser pass.
 - Live bulk run afterwards still logged PE failures; logged ISSUE-108 with read-only live findings and added HTTP status diagnostics to the bulk log and `manifest.md` (TEST 7b asserts it).
-- Resume point: reload the extension, rerun the bulk export, read the per-item HTTP status for ISSUE-108; then ISSUE-104 (task 18) and the manual browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md`, starting with a PE ZIP download.
+- ISSUE-104 fixed (task 18): `ZIP: Not provided` for sets whose live page publishes the paper but no answer key; definitive 4xx no longer retried; build time back to about 10 s.
+- Resume point: reload the extension, rerun the bulk export, read the per-item HTTP status for ISSUE-108 (paste the Batch Progress Log, not only the page console); then the manual browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md`, starting with a PE ZIP download.
 
 ## Session Ledger: 2026-09-28 Language Exams (Reading passages, Writing PDFs)
 

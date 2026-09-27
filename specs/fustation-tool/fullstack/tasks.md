@@ -156,8 +156,13 @@
     - _Requirements: 2.4_
   - [x] 17.6 Fixtures `docs/webfetches/examview/language/` and TEST 11 (Reading passage, Writing PDF, SPA fallback)
     - _Requirements: 9.1_
-- [ ] 18. Writing-set answer-key audit label (ISSUE-104)
-  - _Requirements: 7.4_
+- [x] 18. Writing-set answer-key audit label (ISSUE-104)
+  - [x] 18.1 `resolvePeZipUrl` reports `notProvided` when the fresh payload publishes the paper but no answer-key link; bulk audit marks the ZIP `Not provided`
+    - _Requirements: 7.4, 7.6_
+  - [x] 18.2 `fetchArrayBufferWithFastRetry` stops on definitive 4xx (not 403, 408, 429)
+    - _Requirements: 7.7_
+  - [x] 18.3 TEST 7b: a PE set without an answer key reads `ZIP: Not provided` and is not a missing detail; a 404 is requested once
+    - _Requirements: 9.1_
 
 ## Phase 8: PE Asset Download Reliability
 

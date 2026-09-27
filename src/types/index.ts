@@ -183,7 +183,7 @@ export interface ManifestItemAudit {
   assets: Array<{
     type: 'PDF' | 'ZIP' | 'Image';
     index?: number;
-    status: 'Available' | 'Missing';
+    status: 'Available' | 'Missing' | 'Not provided';
     url?: string;
     targetFilename?: string;
     httpStatus?: number;

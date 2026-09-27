@@ -346,13 +346,19 @@ async function runBulkZipTest(feDataset: any) {
   const mae = loadFeFixture('image-files/example-math-image-examset.html').ds;
   const peOk = formatExamDataset({ product: { id: 'cmsex6fva000004lan2cckccn', title: 'MSS301_SU26_PE_RE_738672', examType: 'PE', pdfUrl: '/api/exams/pdf?productId=cmsex6fva000004lan2cckccn', zipUrl: 'https://fustation.s3.amazonaws.com/exams/pe/mss301/answer-key.zip' }, questions: [] });
   const peNoZip = formatExamDataset({ product: { id: 'cmjmy7sdi0005gwtoi9re56l9', title: 'PRF192_FA25_PE_B3W_983472', examType: 'PE', pdfUrl: '/api/exams/pdf?productId=cmjmy7sdi0005gwtoi9re56l9', zipUrl: 'https://fustation.s3.amazonaws.com/missing.zip' }, questions: [] });
-  const items = [feDataset, { ...feDataset }, mae, peOk, peNoZip].map((d: any) => ({ id: d.id, title: d.title, subjectCode: d.subjectCode, subjectName: d.subjectName, author: d.author, totalQuestions: d.totalQuestions, extractedAt: '', dataset: d }));
+  const peNoKey = formatExamDataset({ product: { id: 'cmwrit1ng000004labcdefghij', title: 'TRS501_SU26_H2_RE_W_185912', examType: 'PE', pdfUrl: '/api/exams/pdf?productId=cmwrit1ng000004labcdefghij' }, questions: [] });
+  const items = [feDataset, { ...feDataset }, mae, peOk, peNoZip, peNoKey].map((d: any) => ({ id: d.id, title: d.title, subjectCode: d.subjectCode, subjectName: d.subjectName, author: d.author, totalQuestions: d.totalQuestions, extractedAt: '', dataset: d }));
   const blobs: { name: string; blob: Blob }[] = [];
   const pendingUrls = new Map<string, Blob>();
   const g = globalThis as any;
-  const orig = { fetch: g.fetch, document: g.document, create: URL.createObjectURL, revoke: URL.revokeObjectURL };
+  const orig = { fetch: g.fetch, document: g.document, create: URL.createObjectURL, revoke: URL.revokeObjectURL, timeout: g.setTimeout };
+  // Skip the 60 s delayed revoke so the process does not idle for a minute.
+  g.setTimeout = (fn: () => void, ms: number) => (ms >= 60_000 ? 0 : orig.timeout(fn, ms));
   const PNG = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const hits: string[] = [];
   g.fetch = async (url: string) => {
+    hits.push(url);
+    if (url.includes('cmwrit1ng000004labcdefghij?_rsc=1')) return new Response('"examUrl":"/api/exams/pdf?productId=cmwrit1ng000004labcdefghij"', { status: 200 });
     if (url.includes('question-image')) return new Response(PNG, { status: 200 });
     if (url.includes('/api/exams/pdf')) return new Response('%PDF-1.4 test', { status: 200 });
     if (url.includes('missing.zip')) return new Response('', { status: 404 });
@@ -384,9 +390,11 @@ async function runBulkZipTest(feDataset: any) {
     if (!/PRF192_FA25_PE_B3W_983472 \| PE \| PDF: Available, ZIP: Missing/.test(manifest)) fail('manifest does not flag missing PE answer key');
     if (!/ZIP -> https:\/\/fustation\.s3\.amazonaws\.com\/missing\.zip \(HTTP 404\)/.test(manifest)) fail('manifest does not record the HTTP status of the missing ZIP');
     if (/X-Amz-/.test(manifest)) fail('manifest leaks a presigned query string');
+    if (!/TRS501_SU26_H2_RE_W_185912 \| PE \| PDF: Available, ZIP: Not provided \| Complete \|/.test(manifest)) fail('set without an answer key is not labelled Not provided');
+    if (hits.filter((u) => u.includes('missing.zip')).length !== 1) fail('a 404 asset was retried');
     console.log('Bulk ZIP holds FE markdown (deduplicated, images embedded) and PE assets with an accurate manifest.');
   } finally {
-    g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke;
+    g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke; g.setTimeout = orig.timeout;
   }
 }
 

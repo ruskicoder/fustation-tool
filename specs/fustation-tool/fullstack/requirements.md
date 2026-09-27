@@ -96,6 +96,8 @@ Last reconciled with code: 2026-09-28 (branch `features/Design_SSOT_Scaffold`).
 2. WHERE preview is enabled THEN the system SHALL fetch the first N exams for review before the full run.
 3. WHILE a batch runs THEN the user SHALL be able to pause, resume, and stop, and state SHALL survive extension reloads.
 4. WHEN bulk export runs over FE and PE items THEN the system SHALL produce 10-item ZIP volumes named `fustation_export_ddmmyyyy_partX.zip`, foldered by subject, each with a `manifest.md` asset audit that marks every unavailable or unresolvable asset `Missing`.
+6. IF a fresh exam payload publishes the PE paper (`/api/exams/pdf` or `examUrl`) but contains no answer-key link, and no stored `zipUrl` exists, THEN the system SHALL mark the ZIP `Not provided` rather than `Missing`, and SHALL NOT list it as a missing detail (ISSUE-104).
+7. WHEN an asset request returns a definitive client error (HTTP 4xx other than 403, 408, 429) THEN the system SHALL stop retrying that URL and SHALL record the status.
 5. WHILE bulk export runs THEN a slide-up progress footer SHALL show counters, batch index, status, and an expandable log.
 
 ### Requirement 8: Overlay UI & Accessibility

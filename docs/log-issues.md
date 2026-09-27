@@ -121,7 +121,7 @@ Logged 2026-09-28 during the language-exam investigation (TRS501, TRS601, ENW493
   - `PRF192_FA25_PE_B3W_983472` and `CSD203_PE_SU26_226851`: the site has no answer-key link at all (ISSUE-104 case); extraction does not invent one.
   - `CSD203_SP26_PE_260561` (`cmn1resr6000004lbu97g8jpf`): has a real `…/Given.zip`. `extractPeZipUrl` on the RSC payload yields the same path and parameters as the site's own download button, so URL resolution is correct. If this set is the logged CSD203 failure, the fetch step failed: either an extension build older than ISSUE-107 was loaded, or the service-worker fetch failed.
   The bulk log could not tell these apart, so every PE asset failure now records the last HTTP status (`0` = no response: network, CORS or extension messaging) in the log line and in `manifest.md`, the exam title is logged next to the subject code, and presigned query strings are stripped from the manifest and console. Next step: reload the extension, rerun, and read the status per item (403 or 404 = platform, 0 = extension path).
-- [ ] **ISSUE-104**: Writing sets (`_W`, `_RW`, e.g. `TRS501_SU26_H2_RE_W_185912`) are PDF-only PE exams exposed as `initialData.examUrl` with no answer key. Bulk export with `PE_BOTH` lists their ZIP as `Missing` in `manifest.md`, which reads as a failure. The payload has no field that distinguishes "no answer key exists" from "answer key URL not found", so the row is kept. Candidate: label it "not provided" when `examUrl` is present and no zip hint exists anywhere in the payload. Target: `src/utils/exporter.ts`.
+- [x] **ISSUE-104**: Sets with no published answer key (Writing `_W` / `_RW`, and PE sets such as `PRF192_FA25_PE_B3W_983472` and `CSD203_PE_SU26_226851`, confirmed live) were listed as `ZIP: Missing` in `manifest.md`. Fixed: `resolvePeZipUrl` returns `notProvided` when the fresh page payload publishes the paper (`/api/exams/pdf` or `examUrl`) but has no answer-key link and no stored `zipUrl` exists; the audit then reads `ZIP: Not provided` and the row stays `Complete`. An empty or logged-out payload still yields `Missing`. Also: definitive 4xx responses (except 403, 408, 429) are no longer retried, which removes the triple 404 requests seen in the live console, and TEST 7b no longer waits 60 s on the delayed revoke timer. TEST 7b covers both and fails on the previous code. Files: `src/utils/exporter.ts`, `src/types/index.ts`, `tests/test-flow.ts`.
 - [ ] **ISSUE-105**: Source data artifact: `TRS501_SU26_H2_RE_R_748358` Q10 has a fifth option `E` whose text is a bare code fence. Exported faithfully; not a parser defect. Target: none (platform data).
 
 ---
@@ -130,7 +130,6 @@ Logged 2026-09-28 during the language-exam investigation (TRS501, TRS601, ENW493
 
 | Issue ID | Category | Description | Severity | Target File |
 | :--- | :--- | :--- | :--- | :--- |
-| ISSUE-104 | Export | Writing sets show a `Missing` answer-key row that does not exist | Low | `src/utils/exporter.ts` |
 | ISSUE-105 | Data | Junk option `E` in one TRS501 Reading question (platform data) | Info | n/a |
 
 ---

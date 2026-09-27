@@ -86,50 +86,41 @@ export async function fetchArrayBuffer(rawUrl: string): Promise<ArrayBuffer | nu
   }
 }
 
+export interface PeZipResolution {
+  url: string | null;
+  /** The live page publishes the paper but no answer-key link: there is nothing to download (ISSUE-104). */
+  notProvided: boolean;
+}
+
 /** Presigned ZIP URLs expire in minutes, so a fresh one always wins over the stored `zipUrl` (ISSUE-107). */
-export async function resolvePeZipUrl(ds: ExamDataset): Promise<string | null> {
-  const fresh = ds.id ? await fetchFreshPeZipUrl(ds.id) : null;
-  return fresh || ds.zipUrl || null;
+export async function resolvePeZipUrl(ds: ExamDataset): Promise<PeZipResolution> {
+  const payload = ds.id ? await fetchPePagePayload(ds.id) : null;
+  const url = (payload && extractPeZipUrl(payload, false)) || ds.zipUrl || null;
+  const publishesPaper = !!payload && /api\/exams\/pdf|examUrl/.test(payload);
+  return { url, notProvided: !url && publishesPaper };
 }
 
 /**
  * Queries the live Next.js marketplace page for a given cuid to obtain a fresh presigned S3 ZIP URL.
  */
 export async function fetchFreshPeZipUrl(cuid: string): Promise<string | null> {
+  const payload = await fetchPePagePayload(cuid);
+  return payload ? extractPeZipUrl(payload, false) : null;
+}
+
+/** RSC flight stream for the exam page (both routes), falling back to the HTML page. */
+async function fetchPePagePayload(cuid: string): Promise<string | null> {
   if (!cuid) return null;
+  const routes = [`/marketplace/exam/${cuid}?_rsc=1`, `/marketplace/${cuid}?_rsc=1`, `/marketplace/exam/${cuid}`, `/marketplace/${cuid}`];
   try {
-    // 1. Try /marketplace/exam/${cuid}?_rsc=1
-    let res = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}?_rsc=1`, {
-      credentials: 'include'
-    });
-    // 2. Fallback to /marketplace/${cuid}?_rsc=1
-    if (!res.ok) {
-      res = await fetch(`https://www.fustation.net/marketplace/${cuid}?_rsc=1`, {
-        credentials: 'include'
-      });
+    for (const route of routes) {
+      const res = await fetch(`https://www.fustation.net${route}`, { credentials: 'include' });
+      if (res.ok) return await res.text();
     }
-    // 3. Fallback to standard HTML page
-    if (!res.ok) {
-      const fallbackRes = await fetch(`https://www.fustation.net/marketplace/exam/${cuid}`, {
-        credentials: 'include'
-      });
-      if (fallbackRes.ok) {
-        const html = await fallbackRes.text();
-        return extractPeZipUrl(html, false);
-      }
-      const directFallback = await fetch(`https://www.fustation.net/marketplace/${cuid}`, {
-        credentials: 'include'
-      });
-      if (!directFallback.ok) return null;
-      const html = await directFallback.text();
-      return extractPeZipUrl(html, false);
-    }
-    const text = await res.text();
-    return extractPeZipUrl(text, false);
   } catch (e) {
-    console.warn(`[fustation-tool] Failed to fetch fresh PE ZIP URL for ${cuid}:`, e);
-    return null;
+    console.warn(`[fustation-tool] Failed to fetch exam page payload for ${cuid}:`, e);
   }
+  return null;
 }
 
 /**
@@ -153,6 +144,9 @@ export async function fetchArrayBufferWithFastRetry(
       if (res.ok && res.buffer) {
         return { buffer: res.buffer, status: 'available', attempts: attempt, url: fullUrl, httpStatus };
       }
+
+      // A definitive client error will not change on retry (403 is handled below as an expired URL).
+      if (res.status >= 400 && res.status < 500 && ![403, 408, 429].includes(res.status)) break;
 
       // If HTTP 403 (expired S3 presigned URL) and cuid is known, attempt dynamic live refresh
       if (res.status === 403 && cuid && attempt < maxRetries) {
@@ -338,7 +332,7 @@ export async function downloadPdfAsset(dataset: ExamDataset): Promise<boolean> {
 
 export async function downloadZipAsset(dataset: ExamDataset): Promise<boolean> {
   if (!dataset) return false;
-  const zipUrl = await resolvePeZipUrl(dataset);
+  const { url: zipUrl } = await resolvePeZipUrl(dataset);
   if (!zipUrl) return false;
   const cleanTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${cleanTitle}_AnswerKey.zip`;
@@ -366,7 +360,7 @@ export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 
       }
     }
 
-    const zipUrl = await resolvePeZipUrl(dataset);
+    const { url: zipUrl } = await resolvePeZipUrl(dataset);
     if (zipUrl) {
       const zipRes = await fetchArrayBufferWithFastRetry(zipUrl, 3, 80, undefined, dataset.id);
       if (zipRes.buffer) {
@@ -599,7 +593,7 @@ export async function exportBulkAsZip(
         }
 
         if ((peFormat === 'PE_ZIP' || peFormat === 'PE_BOTH')) {
-          const zipUrl = await resolvePeZipUrl(ds);
+          const { url: zipUrl, notProvided } = await resolvePeZipUrl(ds);
 
           if (zipUrl) {
             const fetchRes = await fetchArrayBufferWithFastRetry(
@@ -621,6 +615,9 @@ export async function exportBulkAsZip(
               addLog(`[${subjCode}] ${title}: PE ZIP unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
               itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
             }
+          } else if (notProvided) {
+            addLog(`[${subjCode}] ${title}: no answer key is published for this set`);
+            itemAudit.assets.push({ type: 'ZIP', status: 'Not provided' });
           } else {
             addLog(`[${subjCode}] ${title}: PE answer-key ZIP URL could not be resolved, marked missing in audit manifest`);
             itemAudit.assets.push({ type: 'ZIP', status: 'Missing' });
