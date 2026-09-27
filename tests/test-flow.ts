@@ -382,6 +382,8 @@ async function runBulkZipTest(feDataset: any) {
     if ((maeMd.match(/\(data:image\/png;base64,/g) || []).length !== mae.questions.filter((q) => q.imageUrl).length) fail('FE images not embedded as base64');
     const manifest = await zip.file('manifest.md')!.async('string');
     if (!/PRF192_FA25_PE_B3W_983472 \| PE \| PDF: Available, ZIP: Missing/.test(manifest)) fail('manifest does not flag missing PE answer key');
+    if (!/ZIP -> https:\/\/fustation\.s3\.amazonaws\.com\/missing\.zip \(HTTP 404\)/.test(manifest)) fail('manifest does not record the HTTP status of the missing ZIP');
+    if (/X-Amz-/.test(manifest)) fail('manifest leaks a presigned query string');
     console.log('Bulk ZIP holds FE markdown (deduplicated, images embedded) and PE assets with an accurate manifest.');
   } finally {
     g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke;

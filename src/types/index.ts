@@ -172,6 +172,8 @@ export interface AssetFetchResult {
   attempts: number;
   url: string;
   targetFilename?: string;
+  /** Last HTTP status seen; 0 means the request never got a response (network, CORS, extension messaging). */
+  httpStatus?: number;
 }
 
 export interface ManifestItemAudit {
@@ -184,6 +186,7 @@ export interface ManifestItemAudit {
     status: 'Available' | 'Missing';
     url?: string;
     targetFilename?: string;
+    httpStatus?: number;
   }>;
 }
 

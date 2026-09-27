@@ -170,3 +170,5 @@
     - _Requirements: 3.8, 3.9_
   - [x] 19.4 TEST 12: stale stored `zipUrl`, fresh URL fetched first, failure returns `false` without a download
     - _Requirements: 9.1_
+  - [x] 19.5 Record the last HTTP status and the exam title for every missing PE asset in the bulk log and `manifest.md`; strip presigned query strings (ISSUE-108)
+    - _Requirements: 3.8, 7.4_

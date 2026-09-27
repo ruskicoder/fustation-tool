@@ -143,13 +143,15 @@ export async function fetchArrayBufferWithFastRetry(
   cuid?: string
 ): Promise<AssetFetchResult> {
   let fullUrl = toAbsoluteAssetUrl(rawUrl);
+  let httpStatus = 0;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     onRetry?.(attempt === 1 ? 'fetching' : 'retrying', attempt);
     try {
       const res = await fetchAsset(fullUrl);
+      httpStatus = res.status;
       if (res.ok && res.buffer) {
-        return { buffer: res.buffer, status: 'available', attempts: attempt, url: fullUrl };
+        return { buffer: res.buffer, status: 'available', attempts: attempt, url: fullUrl, httpStatus };
       }
 
       // If HTTP 403 (expired S3 presigned URL) and cuid is known, attempt dynamic live refresh
@@ -160,7 +162,8 @@ export async function fetchArrayBufferWithFastRetry(
         }
       }
     } catch (e) {
-      // Network failure, continue retry
+      httpStatus = 0;
+      console.warn(`[fustation-tool] Asset request failed for ${stripQuery(fullUrl)}:`, e);
     }
 
     if (attempt < maxRetries) {
@@ -168,7 +171,16 @@ export async function fetchArrayBufferWithFastRetry(
     }
   }
 
-  return { buffer: null, status: 'missing', attempts: maxRetries, url: fullUrl };
+  return { buffer: null, status: 'missing', attempts: maxRetries, url: fullUrl, httpStatus };
+}
+
+/** Presigned query strings are short-lived credentials; keep them out of logs and manifests. */
+function stripQuery(url: string): string {
+  return url.split('?')[0];
+}
+
+function describeFailure(res: AssetFetchResult): string {
+  return res.httpStatus ? `HTTP ${res.httpStatus}` : 'no response (network or extension error)';
 }
 
 export function generatePrintHtml(dataset: ExamDataset): string {
@@ -266,7 +278,7 @@ export async function downloadAssetUrl(rawUrl: string, filename: string, cuid?: 
   if (typeof document === 'undefined' || !rawUrl) return false;
   const res = await fetchArrayBufferWithFastRetry(rawUrl, 3, 80, undefined, cuid);
   if (!res.buffer) {
-    console.warn(`[fustation-tool] Asset unavailable: ${res.url}`);
+    console.warn(`[fustation-tool] Asset unavailable (${describeFailure(res)}): ${stripQuery(res.url)}`);
     return false;
   }
   downloadBlobFromObjectUrl(URL.createObjectURL(new Blob([res.buffer])), filename);
@@ -412,7 +424,7 @@ function generateManifestMd(batchIdx: number, totalBatches: number, items: Manif
 
   items.forEach((it) => {
     const assetSummary = it.assets.map((a) => `${a.type}${a.index ? ' Q' + a.index : ''}: ${a.status}`).join(', ') || 'OK';
-    const missingDetails = it.assets.filter((a) => a.status === 'Missing').map((a) => `${a.type} -> ${a.targetFilename || a.url || 'N/A'}`).join('; ');
+    const missingDetails = it.assets.filter((a) => a.status === 'Missing').map((a) => `${a.type} -> ${a.targetFilename || (a.url ? stripQuery(a.url) : 'N/A')}${a.httpStatus !== undefined ? ` (${a.httpStatus ? 'HTTP ' + a.httpStatus : 'no response'})` : ''}`).join('; ');
     lines.push(`| ${it.subjectCode} | ${it.title} | ${it.category} | ${assetSummary} | ${missingDetails || 'Complete'} |`);
   });
 
@@ -578,11 +590,11 @@ export async function exportBulkAsZip(
             folder?.file(uniqueName(subjCode, `${title}_Paper`, '.pdf'), fetchRes.buffer);
             itemAudit.assets.push({ type: 'PDF', status: 'Available' });
           } else {
-            addLog(`[${subjCode}] PE PDF asset unavailable — marked missing in audit manifest`);
-            itemAudit.assets.push({ type: 'PDF', status: 'Missing', url: fetchRes.url });
+            addLog(`[${subjCode}] ${title}: PE PDF unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
+            itemAudit.assets.push({ type: 'PDF', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
           }
         } else if (peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') {
-          addLog(`[${subjCode}] PE PDF URL could not be resolved, marked missing in audit manifest`);
+          addLog(`[${subjCode}] ${title}: PE PDF URL could not be resolved, marked missing in audit manifest`);
           itemAudit.assets.push({ type: 'PDF', status: 'Missing' });
         }
 
@@ -606,11 +618,11 @@ export async function exportBulkAsZip(
               folder?.file(uniqueName(subjCode, `${title}_AnswerKey`, '.zip'), fetchRes.buffer);
               itemAudit.assets.push({ type: 'ZIP', status: 'Available' });
             } else {
-              addLog(`[${subjCode}] PE ZIP asset unavailable — marked missing in audit manifest`);
-              itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url });
+              addLog(`[${subjCode}] ${title}: PE ZIP unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
+              itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
             }
           } else {
-            addLog(`[${subjCode}] PE answer-key ZIP URL could not be resolved, marked missing in audit manifest`);
+            addLog(`[${subjCode}] ${title}: PE answer-key ZIP URL could not be resolved, marked missing in audit manifest`);
             itemAudit.assets.push({ type: 'ZIP', status: 'Missing' });
           }
         }

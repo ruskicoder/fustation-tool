@@ -11,7 +11,8 @@
 - Fresh presigned URL before every ZIP download; S3 fetched in the service worker (`FUSTATION_FETCH_ASSET`, S3 buckets in `host_permissions`); no fake-success anchor fallback; failures toast; object URLs revoked after 60 s.
 - Verification: `npm run build` green (tsc, vite, dist check, all suites including new TEST 12, which fails on the previous exporter). `dist/` rebuilt and now includes ISSUE-106 and 107.
 - Not verified live: the service-worker S3 fetch needs a logged-in browser pass.
-- Resume point: ISSUE-104 (task 18), then the manual browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md`, starting with a PE ZIP download.
+- Live bulk run afterwards still logged PE failures; logged ISSUE-108 with read-only live findings and added HTTP status diagnostics to the bulk log and `manifest.md` (TEST 7b asserts it).
+- Resume point: reload the extension, rerun the bulk export, read the per-item HTTP status for ISSUE-108; then ISSUE-104 (task 18) and the manual browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md`, starting with a PE ZIP download.
 
 ## Session Ledger: 2026-09-28 Language Exams (Reading passages, Writing PDFs)
 
