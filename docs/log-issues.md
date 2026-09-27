@@ -87,12 +87,27 @@ This document maintains open, deferred, and roadmap issues identified during tes
 - [x] **ISSUE-81**: Stripped CSS Styles & Missing KaTeX Stylesheet in `generatePrintHtml` -> Fixed in `src/utils/exporter.ts`.
 - [x] **ISSUE-82**: Bulk Batch Export Failure & Expired S3 Presigned URLs (HTTP 403) -> Fixed in `src/utils/exporter.ts` via dynamic `/marketplace/exam/${cuid}?_rsc=1` query refresh engine and `fetchArrayBufferWithFastRetry`.
 - [x] **ISSUE-83**: UI/UX Restoration (Slide-Up ProgressFooter, Expandable Log Drawer, Compact 2-Row Format Matrix Switcher) -> Restored in `src/components/ProgressFooter.tsx`, `FormatSwitcher.tsx`, `Overlay.tsx`, `ExtractTab.tsx`, `SavedTab.tsx`, and `src/styles/overlay.css`.
+- [x] **ISSUE-84**: `/marketplace/{id}` Route & Fetch Failure -> Fixed across `src/utils/parser.ts`, `src/components/Overlay.tsx`, `src/background.ts`, `src/utils/batchFetcher.ts`, and `src/utils/exporter.ts` via unified dual-route non-capturing regex with static asset layout guards.
+- [x] **ISSUE-85**: Shipped `src/manifest.json` lacked `webNavigation`; stale root `manifest.json` held the fix -> Added `webNavigation` to `src/manifest.json`, deleted root `manifest.json`.
+- [x] **ISSUE-86**: `chrome.downloads` branch unreachable from the content script -> Removed from `downloadAssetUrl` in `src/utils/exporter.ts`; anchor fallback kept.
+- [x] **ISSUE-87**: Five duplicated, over-broad exam-id regexes -> Single CUID-shaped matcher in `src/utils/examId.ts`, used by `parser.ts`, `Overlay.tsx`, `batchFetcher.ts`.
+- [x] **ISSUE-88**: Orphan `fustation_catalog` key -> Writer removed from `src/background.ts` (worker now only forwards SPA navigation).
+- [x] **ISSUE-89**: Test suite untracked in `scratch/` -> Moved to `tests/test-flow.ts`; `package.json` and `scripts/build.js` updated.
+- [x] **ISSUE-90**: Currency dollars (`$20000 ... $1500`) paired as inline math, typesetting prose as a formula -> Pandoc-style delimiter normalization in `sanitizeMathLatex` (`src/utils/math.ts`).
+- [x] **ISSUE-91**: Malformed `$$x$` options (MAE101) rendered a stray `$` -> Repaired to inline math by the same normalizer.
+- [x] **ISSUE-92**: Markdown export dropped `<Integer>` generics, collapsed code indentation, and merged options into one paragraph -> `src/utils/compiler.ts` fences code bodies verbatim, escapes `<` outside math, hard-breaks options and multi-line text.
+- [x] **ISSUE-93**: Bulk ZIP silently overwrote same-titled exams in one subject folder -> Per-volume unique names (`_2`, `_3`) in `exportBulkAsZip`.
+- [x] **ISSUE-94**: Bulk manifest omitted PE assets whose URL could not be resolved -> Recorded as `Missing` with a log line.
+- [x] **ISSUE-95**: Exported print HTML linked KaTeX 0.16.11 CSS from a CDN while rendering with 0.18.1, duplicating every formula when opened offline; title and metadata were not HTML-escaped -> MathML-only output for exports (`renderMathInText(..., 'mathml')`), escaped header fields.
+- [x] **ISSUE-96**: Exports fabricated metadata defaults (`SP26`, `29/04/2026`, `XAVALO`) -> `N/A` in `compileMarkdown` and `generatePrintHtml`.
+- [x] **ISSUE-97**: `½`, `€`, `₫` rewritten to LaTeX in plain text, printing `\frac{1}{2}` literally -> Substitution limited to math segments.
+- [x] **ISSUE-98**: Panel question and option text collapsed code indentation -> `white-space: pre-wrap` on `.fus-q-text`, `.fus-q-opt-text`.
 
 ---
 
 ## II. Open & Verified Issues Register
 
-*No open issues remaining. All active features, batch recovery, and UI enhancements implemented and verified.*
+*No open issues. ISSUE-85 to ISSUE-98 resolved on 2026-09-28 (see Resolved Issues Log).*
 
 ---
 
@@ -100,7 +115,7 @@ This document maintains open, deferred, and roadmap issues identified during tes
 
 | Issue ID | Category | Description | Severity | Target File |
 | :--- | :--- | :--- | :--- | :--- |
-| *None* | — | All logged issues resolved and verified | 🟢 Complete | — |
+| *None* | n/a | All logged issues resolved and verified | 🟢 Complete | n/a |
 
 ---
 

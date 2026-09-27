@@ -1,0 +1,28 @@
+%% Single exam extraction: Overlay.runFetch 4-phase pipeline
+sequenceDiagram
+    actor U as User
+    participant SW as background.js
+    participant O as Overlay.tsx
+    participant P as parser.ts
+    participant S as storage.ts
+    U->>O: open /marketplace/(exam/)?{cuid}
+    SW-->>O: FUSTATION_URL_CHANGED (SPA navigation)
+    O->>O: classifyRoute = exam
+    O->>P: Phase 1 extractExamFromScripts()
+    alt dataset valid
+        P-->>O: ExamDataset
+    else not ready
+        loop Phase 2: every 300 ms, max 10
+            O->>P: extractExamFromScripts()
+        end
+        alt still invalid and no reload yet for this URL
+            O->>S: setReloadAttempted(url)
+            O->>O: Phase 3 location.reload()
+        else already reloaded
+            O-->>U: Phase 4 error status + toast
+        end
+    end
+    O->>S: saveExamToStorage (serialized queue)
+    O-->>U: metadata + Saved / Ready
+    U->>O: Download (MD / PDF / JSON / PE)
+    O->>O: exportExam or exportSinglePe

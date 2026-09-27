@@ -42,3 +42,13 @@ This project is indexed by GitNexus as **fustation-tool** (636 symbols, 1428 rel
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+# Documentation-Driven Engineering & Spec-First SSOT
+
+Convention source: `dev-flow/11-doc_driven_scaffold_and_ssot_conventions.md`. Index: `docs/README.md`.
+
+1. Spec before code: no production code, manifest change, or UI view without an approved suite in `specs/{module}/{stack}/` (`requirements.md` in EARS, `design.md`, `tasks.md`). This project's suite is `specs/fustation-tool/fullstack/`. Bug fixes from `docs/log-issues.md` may skip new spec files but must update the owning requirement and task.
+2. Clarification gate: when requirements or boundaries are ambiguous, ask 3 to 5 questions and stop until answered.
+3. Living ledger: update `docs/current-progress.md` at each milestone with completed tasks, test counts, and the resumption point.
+4. Conventions: `docs/00` to `05` are binding; diagrams are Mermaid `.mmd` in `docs/diagrams/` and `docs/flows/`.
+5. Asset hygiene: runtime code stays in tracked `src/`; `dist/` is a build projection; never commit cookies, tokens, or presigned URLs.
+6. Branches: `features/Design_{Story}` for specs, `features/Implementation_{Story}` for code (see `docs/04-gitflow-and-commit-rules.md`).

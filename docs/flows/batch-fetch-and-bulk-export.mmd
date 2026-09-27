@@ -1,0 +1,21 @@
+%% Batch discovery, fetch, and bulk ZIP export
+flowchart TD
+    A["Catalog page /home or /subject"] --> B["extractProductTasksFromHtml<br/>unique CUIDs"]
+    B --> C{"preview enabled?"}
+    C -- yes --> D["runPreviewFetch first N"] --> E{"user proceeds?"}
+    E -- no --> X["cancelPreview"]
+    E -- yes --> F
+    C -- no --> F["runFullBatchFetch"]
+    F --> G["fetchExamDatasetDirect<br/>?_rsc=1 then HTML, retry x2"]
+    G --> H["saveExamToStorage"]
+    H --> I{"paused or stopped?"}
+    I -- paused --> I
+    I -- stopped --> Y["status cancelled"]
+    I -- no --> J{"more tasks?"}
+    J -- yes --> G
+    J -- no --> K["status completed"]
+    K --> L["Saved tab: bulk export"]
+    L --> M["exportBulkAsZip<br/>10 items per volume"]
+    M --> N["per item: compile FE or fetch PE assets<br/>403 -> fetchFreshPeZipUrl, retry"]
+    N --> O["subject folders + manifest.md audit"]
+    O --> P["fustation_export_ddmmyyyy_partX.zip"]

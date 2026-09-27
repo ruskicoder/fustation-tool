@@ -1,4 +1,15 @@
-# Development, Governance & Anti-Hallucination Protocol: fustation-tool
+# 05 Operational Workflows: fustation-tool
+
+Normal development, issue triage, implementation, and autonomous-loop SOPs. Architecture and clean-code rules live in `01-architecture-conventions.md`; git and commit rules live in `04-gitflow-and-commit-rules.md`.
+
+## 0. Spec-First SSOT Lifecycle
+
+Order of operations for any new feature or behavior change:
+
+Clarification Gate (3 to 5 questions, hard stop) -> `specs/{module}/{stack}/requirements.md` (EARS) -> `design.md` -> `tasks.md` -> implementation -> `docs/current-progress.md` ledger entry.
+
+- Bug fixes logged in `docs/log-issues.md` may skip new spec files, but any change to required behavior MUST be reflected back into the owning `requirements.md` and `tasks.md`.
+- `docs/current-progress.md` is updated at every milestone: completed tasks, test counts, and the exact resumption point.
 
 ## 1. Core Operating Principles & Anti-Hallucination Engine
 
@@ -21,75 +32,7 @@
 
 ---
 
-## 2. Clean Code & Architecture Conventions
-
-### Rule 2.1: Single Responsibility & Modular Scoping
-- **Function Boundary Limit**: Functions and React components MUST remain focused, modular, and single-purpose (target < 30-40 lines per function where feasible).
-- **Decoupled Business Logic**: Separate data parsing (`parser.ts`), chrome storage transactions (`storage.ts`), document export formatting (`exporter.ts` / `compiler.ts`), and React UI state presentation (`SavedTab.tsx`, `Overlay.tsx`).
-
-### Rule 2.2: Strict Type Safety & Zero `any` Allowance
-- **100% Strict Typing**: Implicit and explicit `any` types are strictly prohibited (`no-implicit-any`).
-- **Defensive Type Guards**: Use narrow TS discriminator unions (`examCategory: 'FE' | 'PE'`) and strict interfaces. All optional properties MUST be checked for non-null/undefined before property dereferencing.
-
-### Rule 2.3: Immutable & Defensive State Mutations
-- **No In-Place Array/Object Mutation**: Avoid mutating state objects or arrays directly (`list.push()`, `delete list[key]`). Always construct new shallow copy references (`{ ...prev }`, `prev.filter(...)`) to ensure React state identity triggers proper re-renders.
-- **No DOM Property Pollution**: Never mutate private third-party DOM properties or override global browser runtime prototypes.
-
-### Rule 2.4: Fault Boundaries & Exception Discipline
-- **Explicit Error Handling**: Every async network request, Chrome storage call, and HTML/RSC parsing operation MUST be wrapped in explicit `try/catch` blocks.
-- **No Swallowed Exceptions**: Empty catch blocks (`catch (e) {}`) without logged warnings or user toast notifications are strictly forbidden unless explicitly documented as a silent optional feature check.
-- **User Notification Sync**: All runtime errors and failure states MUST surface user-visible feedback via the transient toast notification system (`push('Error message', 'error')`).
-
----
-
-## 3. Commit & Push Flow
-
-The AI assistant SHALL NOT commit or push code automatically unless explicitly requested by the user. When the user explicitly requests to commit or push code, the following strict sequence MUST be followed:
-
-```
-[ Explicit User Request ] 
-          │
-          ▼
-  1. Check Origin (`git remote -v`, `git status`)
-          │
-          ▼
-  2. Fetch Origin (`git fetch origin`)
-          │
-          ▼
-  3. Pull with Rebase (`git pull --rebase origin <branch>`)
-          │
-          ▼
-  4. Resolve Conflicts (if any)
-          │
-          ▼
-  5. Stage & Commit (`git add . && git commit -m "type: description"`)
-          │
-          ▼
-  6. Push Origin (`git push origin <branch>`)
-```
-
----
-
-## 4. Commit Message Standards
-
-Commits MUST follow Conventional Commits standard formatting:
-- `feat: ...` for new features or user capabilities.
-- `fix: ...` for bug fixes or hotfixes.
-- `docs: ...` for documentation updates.
-- `refactor: ...` for architectural or codebase refactoring.
-- `style: ...` for UI layout, styling, and asset adjustments.
-- `test: ...` for test suite or integration test additions.
-
----
-
-## 5. Unsolicited Actions Policy
-
-- **No Unsolicited Commits**: The AI assistant MUST NEVER execute `git commit` or `git push` without an explicit directive from the user.
-- **No Unsolicited Pushes**: All remote pushes require explicit user authorization.
-
----
-
-## 6. End-to-End Governance Workflow
+## 2. End-to-End Governance Workflow
 
 The AI assistant MUST follow this exact multi-stage workflow for all issue detection, plan drafting, implementation, self-critique, and documentation cleanup tasks:
 
@@ -123,7 +66,7 @@ During active implementation, the AI MUST follow this strict inner execution cyc
 
 ### Stage 5: Completion, Cleanup, & Reporting Phase
 Upon successful implementation and verification:
-1. Update task checkboxes to completed in `task.md`.
+1. Update task checkboxes to completed in `specs/{module}/{stack}/tasks.md`.
 2. Record completed implementations and new changes in `docs/current-progress.md`.
 3. **DELETE the implemented/resolved issues from `docs/log-issues.md`**.
 4. Report to the user with a comprehensive report containing:
@@ -134,17 +77,44 @@ Upon successful implementation and verification:
 
 ---
 
-## 7. Temporary Commit Squashing & Precedence Protocol
+## 3. Autonomous Implementation Loop
 
-When temporary or broken intermediate commits exist in local history (e.g., `(temp-notworking)`, `(temp-working-somewhat)`):
+### 3.1 Pre-Implementation Verification & Planning (Stage 1 & 2)
+- **Mandatory Web Search**: During Stage 1 (Issue Detection) and Stage 2 (Implementation Plan Drafting), each AI response MUST execute a web search (`search_web`) every time before any response to ensure full technical context and align with current web standards.
+- **Specification Alignment**: The AI is **mandatory** to double-check all specification documents (`requirements.md`, `design.md`, `tasks.md`, `docs/05-operational-workflows.md`) and confirm alignment with the user before proceeding with execution.
 
-1. **Local Log Inspection**: Check `git log -n <N>` before committing to identify temporary or incomplete commits.
-2. **Precedence Guarantee**: The latest working code in the current turn MUST ALWAYS override and supersede any temporary or broken implementations in earlier commits.
-3. **Soft Reset & Squash Sequence**:
-   - Stage and commit working changes on top of the working tree:
-     `git add . && git commit -m "type: description"`
-   - Reset soft to the last stable/permanent commit preceding the temporary commits:
-     `git reset --soft <stable-commit-hash>`
-   - Re-commit the combined index into a single clean commit:
-     `git commit -m "type: description (resolving ISSUE-X, ISSUE-Y)"`
-4. **Clean Tree Verification**: Confirm `git status` is clean and `git log` reflects a single squashed commit containing the latest working state.
+---
+
+### 3.2 Strict Continuous Execution Loop
+
+When prompted by the user to proceed with continuous autonomous implementation, the AI SHALL execute ALL tasks continuously under the following strict step-by-step cycle:
+
+```
+Read Task Spec ──► Read Target Files (RBW) ──► Anti-Hallucination Thinking ──► Implementation
+                                                                                      │
+Iteration Complete ◄── Mark Task Done ◄── Self-Critique & Think ◄── Build & Test Verification
+```
+
+#### Detailed Loop Step Specifications:
+
+1. **Read Task Spec**: Inspect `specs/fustation-tool/fullstack/tasks.md` to identify the current active subtask.
+2. **Read Target Files (Mandatory RBW Principle)**: Read all target files and their imported dependencies completely using `view_file` before writing or modifying code. Never modify unread files or guess symbol definitions.
+3. **Anti-Hallucination Thinking Stage**:
+   - Verify all variable names, types, CSS selectors, and API endpoints against actual source code files.
+   - Flag any unverified assumptions. If an assumption cannot be verified from codebase context, halt and inform the user.
+   - Assess blast radius, imports, exports, and regression risks.
+4. **Clean Code Implementation**:
+   - Perform minimal, precise, production-grade code modifications or file creations.
+   - Adhere strictly to Single Responsibility Principle, 100% strict TypeScript types, and defensive state update patterns.
+5. **Syntax & Compilation Check**: Run build commands (`npm run build` or `tsc`) to ensure zero syntax or compilation errors.
+6. **Runtime & Test Verification**: Run automated integration test scripts to verify runtime correctness and regression safety.
+7. **Double-Check Business Logic**: Verify implementation against user requirements and EARS acceptance criteria in specification docs.
+8. **Post-Test Self-Critique**: Evaluate 3 potential weak points/vulnerabilities/deviations. Undo any faulty implementation before re-applying a corrected fix.
+9. **Mark Task Complete**: Update task status checkbox `- [x]` in `specs/{module}/{stack}/tasks.md`.
+10. **Iterate Autonomously**: Proceed to the next task in sequence without stopping until the phase or requested scope is completed.
+
+---
+
+### 3.3 Anti-Oscillation & Loop Guard Rules
+- **Tool Failure Limit**: If a build command, linter, or test script fails > 2 times with identical error output, HALT tool calls, output the un-truncated error log, and seek user intervention.
+- **File Oscillation Guard**: If the same source file is edited > 2 times without resolving the target issue, STOP editing, revert to the last working state, summarize what was attempted, and ask for guidance.

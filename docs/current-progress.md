@@ -1,47 +1,60 @@
 # Current Progress — fustation-tool
 
-**Last Updated**: 2026-08-14
-**Status**: 🟢 **ALL ACTIVE ISSUES RESOLVED (BULK BATCH DOWNLOAD RECOVERY & UI/UX RESTORATION COMPLETE & VERIFIED)**
+**Last Updated**: 2026-09-28
+**Status**: 🟢 **SSOT scaffold installed; ISSUE-84 to ISSUE-98 resolved and verified; no open issues**
 
 ---
 
-## Key Milestone Completed: Bulk Batch Download Recovery & UI/UX Restoration
+## Session Ledger: 2026-09-28 FE Export Fidelity & Bulk ZIP Integrity
+
+- Audited every FE fixture (JPD113, PRO192, SSL101c, MAD101, MAE101: 240 questions, 8 multi-answer, 29 with images, math-heavy MAD101/MAE101) and the bulk ZIP path over FE and PE.
+- Resolved ISSUE-85 to ISSUE-98 (see `log-issues.md`): currency `$` typeset as math, malformed `$$x$`, Markdown losing generics, code indentation and option breaks, bulk ZIP overwriting same-titled exams, silent missing PE assets, offline-broken print HTML math, fabricated metadata defaults, manifest drift, dead `chrome.downloads` branch, duplicated exam-id regexes, orphan storage key, untracked tests.
+- Verification: `npm run build` green (tsc, vite, dist check, suite); `tests/test-flow.ts` adds TEST 7b (real `exportBulkAsZip`, FE + PE) and TEST 10 (all FE fixtures through MD and HTML). The new tests fail on the pre-fix code (bulk overwrite, currency math).
+- Resume point: manual in-browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md` on a logged-in session.
+
+## Session Ledger: 2026-09-28 SSOT Scaffold Install
+
+- Branch `features/Design_SSOT_Scaffold` created at `18dbfe7` (was a detached HEAD). Nothing committed yet.
+- Installed the documentation-driven scaffold: `docs/00` to `05`, `docs/diagrams/`, `docs/flows/`, `specs/fustation-tool/fullstack/` (moved from `.kiro/specs/`, refreshed to current code, plus `api-design/` and `ui-design/` guides), `scripts/README.md`. `envs/` skipped (no secrets exist).
+- Retired files: `web-architecture.md` -> `00`, `ui-conventions.md` -> `03`, `development-rules.md` split into `01`, `04`, `05`; `implementation-rules.md` merged into `05`; `extension-requirements.md` merged into `03` and `requirements.md`.
+- Verification at install time: `tsc --noEmit` clean; `npm test` 9/9 suites pass (357-task discovery).
+- Logged ISSUE-85 to ISSUE-89 in `log-issues.md`; open tasks are Phase 6 (12.1 to 14.1) in `specs/fustation-tool/fullstack/tasks.md`.
+- Resume point: commit the ISSUE-84 code and the scaffold as separate commits, then pick Phase 6 task 12.1 (ISSUE-85, highest severity).
+
+---
+
+## Key Milestone Completed: ISSUE-84 `/marketplace/{id}` Dual-Route Normalization & Full Catalog Link Discovery
 
 ### What Was Implemented & Verified
 
-1. **Dynamic S3 Presigned URL Refresh Engine (`src/utils/exporter.ts`)**:
-   - Implemented `fetchFreshPeZipUrl(cuid)` querying `/marketplace/exam/${cuid}?_rsc=1` with session credentials to retrieve fresh, active S3 presigned ZIP URLs when stored cache links expire (resolving HTTP 403 Forbidden).
-   - Added `fetchArrayBufferWithFastRetry` featuring exponential backoff, jitter, and automatic live S3 URL refreshing on HTTP 403 responses.
+1. **Dual-Route Exam ID Parsing (`src/utils/parser.ts` — ISSUE-84)**:
+   - `getExamIdFromUrl` updated with non-capturing optional `(?:exam/)?` group, capturing CUID from both `/marketplace/{id}` and `/marketplace/exam/{id}`.
+   - Added guards filtering out Next.js webpack layout assets (`!id.startsWith('layout-')`) and bare `'exam'` keywords.
 
-2. **Strict Product ID & CUID Validation (`src/utils/exporter.ts`)**:
-   - `extractNumericProductId` strictly validates numeric database IDs or extracts valid cuid prefixes (`cm...`), rejecting 6-digit title number suffixes to prevent invalid `/api/exams/pdf?productId=...` HTTP 404 queries.
+2. **Overlay Route Classification (`src/components/Overlay.tsx` — ISSUE-84)**:
+   - `classifyRoute` updated to classify both `/marketplace/{id}` and `/marketplace/exam/{id}` as `'exam'` routes.
+   - Unlocked automatic exam fetch execution (`runFetch`) on cold boots, page reloads, and SPA navigation from `/home`.
 
-3. **10-Item Partitioned Bulk Export & Markdown Audit (`src/utils/exporter.ts`)**:
-   - Partitioned bulk downloads into structured 10-item batch volumes (`fustation_export_ddmmyyyy_partX.zip`).
-   - Integrated `manifest.md` audit report generation tracking status, format, and asset integrity for all exported items.
-   - Added recovery script generation for offline retrieval of un-downloadable assets.
+3. **Background Service Worker Tab Listener (`src/background.ts` — ISSUE-84)**:
+   - Updated `chrome.tabs.onUpdated` regex to capture both `/marketplace/{id}` and `/marketplace/exam/{id}` tab loads.
 
-4. **S3 Question Image Proxy Routing & Canvas DOM Fallback (`src/utils/images.ts`)**:
-   - Direct S3 image URLs (`fustation.s3.ap-southeast-1.amazonaws.com`) are automatically rewritten to the server proxy `${FUSTATION_ORIGIN}/api/exams/question-image?key=${cleanKey}` with session credentials (`include`).
-   - Added `extractBase64FromDomImage` as an immediate canvas DOM fallback when network requests fail.
+4. **Multi-Route Batch Task Discovery (`src/utils/batchFetcher.ts` — ISSUE-84)**:
+   - Enhanced `extractProductTasksFromHtml` regex to match `/marketplace/(?:exam/)?([a-zA-Z0-9_-]+)`.
+   - Scaled catalog task extraction on `hompage-fullfetch.html` from **30** to all **357 unique exam items**.
 
-5. **KaTeX Currency & Missing Metric Error Suppression (`src/utils/math.ts`)**:
-   - Added `renderKatexSafe` filter suppressing console warnings for missing character metrics (`€`, `½`, `¼`, `¾`).
+5. **Dynamic Presigned S3 ZIP Fallback Query (`src/utils/exporter.ts` — ISSUE-84)**:
+   - Added `/marketplace/${cuid}?_rsc=1` and standard HTML fallback fetching in `fetchFreshPeZipUrl`.
 
-6. **Slide-Up ProgressFooter & Expandable Log Drawer UI (`src/components/ProgressFooter.tsx` & `src/styles/overlay.css`)**:
-   - Implemented slide-up footer with `[completed / total]` counter, `Batch X/Y` indicator, status pill, chevron log drawer expander, pause/resume, and cancel controls.
-   - Built expandable log drawer displaying real-time execution logs above the footer.
+---
 
-7. **Compact 2-Row Format Switcher Matrix (`src/components/FormatSwitcher.tsx` & `src/styles/overlay.css`)**:
-   - Restored compact 2-row radio grid matrix for FE (MD/PDF/JSON) and PE (PDF/ZIP/ALL) with disabled state support during active exports.
-
-8. **Export State Machine Synchronization (`src/components/Overlay.tsx`, `ExtractTab.tsx`, `SavedTab.tsx`)**:
-   - Bound control refs (`isExportingRef`, `isPausedRef`, `isCanceledRef`) and progress callbacks into `exportBulkAsZip` and single download handlers.
-   - Disabled export action buttons during active exports to prevent race conditions.
+## Previous Milestone: Bulk Batch Download Recovery & UI/UX Restoration (Issues 82 & 83)
+- Dynamic S3 Presigned URL Refresh Engine querying `/marketplace/exam/${cuid}?_rsc=1`.
+- Slide-up `ProgressFooter` & expandable log drawer.
+- Compact 2-row radio grid matrix in `FormatSwitcher`.
 
 ---
 
 ## Verification & Build Results
 - Clean TypeScript typecheck (`tsc --noEmit`).
 - Production Vite extension bundle built into `/dist`.
-- All 9 integration test suites passed 100% cleanly (including homepage 330-task discovery test).
+- All 9 integration test suites passed 100% cleanly (including 357-task discovery test).

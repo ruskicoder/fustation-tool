@@ -1,10 +1,22 @@
-# Investigative Web Architecture: fustation.net & Extension Stack
+# 00 System Context: fustation.net & fustation-tool
+
+## 0. Purpose & Scope
+
+`fustation-tool` is a Manifest V3 Chromium extension for `fustation.net`. The platform exposes exam question banks one question at a time and offers learners no bulk export. The extension extracts every question of an exam set (FE) or the paper and answer-key assets of a practical exam (PE), caches them locally, and exports them for offline study as Markdown, PDF, JSON, or ZIP.
+
+- Target site: `https://www.fustation.net`
+- Example exam view: `https://www.fustation.net/marketplace/exam/cmol4jwyh000004i3rxquc7sa` (the platform also serves `/marketplace/{id}`)
+- Out of scope: any backend of our own, accounts, payment, or bypassing `hasAccess`. The extension only reads data the logged-in session already receives.
+
+Glossary: **FE** final exam (multiple choice, question list), **PE** practical exam (PDF paper plus answer-key ZIP), **RE** retake, **CUID** the 25-character platform product id (`c` + 24 lowercase alphanumerics), **RSC** Next.js React Server Component stream (`self.__next_f.push`).
+
+Related: architecture layers in `01-architecture-conventions.md`, data pipeline and platform endpoints in `02-backend-conventions.md`, diagrams in `diagrams/` and `flows/`.
 
 ## 1. Extension Tech Stack
 - **Framework & Language**: React 18 + TypeScript (React TS).
 - **Extension Standard**: Chromium Extension Manifest V3 (MV3).
 - **Bundler & Build Tooling**: Vite with TypeScript compiler (`tsc`) outputting to `/dist`.
-- **Styling**: Tailwind CSS / Vanilla CSS with Glassmorphism design tokens (`backdrop-filter: blur(28px)`).
+- **Styling**: Vanilla CSS (`src/styles/overlay.css`) with Glassmorphism design tokens (`backdrop-filter: blur(28px)`).
 - **Accessibility**: Radix-style ToggleGroup (`role="radiogroup"` / `role="radio"`) with keyboard arrow-key navigation and `:focus-visible` offset rings.
 
 ---

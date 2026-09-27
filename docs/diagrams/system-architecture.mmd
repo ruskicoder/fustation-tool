@@ -1,0 +1,35 @@
+%% fustation-tool runtime architecture (source: src/, vite.config.ts, src/manifest.json)
+flowchart TB
+    subgraph Tab["fustation.net tab"]
+        RSC["self.__next_f RSC chunks"]
+        DOM["page DOM"]
+        Root["#fustation-tool-root"]
+    end
+    subgraph SW["Service worker: dist/background.js"]
+        Nav["webNavigation.onHistoryStateUpdated<br/>sends FUSTATION_URL_CHANGED"]
+    end
+    subgraph CS["Content script: dist/content.js"]
+        Mount["content.tsx mount + keep-alive observer"]
+        UI["Overlay, ExtractTab, SavedTab, ViewerPanel,<br/>FormatSwitcher, ProgressFooter"]
+        Parser["parser.ts"]
+        Batch["batchFetcher.ts"]
+        Enrich["images.ts, math.ts"]
+        Export["compiler.ts, exporter.ts (JSZip)"]
+        Store["storage.ts"]
+    end
+    Local[("chrome.storage.local")]
+    Site[("fustation.net<br/>RSC routes, /api/exams/pdf,<br/>/api/exams/question-image, S3")]
+    Nav --> UI
+    Mount --> Root --> UI
+    UI --> Parser
+    UI --> Batch
+    UI --> Export
+    UI --> Store
+    RSC --> Parser
+    DOM --> Enrich
+    Batch --> Site
+    Batch --> Parser
+    Enrich --> Site
+    Export --> Enrich
+    Export --> Site
+    Store <--> Local

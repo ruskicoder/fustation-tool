@@ -1,0 +1,48 @@
+%% Extension-side data model (source: src/types/index.ts)
+erDiagram
+    SAVED_EXAMS_MAP ||--o{ SAVED_EXAM_ITEM : "keyed by exam id"
+    SAVED_EXAM_ITEM ||--|| EXAM_DATASET : dataset
+    EXAM_DATASET ||--o{ QUESTION : questions
+    QUESTION ||--o{ OPTION : options
+    BATCH_STATE ||--o{ EXAM_DATASET : previewDatasets
+    BATCH_ITEM_TASK }o--|| EXAM_DATASET : "fetched into"
+    EXAM_DATASET {
+        string id
+        string title
+        string subjectCode
+        string subjectName
+        string author
+        string examCategory "FE or PE"
+        string pdfUrl
+        string zipUrl
+        string examSessionDate
+        int totalQuestions
+        bool isPartial
+    }
+    QUESTION {
+        int index
+        string id
+        string text
+        string imageUrl
+        string imageBase64
+        string correctAnswers
+    }
+    OPTION {
+        string id "A-E"
+        string text
+    }
+    SAVED_EXAM_ITEM {
+        string id
+        string extractedAt
+    }
+    BATCH_ITEM_TASK {
+        string id "CUID"
+        string examUrl
+        string rscUrl
+    }
+    BATCH_STATE {
+        string status
+        int previewCount
+        int totalDiscovered
+        int completedCount
+    }

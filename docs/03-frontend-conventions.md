@@ -1,6 +1,10 @@
 
-------------------------------
+# 03 Frontend Conventions: fustation-tool Overlay UI
+
 ## Standardized UI Conventions & Design System Specification
+
+> Scope note: sections 2 to 8 were imported from the FAMS / FTMADS design system and apply only where they fit an injected extension overlay (tokens, typography, dialogs, toasts). Sections 9 and 10 are the binding fustation-tool rules; where they conflict with 2 to 8, sections 9 and 10 win.
+
 This specification defines the mandatory frontend architecture, component behaviors, and styling conventions for the FAMS / FTMADS (Curriculum Service) web application. All implementations must comply strictly with these constraints to ensure visual consistency, performance, and cross-device safety.
 
 ## 2. Layout Architecture & Viewport Constraints
@@ -138,3 +142,33 @@ Each saved record row in `SavedTab` renders action buttons in strict left-to-rig
 ### 9.3 Header Control Minimal Pattern
 The top-right header container of the extension overlay renders a single `–` (Minimize) control button. Redundant `×` (Close) buttons are prohibited.
 
+
+---
+
+## 10. Overlay Business Rules (merged from former extension-requirements.md, reconciled with code on 2026-09-28)
+
+### 10.1 Stack & Mounting
+- React 18 + TypeScript, mounted by `src/content.tsx` into `#fustation-tool-root`; vanilla CSS in `src/styles/overlay.css` plus `katex.min.css`.
+- Header text `fustation-tool v1.0.0`; clicking the logo cycles themes `glass-dark` -> `glass-light` -> `neu-light` -> `neu-dark` (`THEME_ORDER`).
+
+### 10.2 Panel Geometry
+- Main panel default 600 x 330, minimum 380 x 240 (`PANEL_DEFAULT_*`, `PANEL_MIN_*` in `src/types/index.ts`). Resizable and draggable via `usePanelGeometry`; persisted in `fustation_panel_geometry`.
+- Viewer panel default 680 x 520, minimum 420 x 300; collision with the main panel resolved by `panelCollision.ts`.
+- The former fixed 2:1 580 x 290 rule is superseded.
+
+### 10.3 Header & Status
+- Tabs: `Extract` and `Saved (X)`.
+- Status pill has a fixed width so state changes (`Ready`, `Fetching (X/Y)...`, `Processing...`, `Downloading...`, `Saved / Ready`, `Error`) cause zero layout shift.
+
+### 10.4 Extract Tab
+- Left column metadata: subject badge, subject name, campus badge, exam code `[SubjectCode]_[Term]_[Type]_[ExamCode]`, session `HH:MM | DD/MM/YYYY`, exam type badge, total questions.
+- Right column: format switcher, then `[ Fetch ]` and `[ Save ]`, then full-width `[ Download ]`. Save and Download are separate actions (ISSUE-09).
+
+### 10.5 Format Switcher
+- `role="radiogroup"` with `role="radio"` items, `aria-checked`, arrow-key navigation, `:focus-visible` rings.
+- Compact 2-row matrix: FE row `MD | PDF | JSON` (default `MD`), PE row `PDF | ZIP | ALL`. Disabled while an export runs.
+
+### 10.6 Saved Tab
+- Sticky toolbar: `Saved (X)`, format switcher, red `Clear all` (`fus-btn-danger`).
+- Subject folder outline; per-row `[i]` inspector, `[Delete]`, `[Download]`; partial-fetch and PE badges shown once per row.
+- Bulk export shows the slide-up `ProgressFooter` with batch counter, pause, cancel, and expandable log drawer.
