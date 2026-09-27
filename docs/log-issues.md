@@ -115,6 +115,18 @@ This document maintains open, deferred, and roadmap issues identified during tes
 
 Logged 2026-09-28 during the language-exam investigation (TRS501, TRS601, ENW493c, ENM302 on the live site).
 
+- [ ] **ISSUE-107** (High, logged 2026-09-28, NOT YET FIXED; next session starts here): PE answer-key ZIP downloads return 0 B or fail, even right after saving. Root causes from code review:
+  1. The stored presigned S3 `zipUrl` expires in about 10 minutes, but `downloadZipAsset` (`src/utils/exporter.ts` ~327) uses it as-is; it calls `fetchFreshPeZipUrl` only when `zipUrl` is empty and never retries on 403. `exportSinglePe` `PE_BOTH` also tries the stale URL first.
+  2. S3 blocks the content-script fetch with CORS: it runs from the fustation.net page origin with `credentials: 'include'`, and the manifest has no host permission for the S3 host.
+  3. On failure, `downloadAssetUrl` (~260) falls back to a cross-origin `<a download>` to the S3 URL. Chrome ignores `download` cross-origin, so the user gets an error page or an empty file, and the function still returns `true`.
+  4. `downloadBlob` and `downloadBlobFromObjectUrl` call `URL.revokeObjectURL` right after `a.click()`, which can cancel the download or give 0-byte files.
+  Required behavior:
+  - Treat the stored `zipUrl` only as a reference. For every ZIP download (single `PE_ZIP`, `PE_BOTH`, bulk), first get a fresh link with `fetchFreshPeZipUrl(dataset.id)`, then fetch it. Use the stored URL only if the refresh fails. Keep the 403 refresh-and-retry.
+  - CORS: fetch S3 assets in the service worker. Add `https://fustation.s3.ap-southeast-1.amazonaws.com/*` to `host_permissions` in `src/manifest.json`, and check whether a wildcard `*.amazonaws.com` host is actually used. Add a `chrome.runtime` message handler in `src/background.ts` that fetches the asset without credentials (the presigned URL is its own auth) and returns the bytes. Alternative: save with `chrome.downloads.download` plus a filename, and re-add the `downloads` permission if that route is used. The content script requests S3 URLs through this message; fustation.net API URLs keep the same-origin fetch with credentials.
+  - Remove the cross-origin `<a download>` fallback. Report failure honestly: return `false`, show a toast, and mark the asset `Missing` in `manifest.md`.
+  - Delay `revokeObjectURL` (for example `setTimeout` 60 s) in `downloadBlob` and `downloadBlobFromObjectUrl`.
+  - Never store ZIP bytes in `chrome.storage.local`.
+  Deliverables: update this log, `specs/fustation-tool/fullstack/requirements.md` (Req 3), `tasks.md`, `docs/02-backend-conventions.md`; add a test that stubs a stale stored `zipUrl` and asserts a fresh URL is fetched before download, and that failure returns `false`; run `npm run build` (the local `dist/` is stale and does not include ISSUE-106); commit and push to `dev`. Targets: `src/utils/exporter.ts`, `src/background.ts`, `src/manifest.json`, `tests/test-flow.ts`.
 - [ ] **ISSUE-104**: Writing sets (`_W`, `_RW`, e.g. `TRS501_SU26_H2_RE_W_185912`) are PDF-only PE exams exposed as `initialData.examUrl` with no answer key. Bulk export with `PE_BOTH` lists their ZIP as `Missing` in `manifest.md`, which reads as a failure. The payload has no field that distinguishes "no answer key exists" from "answer key URL not found", so the row is kept. Candidate: label it "not provided" when `examUrl` is present and no zip hint exists anywhere in the payload. Target: `src/utils/exporter.ts`.
 - [ ] **ISSUE-105**: Source data artifact: `TRS501_SU26_H2_RE_R_748358` Q10 has a fifth option `E` whose text is a bare code fence. Exported faithfully; not a parser defect. Target: none (platform data).
 
@@ -124,6 +136,7 @@ Logged 2026-09-28 during the language-exam investigation (TRS501, TRS601, ENW493
 
 | Issue ID | Category | Description | Severity | Target File |
 | :--- | :--- | :--- | :--- | :--- |
+| ISSUE-107 | Export / CORS | PE answer-key ZIP downloads 0 B or fail (stale presigned URL, S3 CORS, fake-success fallback, early revoke) | High | `src/utils/exporter.ts`, `src/background.ts`, `src/manifest.json` |
 | ISSUE-104 | Export | Writing sets show a `Missing` answer-key row that does not exist | Low | `src/utils/exporter.ts` |
 | ISSUE-105 | Data | Junk option `E` in one TRS501 Reading question (platform data) | Info | n/a |
 

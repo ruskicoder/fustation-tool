@@ -11,7 +11,7 @@
 - Investigated the saved SPA capture and the live site (logged-in Chrome, read-only): TRS501 Reading, Writing, Reading+Writing, VG; TRS601 Reading; ENW493c Writing. No textarea questions exist; Reading uses shared passages, Writing is a PDF-only PE set.
 - Fixed ISSUE-99 to 103 and 106 (see `log-issues.md`). Added fixtures under `docs/webfetches/examview/language/` and TEST 11; the new test fails on the previous code.
 - Verification: `npm run build` green (tsc, vite, dist check, all suites).
-- Resume point: ISSUE-104 (Writing-set answer-key label), then a manual pass with a Reading and a Writing exam in the browser.
+- Session ended after logging ISSUE-107 (PE ZIP downloads 0 B / fail). Resume point: implement ISSUE-107 spec-first (Req 3, tasks, `02-backend-conventions`), then test, `npm run build`, commit and push to `dev`. After that: ISSUE-104, then a manual browser pass.
 
 ## Session Ledger: 2026-09-28 FE Export Fidelity & Bulk ZIP Integrity
 
