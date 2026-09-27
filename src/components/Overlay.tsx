@@ -359,7 +359,11 @@ export const Overlay: React.FC = () => {
 
       setStatus('downloading');
       if (dataToExport.examCategory === 'PE' || dataToExport.totalQuestions === 0) {
-        await exportSinglePe(dataToExport, peFormat);
+        if (!(await exportSinglePe(dataToExport, peFormat))) {
+          push(`Export failed: ${dataToExport.subjectCode} asset unavailable`, 'error');
+          setStatus('error');
+          return;
+        }
       } else {
         await exportExam(dataToExport, feFormat);
       }
@@ -506,7 +510,11 @@ export const Overlay: React.FC = () => {
         const item = selectedItems[0];
         const ds = item.dataset || (item as any);
         if (ds.examCategory === 'PE' || ds.totalQuestions === 0) {
-          await exportSinglePe(ds as ExamDataset, peFormat);
+          if (!(await exportSinglePe(ds as ExamDataset, peFormat))) {
+            push(`Export failed: ${ds.subjectCode || 'exam'} asset unavailable`, 'error');
+            setStatus('error');
+            return;
+          }
         } else {
           await exportExam(ds as ExamDataset, feFormat);
         }
@@ -893,6 +901,7 @@ export const Overlay: React.FC = () => {
           dataset={viewerDataset}
           onClose={handleViewerClose}
           mainGeo={geometry}
+          onNotify={push}
         />
       )}
     </div>

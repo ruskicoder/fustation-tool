@@ -33,7 +33,12 @@ export function downloadBlob(content: string, filename: string, mimeType: string
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  revokeLater(url);
+}
+
+// Revoking right after click() can cancel the download or leave a 0-byte file (ISSUE-107).
+function revokeLater(url: string): void {
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function getFormattedDateString(d = new Date()): string {
@@ -43,21 +48,48 @@ export function getFormattedDateString(d = new Date()): string {
   return `${day}${month}${year}`;
 }
 
+function toAbsoluteAssetUrl(rawUrl: string): string {
+  const url = rawUrl
+    .replace(/\\\\u0026/gi, '&')
+    .replace(/\\u0026/gi, '&')
+    .replace(/&amp;/gi, '&')
+    .replace(/\\/g, '')
+    .trim();
+  return url.startsWith('http') ? url : `https://www.fustation.net${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
+interface AssetResponse { ok: boolean; status: number; buffer: ArrayBuffer | null }
+
+/**
+ * fustation.net URLs are fetched in-page with the session cookie. Anything else (presigned S3)
+ * is blocked by CORS from the page origin, so it goes through the service worker (ISSUE-107).
+ */
+export async function fetchAsset(fullUrl: string): Promise<AssetResponse> {
+  const sameSite = /^https?:\/\/([^/]+\.)?fustation\.net\//i.test(fullUrl);
+  if (!sameSite && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+    const r = await chrome.runtime.sendMessage({ type: 'FUSTATION_FETCH_ASSET', url: fullUrl });
+    if (!r || !r.ok || typeof r.base64 !== 'string') return { ok: false, status: r?.status ?? 0, buffer: null };
+    const bin = atob(r.base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return { ok: true, status: r.status, buffer: bytes.buffer };
+  }
+  const res = await fetch(fullUrl, sameSite ? { credentials: 'include' } : undefined);
+  return { ok: res.ok, status: res.status, buffer: res.ok ? await res.arrayBuffer() : null };
+}
+
 export async function fetchArrayBuffer(rawUrl: string): Promise<ArrayBuffer | null> {
   try {
-    const url = rawUrl
-      .replace(/\\\\u0026/gi, '&')
-      .replace(/\\u0026/gi, '&')
-      .replace(/&amp;/gi, '&')
-      .replace(/\\/g, '')
-      .trim();
-    const fullUrl = url.startsWith('http') ? url : `https://www.fustation.net${url.startsWith('/') ? '' : '/'}${url}`;
-    const res = await fetch(fullUrl, { credentials: 'include' });
-    if (!res.ok) return null;
-    return await res.arrayBuffer();
+    return (await fetchAsset(toAbsoluteAssetUrl(rawUrl))).buffer;
   } catch {
     return null;
   }
+}
+
+/** Presigned ZIP URLs expire in minutes, so a fresh one always wins over the stored `zipUrl` (ISSUE-107). */
+export async function resolvePeZipUrl(ds: ExamDataset): Promise<string | null> {
+  const fresh = ds.id ? await fetchFreshPeZipUrl(ds.id) : null;
+  return fresh || ds.zipUrl || null;
 }
 
 /**
@@ -110,24 +142,14 @@ export async function fetchArrayBufferWithFastRetry(
   onRetry?: (status: 'fetching' | 'retrying', attempt: number) => void,
   cuid?: string
 ): Promise<AssetFetchResult> {
-  let cleanUrl = rawUrl
-    .replace(/\\\\u0026/gi, '&')
-    .replace(/\\u0026/gi, '&')
-    .replace(/&amp;/gi, '&')
-    .replace(/\\/g, '')
-    .trim();
-
-  let fullUrl = cleanUrl.startsWith('http')
-    ? cleanUrl
-    : `https://www.fustation.net${cleanUrl.startsWith('/') ? '' : '/'}${cleanUrl}`;
+  let fullUrl = toAbsoluteAssetUrl(rawUrl);
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     onRetry?.(attempt === 1 ? 'fetching' : 'retrying', attempt);
     try {
-      const res = await fetch(fullUrl, { credentials: 'include' });
-      if (res.ok) {
-        const buffer = await res.arrayBuffer();
-        return { buffer, status: 'available', attempts: attempt, url: fullUrl };
+      const res = await fetchAsset(fullUrl);
+      if (res.ok && res.buffer) {
+        return { buffer: res.buffer, status: 'available', attempts: attempt, url: fullUrl };
       }
 
       // If HTTP 403 (expired S3 presigned URL) and cuid is known, attempt dynamic live refresh
@@ -240,35 +262,15 @@ export function generatePrintHtml(dataset: ExamDataset): string {
 </html>`;
 }
 
-export async function downloadAssetUrl(rawUrl: string, filename: string): Promise<boolean> {
+export async function downloadAssetUrl(rawUrl: string, filename: string, cuid?: string): Promise<boolean> {
   if (typeof document === 'undefined' || !rawUrl) return false;
-  const cleanUrl = rawUrl
-    .replace(/\\\\u0026/gi, '&')
-    .replace(/\\u0026/gi, '&')
-    .replace(/&amp;/gi, '&')
-    .replace(/\\/g, '')
-    .trim();
-  const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://www.fustation.net${cleanUrl.startsWith('/') ? '' : '/'}${cleanUrl}`;
-
-  try {
-    const res = await fetch(fullUrl, { credentials: 'include' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    downloadBlobFromObjectUrl(objectUrl, filename);
-    return true;
-  } catch (err) {
-    // chrome.downloads is not exposed to content scripts; let the browser navigate to the asset instead.
-    console.warn(`[fustation-tool] Direct blob fetch failed for ${fullUrl}, falling back to anchor download:`, err);
-    const a = document.createElement('a');
-    a.href = fullUrl;
-    a.download = filename;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    return true;
+  const res = await fetchArrayBufferWithFastRetry(rawUrl, 3, 80, undefined, cuid);
+  if (!res.buffer) {
+    console.warn(`[fustation-tool] Asset unavailable: ${res.url}`);
+    return false;
   }
+  downloadBlobFromObjectUrl(URL.createObjectURL(new Blob([res.buffer])), filename);
+  return true;
 }
 
 /**
@@ -324,14 +326,11 @@ export async function downloadPdfAsset(dataset: ExamDataset): Promise<boolean> {
 
 export async function downloadZipAsset(dataset: ExamDataset): Promise<boolean> {
   if (!dataset) return false;
-  let zipUrl = dataset.zipUrl;
-  if (!zipUrl && dataset.id) {
-    zipUrl = await fetchFreshPeZipUrl(dataset.id);
-  }
+  const zipUrl = await resolvePeZipUrl(dataset);
   if (!zipUrl) return false;
   const cleanTitle = (dataset.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${cleanTitle}_AnswerKey.zip`;
-  return await downloadAssetUrl(zipUrl, filename);
+  return await downloadAssetUrl(zipUrl, filename, dataset.id);
 }
 
 export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 'PE_BOTH'): Promise<boolean> {
@@ -355,21 +354,11 @@ export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 
       }
     }
 
-    let zipUrl = dataset.zipUrl;
-    if (!zipUrl && dataset.id) {
-      zipUrl = await fetchFreshPeZipUrl(dataset.id);
-    }
-
+    const zipUrl = await resolvePeZipUrl(dataset);
     if (zipUrl) {
-      let zipBuf = await fetchArrayBuffer(zipUrl);
-      if (!zipBuf && dataset.id) {
-        const freshUrl = await fetchFreshPeZipUrl(dataset.id);
-        if (freshUrl) {
-          zipBuf = await fetchArrayBuffer(freshUrl);
-        }
-      }
-      if (zipBuf) {
-        zip.file(`${title}_AnswerKey.zip`, zipBuf);
+      const zipRes = await fetchArrayBufferWithFastRetry(zipUrl, 3, 80, undefined, dataset.id);
+      if (zipRes.buffer) {
+        zip.file(`${title}_AnswerKey.zip`, zipRes.buffer);
         addedCount++;
       }
     }
@@ -379,12 +368,8 @@ export async function exportSinglePe(dataset: ExamDataset, peFormat: PEFormat = 
       const url = URL.createObjectURL(zipBlob);
       downloadBlobFromObjectUrl(url, `${title}.zip`);
       return true;
-    } else {
-      const pdfOk = await downloadPdfAsset(dataset);
-      let zipOk = false;
-      if (dataset.zipUrl || dataset.id) zipOk = await downloadZipAsset(dataset);
-      return pdfOk || zipOk;
     }
+    return false;
   }
 }
 
@@ -395,7 +380,7 @@ function downloadBlobFromObjectUrl(url: string, filename: string): void {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  revokeLater(url);
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -601,11 +586,8 @@ export async function exportBulkAsZip(
           itemAudit.assets.push({ type: 'PDF', status: 'Missing' });
         }
 
-        let zipUrl = ds.zipUrl;
         if ((peFormat === 'PE_ZIP' || peFormat === 'PE_BOTH')) {
-          if (!zipUrl && ds.id) {
-            zipUrl = await fetchFreshPeZipUrl(ds.id);
-          }
+          const zipUrl = await resolvePeZipUrl(ds);
 
           if (zipUrl) {
             const fetchRes = await fetchArrayBufferWithFastRetry(

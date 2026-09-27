@@ -24,6 +24,7 @@ interface ViewerPanelProps {
   dataset: ExamDataset;
   onClose: () => void;
   mainGeo: PanelGeometry;
+  onNotify?: (message: string, kind?: 'info' | 'error') => void;
 }
 
 /**
@@ -41,8 +42,13 @@ interface ViewerPanelProps {
 export const ViewerPanel: React.FC<ViewerPanelProps> = ({
   dataset,
   onClose,
-  mainGeo
+  mainGeo,
+  onNotify
 }) => {
+  const downloadPeAsset = async (fn: (ds: ExamDataset) => Promise<boolean>, label: string) => {
+    if (!(await fn(dataset))) onNotify?.(`${label} unavailable for ${dataset.subjectCode || 'this exam'}`, 'error');
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedPdfSearchQuery, setDebouncedPdfSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
@@ -327,7 +333,7 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
                       <button
                         type="button"
                         className="fus-btn-primary"
-                        onClick={() => downloadPdfAsset(dataset)}
+                        onClick={() => downloadPeAsset(downloadPdfAsset, 'PDF exam paper')}
                       >
                         <DownloadIcon size={14} /> Download PDF Exam Paper
                       </button>
@@ -336,7 +342,7 @@ export const ViewerPanel: React.FC<ViewerPanelProps> = ({
                       <button
                         type="button"
                         className="fus-btn-sec"
-                        onClick={() => downloadZipAsset(dataset)}
+                        onClick={() => downloadPeAsset(downloadZipAsset, 'ZIP answer key')}
                       >
                         <DownloadIcon size={14} /> Download ZIP Answer Key
                       </button>

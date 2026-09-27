@@ -190,6 +190,7 @@ async function runTests() {
   console.log('DOM Extracted ZIP:', peDomDataset.zipUrl);
 
   await runBulkZipTest(dataset);
+  await runPeZipRefreshTest();
 
   console.log('\n=== TEST 8: Atomic Storage Batch Deletion ===');
   const sampleMap: Record<string, any> = {
@@ -384,6 +385,48 @@ async function runBulkZipTest(feDataset: any) {
     console.log('Bulk ZIP holds FE markdown (deduplicated, images embedded) and PE assets with an accurate manifest.');
   } finally {
     g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke;
+  }
+}
+
+// ISSUE-107: a stale stored zipUrl must never be the first thing fetched, and failure must be reported.
+async function runPeZipRefreshTest() {
+  console.log('\n=== TEST 12: PE ZIP fresh URL first, honest failure ===');
+  const { downloadZipAsset, exportSinglePe } = await import('../src/utils/exporter');
+  const ds = formatExamDataset({ product: { id: 'cmsex6fva000004lan2cckccn', title: 'MSS301_SU26_PE_RE_738672', examType: 'PE', pdfUrl: '/api/exams/pdf?productId=cmsex6fva000004lan2cckccn', zipUrl: 'https://fustation.s3.ap-southeast-1.amazonaws.com/exams/stale.zip?X-Amz-Signature=old' }, questions: [] });
+  const g = globalThis as any;
+  const orig = { fetch: g.fetch, document: g.document, create: URL.createObjectURL, revoke: URL.revokeObjectURL, timeout: g.setTimeout };
+  const calls: string[] = [];
+  const clicks: string[] = [];
+  let rscHasFresh = true;
+  g.fetch = async (url: string) => {
+    calls.push(url);
+    if (url.includes('_rsc=1') && rscHasFresh) return new Response('"zipUrl":"https://fustation.s3.ap-southeast-1.amazonaws.com/exams/fresh.zip?X-Amz-Signature=new"', { status: 200 });
+    if (url.includes('fresh.zip')) return new Response('PK fresh', { status: 200 });
+    if (url.includes('stale.zip')) return new Response('', { status: 403 });
+    return new Response('', { status: 404 });
+  };
+  let revokedEarly = false;
+  URL.createObjectURL = () => 'blob:test/pe';
+  URL.revokeObjectURL = () => { revokedEarly = true; };
+  g.setTimeout = (fn: () => void, ms: number) => (ms >= 60_000 ? 0 : orig.timeout(fn, ms));
+  g.document = { body: { appendChild() {}, removeChild() {} }, createElement: () => { const a: any = { click() { clicks.push(a.download); } }; return a; } };
+  try {
+    if (!(await downloadZipAsset(ds))) fail('fresh ZIP download returned false');
+    const firstZip = calls.findIndex((u) => u.includes('.zip'));
+    const firstRsc = calls.findIndex((u) => u.includes('_rsc=1'));
+    if (firstRsc < 0 || firstRsc > firstZip) fail('fresh URL was not requested before the ZIP fetch');
+    if (calls.some((u) => u.includes('stale.zip'))) fail('stale stored zipUrl was fetched although a fresh URL existed');
+    if (revokedEarly) fail('object URL revoked before the 60 s delay');
+    if (clicks.join() !== 'MSS301_SU26_PE_RE_738672_AnswerKey.zip') fail(`unexpected downloads: ${clicks.join()}`);
+
+    rscHasFresh = false; calls.length = 0; clicks.length = 0;
+    if (await downloadZipAsset(ds)) fail('download reported success with only an expired URL');
+    if (!calls.some((u) => u.includes('stale.zip'))) fail('stored zipUrl was not used as the fallback');
+    if (await exportSinglePe({ ...ds, pdfUrl: undefined, id: 'cmsex6fva000004lan2cckccx' } as any, 'PE_BOTH')) fail('PE_BOTH reported success with no asset');
+    if (clicks.length) fail(`failure still triggered a download: ${clicks.join()}`);
+    console.log('Fresh presigned URL is fetched first; expired-only and asset-less exports return false with no download.');
+  } finally {
+    g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke; g.setTimeout = orig.timeout;
   }
 }
 

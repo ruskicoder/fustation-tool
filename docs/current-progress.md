@@ -1,9 +1,17 @@
 # Current Progress — fustation-tool
 
 **Last Updated**: 2026-09-28
-**Status**: 🟢 **Language exams supported (ISSUE-99 to 103, 106 resolved); ISSUE-104, 105 open (low / data)**
+**Status**: 🟢 **PE ZIP downloads fixed (ISSUE-107); ISSUE-104, 105 open (low / data)**
 
 ---
+
+## Session Ledger: 2026-09-28 PE Answer-Key ZIP Downloads (ISSUE-107)
+
+- Spec first: Req 3.6 to 3.9, task 19 (Phase 8), `docs/02-backend-conventions.md`.
+- Fresh presigned URL before every ZIP download; S3 fetched in the service worker (`FUSTATION_FETCH_ASSET`, S3 buckets in `host_permissions`); no fake-success anchor fallback; failures toast; object URLs revoked after 60 s.
+- Verification: `npm run build` green (tsc, vite, dist check, all suites including new TEST 12, which fails on the previous exporter). `dist/` rebuilt and now includes ISSUE-106 and 107.
+- Not verified live: the service-worker S3 fetch needs a logged-in browser pass.
+- Resume point: ISSUE-104 (task 18), then the manual browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md`, starting with a PE ZIP download.
 
 ## Session Ledger: 2026-09-28 Language Exams (Reading passages, Writing PDFs)
 

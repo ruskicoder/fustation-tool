@@ -13,7 +13,9 @@
   ],
   "host_permissions": [
     "*://*.fustation.net/*",
-    "*://fustation.net/*"
+    "*://fustation.net/*",
+    "https://fustation.s3.amazonaws.com/*",
+    "https://fustation.s3.ap-southeast-1.amazonaws.com/*"
   ],
   "background": {
     "service_worker": "background.js",

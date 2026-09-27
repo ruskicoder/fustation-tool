@@ -158,3 +158,15 @@
     - _Requirements: 9.1_
 - [ ] 18. Writing-set answer-key audit label (ISSUE-104)
   - _Requirements: 7.4_
+
+## Phase 8: PE Asset Download Reliability
+
+- [x] 19. PE answer-key ZIP downloads (ISSUE-107)
+  - [x] 19.1 `resolvePeZipUrl`: fresh RSC URL first, stored `zipUrl` as fallback, used by `downloadZipAsset`, `exportSinglePe` and `exportBulkAsZip`
+    - _Requirements: 3.3, 3.6_
+  - [x] 19.2 `fetchAsset`: fustation.net URLs fetched with credentials, other hosts through the `FUSTATION_FETCH_ASSET` service-worker message; S3 hosts added to `host_permissions`
+    - _Requirements: 3.7_
+  - [x] 19.3 Remove the cross-origin anchor fallback; surface `false` as an error toast in `Overlay.tsx` and `ViewerPanel.tsx`; delay `revokeObjectURL` by 60 s
+    - _Requirements: 3.8, 3.9_
+  - [x] 19.4 TEST 12: stale stored `zipUrl`, fresh URL fetched first, failure returns `false` without a download
+    - _Requirements: 9.1_

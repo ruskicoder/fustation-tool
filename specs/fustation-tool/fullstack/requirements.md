@@ -41,6 +41,10 @@ Last reconciled with code: 2026-09-28 (branch `features/Design_SSOT_Scaffold`).
 1. WHEN the exam type or title marks a PE set THEN the system SHALL classify it as `examCategory: 'PE'` and resolve `pdfUrl` and `zipUrl`.
 2. WHEN the PDF is requested THEN the system SHALL use `/api/exams/pdf?productId={id}` only with a valid numeric id or CUID, never a 6-digit title suffix.
 3. IF a presigned ZIP URL returns HTTP 403 THEN the system SHALL fetch a fresh URL from the RSC endpoint and retry with backoff.
+6. WHEN any PE answer-key ZIP is downloaded (single `PE_ZIP`, `PE_BOTH`, viewer button, bulk) THEN the system SHALL first request a fresh presigned URL from the RSC endpoint and SHALL use the stored `zipUrl` only if that request yields none.
+7. WHEN an asset URL is not on the fustation.net origin THEN the content script SHALL fetch it through the service worker, which holds the S3 host permission and sends no cookies.
+8. IF an asset cannot be fetched THEN the system SHALL return `false`, show an error toast, and mark the asset `Missing` in `manifest.md`; it SHALL NOT fall back to a cross-origin `<a download>` or report success.
+9. WHEN a download is started from an object URL THEN the system SHALL revoke that URL no sooner than 60 seconds later, and SHALL NOT store asset bytes in `chrome.storage.local`.
 4. WHEN a PE set is previewed THEN the viewer SHALL show the PDF full-height with a debounced search input.
 5. WHEN a language Writing set (`_W`, `_RW`) exposes its paper as `initialData.examUrl` THEN the system SHALL treat it as a PDF-only PE set.
 

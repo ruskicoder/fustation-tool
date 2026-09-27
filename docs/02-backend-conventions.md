@@ -14,7 +14,7 @@ All requests go to `https://www.fustation.net` and rely on the logged-in session
 | `GET /home` (and `/subject/...` catalog pages) | batch discovery via `extractProductTasksFromHtml` | HTML with product cards and marketplace links | discovering exam CUIDs (357 on the full-fetch fixture) |
 | `GET /api/exams/pdf?productId={id}` | `exporter.resolveValidPdfUrl`, `downloadPdfAsset`, `ViewerPanel` | PDF | PE paper download and embedded preview |
 | `GET /api/exams/question-image?key={s3Key}` | `images.normalizeImageUrl`, `fetchImageAsBase64` | image bytes | proxy for S3 question images (direct S3 is blocked) |
-| presigned S3 ZIP URL (from RSC payload) | `exporter.fetchArrayBufferWithFastRetry` | ZIP | PE answer key; on HTTP 403 the URL is refreshed via the RSC endpoint |
+| presigned S3 ZIP URL (from RSC payload) | `exporter.fetchArrayBufferWithFastRetry` via `fetchAsset` and the `FUSTATION_FETCH_ASSET` service-worker handler | ZIP | PE answer key; a fresh URL is requested before every download (ISSUE-107); on HTTP 403 it is refreshed again |
 
 ## 2. Pipeline Stages
 
@@ -29,7 +29,9 @@ All requests go to `https://www.fustation.net` and rely on the logged-in session
 
 - Parse, never guess: a dataset is valid only when `isValidExtractedDataset` passes (FE has questions, PE has assets). Partial results carry `isPartial` and fetch counters instead of dummy placeholders.
 - Do not replace `\\n` with a raw newline before `JSON.parse` on RSC chunks (see `00-system-context.md` section 5.B).
-- Presigned S3 URLs expire. Store them, but always be ready to refresh through the RSC endpoint before reporting an asset as missing.
+- Presigned S3 URLs expire in minutes. The stored `zipUrl` is only a fallback: `resolvePeZipUrl` asks the RSC endpoint for a fresh URL before every download (ISSUE-107).
+- S3 does not allow CORS from the fustation.net page. Content scripts fetch non-fustation.net assets through the `FUSTATION_FETCH_ASSET` message in `background.ts`, which fetches without cookies (the presigned query string is the credential) and returns base64 bytes. fustation.net URLs keep the same-origin fetch with credentials.
+- Never fake success: a failed asset fetch returns `false` and becomes a toast or a `Missing` manifest row. Object URLs are revoked 60 s after the click. Asset bytes never go into `chrome.storage.local`.
 - Network helpers retry with backoff and jitter; every failure is logged and surfaced through a toast or the batch log drawer, never swallowed.
 - `chrome.downloads` is not available to content scripts. Downloads use blob anchors; anything needing `chrome.downloads` must be delegated to the service worker by message.
 
