@@ -21,6 +21,28 @@ export interface BulkExportOptions {
   peFormat?: PEFormat;
   onProgress?: ExportProgressCallback;
   getControlState?: () => { isPaused: boolean; isCanceled: boolean };
+  /** Override the per-volume byte budget (tests); defaults to getVolumeByteBudget(). */
+  maxVolumeBytes?: number;
+}
+
+interface StagedEntry { base: string; ext: string; data: string | ArrayBuffer }
+interface StagedItem { folder: string; entries: StagedEntry[]; audit: ManifestItemAudit; missingFeImages: boolean; bytes: number }
+
+/** Local header (30) + central directory (46) + data descriptor slack, per ZIP entry, plus the path twice. */
+const ZIP_ENTRY_OVERHEAD = 96;
+
+/**
+ * Byte budget for one bulk ZIP volume. JSZip keeps every input and the finished archive in memory,
+ * so peak use is about twice the budget; Chrome caps in-memory blobs at 2 GB on 64-bit desktop and
+ * far lower on Chrome OS and Android. 64 MB per GB of device memory, clamped to 128..512 MB (ISSUE-109).
+ */
+export function getVolumeByteBudget(): number {
+  const deviceGb = (typeof navigator !== 'undefined' && (navigator as any).deviceMemory) || 8;
+  return Math.min(512, Math.max(128, deviceGb * 64)) * 1024 * 1024;
+}
+
+function formatMb(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function downloadBlob(content: string, filename: string, mimeType: string): void {
@@ -407,9 +429,9 @@ function getMimeFromUrl(url: string): string {
   return 'image/png';
 }
 
-function generateManifestMd(batchIdx: number, totalBatches: number, items: ManifestItemAudit[]): string {
+function generateManifestMd(partNo: number, multiPart: boolean, isLast: boolean, items: ManifestItemAudit[]): string {
   const lines: string[] = [
-    `# FUSTATION Batch Export Manifest (Part ${batchIdx + 1} of ${totalBatches})`,
+    `# FUSTATION Batch Export Manifest${multiPart ? ` (Part ${partNo}${isLast ? ', last part' : ''})` : ''}`,
     `Generated at: ${new Date().toISOString()}`,
     '',
     '| Subject | Title | Category | Asset Status | Details |',
@@ -454,7 +476,7 @@ if __name__ == "__main__":
 }
 
 /**
- * Bulk exports saved exam datasets chunked into 10-item partition ZIP volumes with live RSC refresh & audit manifests.
+ * Bulk exports saved exam datasets into ZIP volumes packed up to a byte budget, with live RSC refresh & audit manifests.
  */
 export async function exportBulkAsZip(
   savedItems: SavedExamItem[],
@@ -467,22 +489,26 @@ export async function exportBulkAsZip(
   let peFormat: PEFormat = 'PE_BOTH';
   let onProgress: ExportProgressCallback | undefined;
   let getControlState: (() => { isPaused: boolean; isCanceled: boolean }) | undefined;
+  let optionsMaxVolumeBytes: number | undefined;
 
   if (typeof optionsOrFeFormat === 'object' && optionsOrFeFormat !== null) {
     feFormat = optionsOrFeFormat.feFormat || 'MD';
     peFormat = optionsOrFeFormat.peFormat || 'PE_BOTH';
     onProgress = optionsOrFeFormat.onProgress;
     getControlState = optionsOrFeFormat.getControlState;
+    optionsMaxVolumeBytes = optionsOrFeFormat.maxVolumeBytes;
   } else if (typeof optionsOrFeFormat === 'string') {
     feFormat = optionsOrFeFormat;
     if (maybePeFormat) peFormat = maybePeFormat;
   }
 
-  const BATCH_SIZE = 10;
+  const volumeBudget = optionsMaxVolumeBytes ?? getVolumeByteBudget();
   const totalItems = savedItems.length;
-  const totalBatches = Math.ceil(totalItems / BATCH_SIZE);
+  let totalBatches = 1; // grows as volumes are written; exact once the run ends
+  let volumeIdx = 0;
   let completedItems = 0;
   const logEntries: string[] = [];
+  const utf8 = new TextEncoder();
 
   const addLog = (msg: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -513,212 +539,214 @@ export async function exportBulkAsZip(
     }
   };
 
-  for (let batchIdx = 0; batchIdx < totalBatches; batchIdx++) {
-    let ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
-    if (ctrl.isCanceled) {
-      reportProgress(batchIdx, 'done', '', 'Export cancelled by user');
-      return;
-    }
+  // Items are staged first and committed to the open volume only if they fit its byte budget.
+  // An item that would overflow is held back (rolled back), the volume is written, and the item
+  // opens the next volume (ISSUE-109).
+  let volume: StagedItem[] = [];
+  let volumeBytes = 0;
 
-    const batchStart = batchIdx * BATCH_SIZE;
-    const batchEnd = Math.min(batchStart + BATCH_SIZE, totalItems);
-    const batchItems = savedItems.slice(batchStart, batchEnd);
-
+  const writeVolume = async (isLast: boolean) => {
+    const partNo = volumeIdx + 1;
+    const multiPart = !isLast || partNo > 1;
     const zip = new JSZip();
-    const itemsAudit: ManifestItemAudit[] = [];
     // Same-titled exams (e.g. one code uploaded by two campuses) must not overwrite each other.
     const usedPaths = new Set<string>();
-    const uniqueName = (folderName: string, base: string, ext: string): string => {
-      let name = `${base}${ext}`;
-      for (let n = 2; usedPaths.has(`${folderName}/${name}`); n++) name = `${base}_${n}${ext}`;
-      usedPaths.add(`${folderName}/${name}`);
-      return name;
-    };
-    let batchHasMissingFeImages = false;
-
-    // 1. Process items in current partition batch
-    for (const item of batchItems) {
-      ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
-      if (ctrl.isCanceled) {
-        reportProgress(batchIdx, 'done', '', 'Export cancelled by user');
-        return;
+    for (const it of volume) {
+      for (const e of it.entries) {
+        let name = `${e.base}${e.ext}`;
+        for (let n = 2; usedPaths.has(`${it.folder}/${name}`); n++) name = `${e.base}_${n}${e.ext}`;
+        usedPaths.add(`${it.folder}/${name}`);
+        // Text compresses well; PDFs, ZIPs and images are already compressed.
+        zip.file(`${it.folder}/${name}`, e.data, { compression: typeof e.data === 'string' ? 'DEFLATE' : 'STORE' });
       }
-      while (ctrl.isPaused && !ctrl.isCanceled) {
-        reportProgress(batchIdx, 'standby', '', 'Export paused');
-        await new Promise((r) => setTimeout(r, 200));
-        ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
-      }
-
-      const ds = item.dataset || (item as any);
-      const subjCode = (ds.subjectCode || item.subjectCode || 'UNASSIGNED').toUpperCase();
-      const folder = zip.folder(subjCode);
-      const title = (ds.title || item.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const isItemPe = isPeDataset(ds as ExamDataset);
-
-      const itemAudit: ManifestItemAudit = {
-        title,
-        subjectCode: subjCode,
-        category: isItemPe ? 'PE' : 'FE',
-        assets: []
-      };
-
-      reportProgress(
-        batchIdx,
-        'compiling',
-        subjCode,
-        `[${subjCode}] Compiling ${title}...`
-      );
-
-      if (isItemPe) {
-        // PE asset export
-        const pdfUrl = resolveValidPdfUrl(ds as ExamDataset);
-
-        if ((peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') && pdfUrl) {
-          const fetchRes = await fetchArrayBufferWithFastRetry(pdfUrl, 3, 80, (st, attempt) => {
-            if (st === 'retrying') {
-              reportProgress(batchIdx, 'retrying', subjCode, `[${subjCode}] Retrying PE PDF (attempt ${attempt}/3)...`);
-            }
-          });
-
-          if (fetchRes.status === 'available' && fetchRes.buffer) {
-            folder?.file(uniqueName(subjCode, `${title}_Paper`, '.pdf'), fetchRes.buffer);
-            itemAudit.assets.push({ type: 'PDF', status: 'Available' });
-          } else {
-            addLog(`[${subjCode}] ${title}: PE PDF unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
-            itemAudit.assets.push({ type: 'PDF', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
-          }
-        } else if (peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') {
-          addLog(`[${subjCode}] ${title}: PE PDF URL could not be resolved, marked missing in audit manifest`);
-          itemAudit.assets.push({ type: 'PDF', status: 'Missing' });
-        }
-
-        if ((peFormat === 'PE_ZIP' || peFormat === 'PE_BOTH')) {
-          const { url: zipUrl, notProvided } = await resolvePeZipUrl(ds);
-
-          if (zipUrl) {
-            const fetchRes = await fetchArrayBufferWithFastRetry(
-              zipUrl,
-              3,
-              80,
-              (st, attempt) => {
-                if (st === 'retrying') {
-                  reportProgress(batchIdx, 'retrying', subjCode, `[${subjCode}] Retrying PE ZIP (attempt ${attempt}/3)...`);
-                }
-              },
-              ds.id
-            );
-
-            if (fetchRes.status === 'available' && fetchRes.buffer) {
-              folder?.file(uniqueName(subjCode, `${title}_AnswerKey`, '.zip'), fetchRes.buffer);
-              itemAudit.assets.push({ type: 'ZIP', status: 'Available' });
-            } else {
-              addLog(`[${subjCode}] ${title}: PE ZIP unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
-              itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
-            }
-          } else if (notProvided) {
-            addLog(`[${subjCode}] ${title}: no answer key is published for this set`);
-            itemAudit.assets.push({ type: 'ZIP', status: 'Not provided' });
-          } else {
-            addLog(`[${subjCode}] ${title}: PE answer-key ZIP URL could not be resolved, marked missing in audit manifest`);
-            itemAudit.assets.push({ type: 'ZIP', status: 'Missing' });
-          }
-        }
-      } else {
-        // FE exam export with fast image asset fetching & Base64 embedding
-        const datasetCopy: ExamDataset = JSON.parse(JSON.stringify(ds));
-        const questions = datasetCopy.questions || [];
-
-        for (let qIdx = 0; qIdx < questions.length; qIdx++) {
-          const q = questions[qIdx];
-          if (q.imageUrl) {
-            if (q.imageBase64 && q.imageBase64.startsWith('data:image/')) {
-              itemAudit.assets.push({ type: 'Image', index: q.index, status: 'Available' });
-            } else {
-              const imgUrl = normalizeImageUrl(q.imageUrl);
-              if (imgUrl) {
-                const fetchRes = await fetchArrayBufferWithFastRetry(imgUrl, 3, 80, (st, attempt) => {
-                  if (st === 'retrying') {
-                    reportProgress(batchIdx, 'retrying', subjCode, `[${subjCode}] Retrying Q${q.index || qIdx + 1} image (attempt ${attempt}/3)...`);
-                  }
-                });
-
-                if (fetchRes.status === 'available' && fetchRes.buffer) {
-                  const b64 = arrayBufferToBase64(fetchRes.buffer);
-                  const mime = getMimeFromUrl(imgUrl);
-                  q.imageBase64 = `data:${mime};base64,${b64}`;
-                  itemAudit.assets.push({ type: 'Image', index: q.index, status: 'Available' });
-                } else {
-                  batchHasMissingFeImages = true;
-                  addLog(`[${subjCode}] Image Q${q.index || qIdx + 1} asset unavailable — marked missing in manifest`);
-                  const targetFilename = `batch${String(batchIdx + 1).padStart(2, '0')}-rec-img-${q.index || qIdx + 1}.png`;
-                  itemAudit.assets.push({
-                    type: 'Image',
-                    index: q.index,
-                    status: 'Missing',
-                    url: fetchRes.url,
-                    targetFilename
-                  });
-                }
-              }
-            }
-          }
-        }
-
-        if (feFormat === 'JSON') {
-          const jsonStr = JSON.stringify(datasetCopy, null, 2);
-          folder?.file(uniqueName(subjCode, title, '.json'), jsonStr);
-        } else if (feFormat === 'PDF') {
-          const htmlStr = generatePrintHtml(datasetCopy);
-          folder?.file(uniqueName(subjCode, title, '.html'), htmlStr);
-        } else {
-          // Default MD
-          const mdStr = await compileMarkdown(datasetCopy, true);
-          folder?.file(uniqueName(subjCode, title, '.md'), mdStr);
-        }
-      }
-
-      itemsAudit.push(itemAudit);
-      completedItems++;
-      // Yield to browser event loop between items
-      await new Promise((r) => setTimeout(r, 10));
     }
-
-    // 2. Generate Universal manifest.md at ZIP root
-    const manifestText = generateManifestMd(batchIdx, totalBatches, itemsAudit);
-    zip.file('manifest.md', manifestText);
-
-    // 3. Include Python recovery script if missing FE images exist
-    if (batchHasMissingFeImages) {
+    zip.file('manifest.md', generateManifestMd(partNo, multiPart, isLast, volume.map((it) => it.audit)), { compression: 'DEFLATE' });
+    if (volume.some((it) => it.missingFeImages)) {
       zip.folder('reimport-images-here');
       zip.file('recover_images.py', generateRecoverImagesPy());
     }
 
-    // 4. Trigger Batch ZIP Download
-    reportProgress(
-      batchIdx,
-      'downloading',
-      '',
-      `Compressing & downloading Batch ${batchIdx + 1} of ${totalBatches}...`
-    );
-
+    reportProgress(volumeIdx, 'downloading', '', `Compressing & downloading part ${partNo} (${volume.length} exams, ${formatMb(volumeBytes)})...`);
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const dateStr = getFormattedDateString();
-    const filename = totalBatches > 1
-      ? `fustation_export_${dateStr}_part${batchIdx + 1}.zip`
-      : `fustation_export_${dateStr}.zip`;
+    const filename = multiPart ? `fustation_export_${dateStr}_part${partNo}.zip` : `fustation_export_${dateStr}.zip`;
+    downloadBlobFromObjectUrl(URL.createObjectURL(zipBlob), filename);
+    addLog(`Part ${partNo}: ${volume.length} exams, ${formatMb(volumeBytes)} of ${formatMb(volumeBudget)} budget -> ${filename}`);
 
-    const objectUrl = URL.createObjectURL(zipBlob);
-    downloadBlobFromObjectUrl(objectUrl, filename);
-
-    // Micro-pause before next batch
+    volume = [];
+    volumeBytes = 0;
+    volumeIdx++;
+    if (!isLast) totalBatches = volumeIdx + 1;
+    // Micro-pause before the next volume
     await new Promise((r) => setTimeout(r, 50));
+  };
+
+  for (const item of savedItems) {
+    let ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
+    if (ctrl.isCanceled) {
+      reportProgress(volumeIdx, 'done', '', 'Export cancelled by user');
+      return;
+    }
+    while (ctrl.isPaused && !ctrl.isCanceled) {
+      reportProgress(volumeIdx, 'standby', '', 'Export paused');
+      await new Promise((r) => setTimeout(r, 200));
+      ctrl = getControlState?.() || { isPaused: false, isCanceled: false };
+    }
+
+    const ds = item.dataset || (item as any);
+    const subjCode = (ds.subjectCode || item.subjectCode || 'UNASSIGNED').toUpperCase();
+    const title = (ds.title || item.title || 'exam').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const isItemPe = isPeDataset(ds as ExamDataset);
+
+    const itemAudit: ManifestItemAudit = {
+      title,
+      subjectCode: subjCode,
+      category: isItemPe ? 'PE' : 'FE',
+      assets: []
+    };
+    const staged: StagedItem = { folder: subjCode, entries: [], audit: itemAudit, missingFeImages: false, bytes: 0 };
+    const stage = (base: string, ext: string, data: string | ArrayBuffer) => {
+      const size = typeof data === 'string' ? utf8.encode(data).byteLength : data.byteLength;
+      staged.entries.push({ base, ext, data });
+      staged.bytes += size + ZIP_ENTRY_OVERHEAD + 2 * utf8.encode(`${subjCode}/${base}${ext}`).byteLength;
+    };
+
+    reportProgress(
+      volumeIdx,
+      'compiling',
+      subjCode,
+      `[${subjCode}] Compiling ${title}...`
+    );
+
+    if (isItemPe) {
+      // PE asset export
+      const pdfUrl = resolveValidPdfUrl(ds as ExamDataset);
+
+      if ((peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') && pdfUrl) {
+        const fetchRes = await fetchArrayBufferWithFastRetry(pdfUrl, 3, 80, (st, attempt) => {
+          if (st === 'retrying') {
+            reportProgress(volumeIdx, 'retrying', subjCode, `[${subjCode}] Retrying PE PDF (attempt ${attempt}/3)...`);
+          }
+        });
+
+        if (fetchRes.status === 'available' && fetchRes.buffer) {
+          stage(`${title}_Paper`, '.pdf', fetchRes.buffer);
+          itemAudit.assets.push({ type: 'PDF', status: 'Available' });
+        } else {
+          addLog(`[${subjCode}] ${title}: PE PDF unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
+          itemAudit.assets.push({ type: 'PDF', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
+        }
+      } else if (peFormat === 'PE_PDF' || peFormat === 'PE_BOTH') {
+        addLog(`[${subjCode}] ${title}: PE PDF URL could not be resolved, marked missing in audit manifest`);
+        itemAudit.assets.push({ type: 'PDF', status: 'Missing' });
+      }
+
+      if ((peFormat === 'PE_ZIP' || peFormat === 'PE_BOTH')) {
+        const { url: zipUrl, notProvided } = await resolvePeZipUrl(ds);
+
+        if (zipUrl) {
+          const fetchRes = await fetchArrayBufferWithFastRetry(
+            zipUrl,
+            3,
+            80,
+            (st, attempt) => {
+              if (st === 'retrying') {
+                reportProgress(volumeIdx, 'retrying', subjCode, `[${subjCode}] Retrying PE ZIP (attempt ${attempt}/3)...`);
+              }
+            },
+            ds.id
+          );
+
+          if (fetchRes.status === 'available' && fetchRes.buffer) {
+            stage(`${title}_AnswerKey`, '.zip', fetchRes.buffer);
+            itemAudit.assets.push({ type: 'ZIP', status: 'Available' });
+          } else {
+            addLog(`[${subjCode}] ${title}: PE ZIP unavailable (${describeFailure(fetchRes)}), marked missing in audit manifest`);
+            itemAudit.assets.push({ type: 'ZIP', status: 'Missing', url: fetchRes.url, httpStatus: fetchRes.httpStatus });
+          }
+        } else if (notProvided) {
+          addLog(`[${subjCode}] ${title}: no answer key is published for this set`);
+          itemAudit.assets.push({ type: 'ZIP', status: 'Not provided' });
+        } else {
+          addLog(`[${subjCode}] ${title}: PE answer-key ZIP URL could not be resolved, marked missing in audit manifest`);
+          itemAudit.assets.push({ type: 'ZIP', status: 'Missing' });
+        }
+      }
+    } else {
+      // FE exam export with fast image asset fetching & Base64 embedding
+      const datasetCopy: ExamDataset = JSON.parse(JSON.stringify(ds));
+      const questions = datasetCopy.questions || [];
+
+      for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+        const q = questions[qIdx];
+        if (q.imageUrl) {
+          if (q.imageBase64 && q.imageBase64.startsWith('data:image/')) {
+            itemAudit.assets.push({ type: 'Image', index: q.index, status: 'Available' });
+          } else {
+            const imgUrl = normalizeImageUrl(q.imageUrl);
+            if (imgUrl) {
+              const fetchRes = await fetchArrayBufferWithFastRetry(imgUrl, 3, 80, (st, attempt) => {
+                if (st === 'retrying') {
+                  reportProgress(volumeIdx, 'retrying', subjCode, `[${subjCode}] Retrying Q${q.index || qIdx + 1} image (attempt ${attempt}/3)...`);
+                }
+              });
+
+              if (fetchRes.status === 'available' && fetchRes.buffer) {
+                const b64 = arrayBufferToBase64(fetchRes.buffer);
+                const mime = getMimeFromUrl(imgUrl);
+                q.imageBase64 = `data:${mime};base64,${b64}`;
+                itemAudit.assets.push({ type: 'Image', index: q.index, status: 'Available' });
+              } else {
+                staged.missingFeImages = true;
+                addLog(`[${subjCode}] Image Q${q.index || qIdx + 1} asset unavailable — marked missing in manifest`);
+                const targetFilename = `${subjCode}_${title}_Q${q.index || qIdx + 1}.png`;
+                itemAudit.assets.push({
+                  type: 'Image',
+                  index: q.index,
+                  status: 'Missing',
+                  url: fetchRes.url,
+                  targetFilename
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (feFormat === 'JSON') {
+        const jsonStr = JSON.stringify(datasetCopy, null, 2);
+        stage(title, '.json', jsonStr);
+      } else if (feFormat === 'PDF') {
+        const htmlStr = generatePrintHtml(datasetCopy);
+        stage(title, '.html', htmlStr);
+      } else {
+        // Default MD
+        const mdStr = await compileMarkdown(datasetCopy, true);
+        stage(title, '.md', mdStr);
+      }
+    }
+
+    if (volume.length > 0 && volumeBytes + staged.bytes > volumeBudget) {
+      await writeVolume(false);
+    }
+    if (staged.bytes > volumeBudget) {
+      addLog(`[${subjCode}] ${title}: ${formatMb(staged.bytes)} exceeds the ${formatMb(volumeBudget)} volume budget on its own, exported as a separate part`);
+    }
+    volume.push(staged);
+    volumeBytes += staged.bytes;
+    completedItems++;
+    // Yield to browser event loop between items
+    await new Promise((r) => setTimeout(r, 10));
   }
 
+  if (volume.length > 0) await writeVolume(true);
+  totalBatches = volumeIdx;
+
   reportProgress(
-    totalBatches - 1,
+    Math.max(0, volumeIdx - 1),
     'done',
     '',
-    `Successfully exported all ${totalItems} examsets across ${totalBatches} batch parts.`
+    `Successfully exported all ${totalItems} examsets across ${volumeIdx} ZIP part${volumeIdx === 1 ? '' : 's'}.`
   );
 }
 

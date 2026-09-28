@@ -191,6 +191,7 @@ async function runTests() {
 
   await runBulkZipTest(dataset);
   await runPeZipRefreshTest();
+  await runSizePackingTest(dataset);
 
   console.log('\n=== TEST 8: Atomic Storage Batch Deletion ===');
   const sampleMap: Record<string, any> = {
@@ -435,6 +436,67 @@ async function runPeZipRefreshTest() {
     if (await exportSinglePe({ ...ds, pdfUrl: undefined, id: 'cmsex6fva000004lan2cckccx' } as any, 'PE_BOTH')) fail('PE_BOTH reported success with no asset');
     if (clicks.length) fail(`failure still triggered a download: ${clicks.join()}`);
     console.log('Fresh presigned URL is fetched first; expired-only and asset-less exports return false with no download.');
+  } finally {
+    g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke; g.setTimeout = orig.timeout;
+  }
+}
+
+// ISSUE-109: bulk volumes are packed by byte budget, not by a fixed item count.
+async function runSizePackingTest(feDataset: any) {
+  console.log('\n=== TEST 13: Bulk ZIP volumes packed by size (rollback on overflow) ===');
+  const JSZip = (await import('jszip')).default;
+  const { exportBulkAsZip } = await import('../src/utils/exporter');
+  const pe = formatExamDataset({ product: { id: 'cmsex6fva000004lan2cckccn', title: 'MSS301_SU26_PE_RE_738672', examType: 'PE', pdfUrl: '/api/exams/pdf?productId=cmsex6fva000004lan2cckccn', zipUrl: 'https://fustation.s3.amazonaws.com/exams/pe/mss301/answer-key.zip' }, questions: [] });
+  const g = globalThis as any;
+  const orig = { fetch: g.fetch, document: g.document, create: URL.createObjectURL, revoke: URL.revokeObjectURL, timeout: g.setTimeout };
+  const PDF = new Uint8Array(300_000).fill(37);
+  const KEY = new Uint8Array(200_000).fill(80);
+  g.fetch = async (url: string) => {
+    if (url.includes('/api/exams/pdf')) return new Response(PDF, { status: 200 });
+    if (url.includes('answer-key.zip')) return new Response(KEY, { status: 200 });
+    return new Response('', { status: 404 });
+  };
+  g.setTimeout = (fn: () => void, ms: number) => (ms >= 60_000 ? 0 : orig.timeout(fn, ms));
+  const pending = new Map<string, Blob>();
+  let counter = 0;
+  URL.createObjectURL = (b: Blob) => { const u = `blob:pack/${counter++}`; pending.set(u, b); return u; };
+  URL.revokeObjectURL = () => {};
+  const run = async (datasets: any[], maxVolumeBytes?: number) => {
+    const out: { name: string; zip: any; stored: number }[] = [];
+    g.document = { body: { appendChild() {}, removeChild() {} }, createElement: () => { const a: any = { click() { out.push({ name: a.download, blob: pending.get(a.href) } as any); } }; return a; } };
+    const items = datasets.map((d: any) => ({ id: d.id, title: d.title, subjectCode: d.subjectCode, subjectName: d.subjectName, author: d.author, totalQuestions: d.totalQuestions, extractedAt: '', dataset: d }));
+    await exportBulkAsZip(items as any, { feFormat: 'MD', peFormat: 'PE_BOTH', maxVolumeBytes });
+    for (const o of out as any[]) {
+      o.zip = await JSZip.loadAsync(await o.blob.arrayBuffer());
+      o.stored = 0;
+      for (const n of Object.keys(o.zip.files)) if (!o.zip.files[n].dir && n !== 'manifest.md') o.stored += (await o.zip.files[n].async('uint8array')).byteLength;
+    }
+    return out;
+  };
+  try {
+    // 25 FE exams are far below the budget: one volume, no 10-item cap.
+    const many = await run(Array.from({ length: 25 }, () => feDataset));
+    if (many.length !== 1) fail(`25 small exams produced ${many.length} volumes, expected 1`);
+    if (many[0].name !== `fustation_export_${many[0].name.slice(17, 25)}.zip`) fail(`single volume must not carry a part suffix: ${many[0].name}`);
+    if (Object.keys(many[0].zip.files).filter((n: string) => n.endsWith('.md') && n !== 'manifest.md').length !== 25) fail('not every FE exam landed in the single volume');
+
+    // Budget fits one PE set (~500 KB) but not two: each PE set is rolled back into its own volume, intact.
+    const budget = 700_000;
+    const parts = await run([pe, { ...pe }, { ...pe }], budget);
+    if (parts.length !== 3) fail(`expected 3 size-bounded volumes, got ${parts.length}`);
+    parts.forEach((p, i) => {
+      if (p.name !== p.name.replace(/_part\d+\.zip$/, '') + `_part${i + 1}.zip`) fail(`volume ${i + 1} misnamed: ${p.name}`);
+      if (p.stored > budget) fail(`volume ${i + 1} holds ${p.stored} bytes, over the ${budget} budget`);
+      const files = Object.keys(p.zip.files).filter((n: string) => n.startsWith('MSS301/') && !p.zip.files[n].dir);
+      if (files.length !== 2) fail(`volume ${i + 1} split a PE set across volumes: ${files.join(', ')}`);
+    });
+    const lastManifest = await parts[2].zip.file('manifest.md').async('string');
+    if (!/Part 3, last part/.test(lastManifest)) fail('last manifest does not mark the final part');
+
+    // An exam bigger than the whole budget still exports, alone.
+    const solo = await run([pe, feDataset], 100_000);
+    if (solo.length !== 2) fail(`oversized exam should get its own volume, got ${solo.length} volumes`);
+    console.log('25 exams fit one ZIP; overflowing exams roll back into the next volume intact; oversized exams export alone.');
   } finally {
     g.fetch = orig.fetch; g.document = orig.document; URL.createObjectURL = orig.create; URL.revokeObjectURL = orig.revoke; g.setTimeout = orig.timeout;
   }

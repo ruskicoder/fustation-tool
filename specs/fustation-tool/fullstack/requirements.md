@@ -95,9 +95,10 @@ Last reconciled with code: 2026-09-28 (branch `features/Design_SSOT_Scaffold`).
 1. WHEN batch mode starts on a catalog page (`/home`, `/subject/...`) THEN the system SHALL discover every unique exam CUID from product data and marketplace links.
 2. WHERE preview is enabled THEN the system SHALL fetch the first N exams for review before the full run.
 3. WHILE a batch runs THEN the user SHALL be able to pause, resume, and stop, and state SHALL survive extension reloads.
-4. WHEN bulk export runs over FE and PE items THEN the system SHALL produce 10-item ZIP volumes named `fustation_export_ddmmyyyy_partX.zip`, foldered by subject, each with a `manifest.md` asset audit that marks every unavailable or unresolvable asset `Missing`.
+4. WHEN bulk export runs over FE and PE items THEN the system SHALL produce ZIP volumes bounded by byte size, not item count (see 7.8), named `fustation_export_ddmmyyyy.zip` when one volume suffices and `fustation_export_ddmmyyyy_partX.zip` otherwise, foldered by subject, each with a `manifest.md` asset audit that marks every unavailable or unresolvable asset `Missing`.
 6. IF a fresh exam payload publishes the PE paper (`/api/exams/pdf` or `examUrl`) but contains no answer-key link, and no stored `zipUrl` exists, THEN the system SHALL mark the ZIP `Not provided` rather than `Missing`, and SHALL NOT list it as a missing detail (ISSUE-104).
 7. WHEN an asset request returns a definitive client error (HTTP 4xx other than 403, 408, 429) THEN the system SHALL stop retrying that URL and SHALL record the status.
+8. WHEN an exam is added to a bulk volume THEN the system SHALL stage all of its files first; IF the staged exam would push the volume past its byte budget (64 MB per GB of `navigator.deviceMemory`, clamped to 128 to 512 MB) THEN the system SHALL roll the exam back, write the volume, and start the next volume with that exam, so no exam is split across volumes; IF one exam alone exceeds the budget THEN it SHALL be written as its own volume and logged (ISSUE-109).
 5. WHILE bulk export runs THEN a slide-up progress footer SHALL show counters, batch index, status, and an expandable log.
 
 ### Requirement 8: Overlay UI & Accessibility

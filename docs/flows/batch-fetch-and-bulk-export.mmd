@@ -15,7 +15,7 @@ flowchart TD
     J -- yes --> G
     J -- no --> K["status completed"]
     K --> L["Saved tab: bulk export"]
-    L --> M["exportBulkAsZip<br/>10 items per volume"]
+    L --> M["exportBulkAsZip<br/>stage exam, pack by byte budget<br/>overflow -> write volume, exam opens next"]
     M --> N["per item: compile FE or fetch PE assets<br/>403 -> fetchFreshPeZipUrl, retry"]
     N --> O["subject folders + manifest.md audit"]
-    O --> P["fustation_export_ddmmyyyy_partX.zip"]
+    O --> P["fustation_export_ddmmyyyy.zip<br/>or _partX.zip when split"]

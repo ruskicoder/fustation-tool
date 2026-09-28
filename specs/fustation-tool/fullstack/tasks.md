@@ -102,7 +102,7 @@
 - [x] 10. Batch and bulk
   - [x] 10.1 Catalog discovery, preview queue, pause and stop, persisted batch state (ISSUE-12)
     - _Requirements: 7.1, 7.2, 7.3_
-  - [x] 10.2 10-item ZIP volumes with `manifest.md` audit and progress footer (ISSUE-54, 74, 82, 83)
+  - [x] 10.2 ZIP volumes (10 items; superseded by size-based volumes in task 20) with `manifest.md` audit and progress footer (ISSUE-54, 74, 82, 83)
     - _Requirements: 7.4, 7.5_
 - [x] 11. Overlay UI
   - [x] 11.1 Draggable, resizable panels, themes, toasts, skeletons, focus rings (ISSUE-08, 32, 37, 38, 39, 40, 75)
@@ -177,3 +177,15 @@
     - _Requirements: 9.1_
   - [x] 19.5 Record the last HTTP status and the exam title for every missing PE asset in the bulk log and `manifest.md`; strip presigned query strings (ISSUE-108)
     - _Requirements: 3.8, 7.4_
+
+## Phase 9: Size-Based Bulk Volumes
+
+- [x] 20. Pack bulk ZIP volumes by byte size (ISSUE-109)
+  - [x] 20.1 Stage each exam's files with a byte count; commit to the open volume only if it fits, otherwise write the volume and start the next one with that exam
+    - _Requirements: 7.4, 7.8_
+  - [x] 20.2 `getVolumeByteBudget` from `navigator.deviceMemory` (128 to 512 MB); `maxVolumeBytes` option for tests; DEFLATE for text entries, STORE for binary
+    - _Requirements: 7.8_
+  - [x] 20.3 Volume naming and manifest part labels decided at write time; recovery image names no longer depend on the volume
+    - _Requirements: 7.4_
+  - [x] 20.4 TEST 13: 25 exams in one volume; overflow rolls back intact into the next volume; oversized exam exported alone
+    - _Requirements: 9.1_

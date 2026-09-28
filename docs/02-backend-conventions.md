@@ -23,7 +23,7 @@ All requests go to `https://www.fustation.net` and rely on the logged-in session
 3. **Batch fetch** (`batchFetcher.ts` `BatchFetchManager` singleton): discover tasks, optional preview fetch of N items, then full fetch with pause/stop; state persisted in `fustation_batch_state`.
 4. **Persist** (`storage.ts`): `saveExamToStorage` with `normalizeSavedDataset`; writes are serialized to avoid the concurrent overwrite fixed in ISSUE-72.
 5. **Enrich** (`images.ts`, `math.ts`): images normalized to the proxy and embedded as base64; LaTeX sanitized by `sanitizeMathLatex`: escaped and unpairable (currency) `$` become the literal `\uE000` marker, malformed `$$x$` is repaired, then KaTeX renders (MathML-only for exported HTML).
-6. **Compile & export** (`compiler.ts`, `exporter.ts`): `exportExam` routes MD (`compileMarkdown`), PDF (`generatePrintHtml` + `window.print()`, HTML download fallback when pop-ups are blocked), JSON; `exportSinglePe` for PE assets; `exportBulkAsZip` builds 10-item JSZip volumes (`fustation_export_ddmmyyyy_partX.zip`) with a `manifest.md` audit per volume.
+6. **Compile & export** (`compiler.ts`, `exporter.ts`): `exportExam` routes MD (`compileMarkdown`), PDF (`generatePrintHtml` + `window.print()`, HTML download fallback when pop-ups are blocked), JSON; `exportSinglePe` for PE assets; `exportBulkAsZip` stages each exam and packs JSZip volumes up to a byte budget (`getVolumeByteBudget`, 128 to 512 MB by device memory); an exam that would overflow is rolled back into the next volume, so exams are never split (ISSUE-109). One volume is `fustation_export_ddmmyyyy.zip`, more are `_partX.zip`, each with a `manifest.md` audit.
 
 ## 3. Pipeline Rules
 
