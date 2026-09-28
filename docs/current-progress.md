@@ -1,7 +1,7 @@
 # Current Progress — fustation-tool
 
 **Last Updated**: 2026-09-28
-**Status**: 🟢 **ISSUE-104, 107, 109 fixed; ISSUE-108 narrowed to one classification case; ISSUE-105 is platform data**
+**Status**: 🟢 **ISSUE-104, 107, 108, 109 closed; ISSUE-110 (cosmetic) open; ISSUE-105 is platform data**
 
 ---
 
@@ -10,7 +10,8 @@
 - A live 508-exam bulk run produced 51 ZIPs (fixed 10 items each). Bulk volumes are now packed by byte budget with stage-and-rollback; one volume for typical runs.
 - Live rerun also resolved most of ISSUE-108: PFP191 assets are HTTP 404 on the platform; `CSD203_FA25_FE_982738` being exported as PE remains to investigate.
 - Verification: `npm run build` green including TEST 13, which fails on the previous exporter.
-- Resume point: user tests the size-based bulk export in the browser; then the `CSD203_FA25_FE_982738` classification (ISSUE-108) and the manual browser pass.
+- Live verification by the user: 508 exams exported into one 200.9 MB ZIP; manifest audited against the folder (430 FE HTML, 77 PE papers, 23 answer keys, all valid, no zero-byte files). ISSUE-108 closed as platform data; ISSUE-110 logged (cosmetic manifest details).
+- Resume point: ISSUE-110 (optional), then the remaining manual browser pass with `specs/fustation-tool/fullstack/ui-design/00-manual-testing-guide.md` (single-exam exports, viewer PE buttons, pause and cancel during bulk).
 
 ## Session Ledger: 2026-09-28 PE Answer-Key ZIP Downloads (ISSUE-107)
 
